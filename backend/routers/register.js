@@ -121,6 +121,54 @@ router.post("/verify/:user_id", async (req, res) => {
   }
 });
 
+router.put("/new-otp/:user_id", async (req, res) => {
+  try {
+    const { user_id } = req.params;
+        // แฮชรหัสผ่าน
+        function generateNumericOtp(length) {
+          const otp = crypto.randomBytes(length).toString('hex').slice(0, length); // ใช้ 'hex' เพื่อให้เป็นตัวเลข
+          return otp;
+      }
+    const otp = generateNumericOtp(6);  // สร้าง OTP ใหม่
+
+    // อัปเดต OTP ในฐานข้อมูลและใช้ RETURNING เพื่อดึงค่าใหม่
+    const result = await pool.query(
+      `UPDATE users SET verification = $1 WHERE user_id = $2 RETURNING verification`, 
+      [otp, user_id]
+    );
+
+    // ตรวจสอบว่าการอัปเดตสำเร็จหรือไม่
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "ไม่พบข้อมูลผู้ใช้" });
+    }
+
+    const newOtp = result.rows[0].verification;  // OTP ที่อัปเดตแล้ว
+
+    try {
+      // ส่งอีเมลใหม่
+      const resultEmail = await resend.emails.send({
+        from: 'onboarding@resend.dev',
+        to: 'surachai.up@rmuti.ac.th',
+        subject: "New OTP",
+        text: `Your new OTP is: ${newOtp}`,  // ส่ง OTP ที่ถูกอัปเดต
+      });
+
+      console.log("อีเมลส่งสำเร็จ:", resultEmail);
+      return res.status(200).json({ message: "ส่ง OTP ใหม่สำเร็จ", otp: newOtp });
+    } catch (error) {
+      console.log("ส่งอีเมลไม่สำเร็จ:", error);
+      return res.status(500).json({ error: "ไม่สามารถส่งอีเมลได้" });
+    }
+
+  } catch (error) {
+    console.error("Error requesting OTP:", error);
+    return res.status(500).json({ message: "ไม่สามารถส่ง OTP ใหม่ได้", error: error.message });
+  }
+});
+
+
+
+
 
 router.get("/check-duplicate", async (req, res) => {
   const { field, value } = req.query;

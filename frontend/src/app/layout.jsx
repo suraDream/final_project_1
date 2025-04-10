@@ -22,7 +22,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={`${kanitFont.variable} antialiased`}>
         {children}
-         <div className="navbar">
+        {/* <div className="navbar">
           <Navbar></Navbar>
         </div> *
         {/* <Footer></Footer> */}
