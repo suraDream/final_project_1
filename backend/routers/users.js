@@ -117,7 +117,7 @@ router.post("/:id/check-password", authMiddleware, async (req, res) => {
   }
 });
 
-router.get("/reset-password", async (req, res) => {
+router.post("/check_token", async (req, res) => {
   const {email} =req.body;
   try{
     const result = await pool.query(`SELECT * FROM users WHERE email = $1`,[email]);
@@ -127,7 +127,7 @@ router.get("/reset-password", async (req, res) => {
     const user = result.rows[0];
     const user_id = user.user_id;
     const result_otp = await pool.query(`SELECT * FROM password_reset WHERE user_id = $1`,[user_id]);
-    res.status(200).json({message:"ดึงข้อมูลผู้ใช้สำเร็จ"})
+    res.status(200).json({message:"ดึงข้อมูลผู้ใช้สำเร็จ",otp_data:result_otp})
   }
   catch (error){
     console.error("Error:",error);
