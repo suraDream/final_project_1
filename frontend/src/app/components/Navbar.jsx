@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import LogoutButton from "./LogoutButton";
+import LogoutButton from "@/app/components/LogoutButton";
 import "@/app/css/Nav.css";
 
 export default function Navbar() {
@@ -18,11 +18,20 @@ export default function Navbar() {
     setToken(storedToken);
 
     const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    
+    try {
+      // ตรวจสอบว่า storedUser มีค่าหรือไม่ก่อนการแปลง
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    } catch (error) {
+      console.error("Error parsing user data:", error);
+      setUser(null); // กรณีที่ JSON.parse() ล้มเหลว
     }
+
     const expiresAt = localStorage.getItem("expiresAt");
 
+    // ตรวจสอบว่า token, user, expiresAt ถูกเก็บไว้และไม่หมดอายุ
     if (!storedToken || !storedUser || !expiresAt || Date.now() > parseInt(expiresAt)) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
@@ -31,9 +40,17 @@ export default function Navbar() {
       setUser(null);
       return;
     }
-  
+
+    // หากไม่มีข้อผิดพลาดในการแปลงข้อมูล, เราตั้งค่าตามปกติ
     setToken(storedToken);
-    setUser(JSON.parse(storedUser));
+    try {
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    } catch (error) {
+      console.error("Error parsing user data on initial load:", error);
+      setUser(null);
+    }
   }, []);
 
   useEffect(() => {

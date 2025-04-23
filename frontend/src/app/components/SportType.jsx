@@ -138,7 +138,7 @@ export default function HomePage() {
                   </div>
                   <div className="firstopen">
                     <p>
-                      <span className="first-label-date">วันทำการ: </span>
+                      <span className="first-label-date">เปิด: </span>
                       {convertToThaiDays(field.open_days)}
                     </p>
                   </div>

@@ -13,6 +13,7 @@ export default function MyFieldPage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [fieldIdToDelete, setFieldIdToDelete] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -35,9 +36,15 @@ export default function MyFieldPage() {
     const user = JSON.parse(storedUser);
     setCurrentUser(user);
 
+    if (user.status !== "ตรวจสอบแล้ว") {
+      router.push("/verification");
+    }
+
     if (user.role !== "admin" && user.role !== "field_owner") {
       router.push("/");
     }
+    
+    setIsLoading(false);
   }, []);
 
   useEffect(() => {
@@ -54,6 +61,7 @@ export default function MyFieldPage() {
         });
 
         const data = await res.json();
+        console.log(data);
 
         if (!res.ok) {
           throw new Error(data.error || "เกิดข้อผิดพลาดในการดึงข้อมูลสนาม");
@@ -117,6 +125,12 @@ export default function MyFieldPage() {
       console.error("Error deleting field:", error);
     }
   };
+  if (isLoading)
+    return (
+      <div className="load">
+        <span className="spinner"></span> กำลังโหลด...
+      </div>
+    );
 
   return (
     <div className="container">
@@ -138,7 +152,7 @@ export default function MyFieldPage() {
           filteredFields.map((field) => (
             <div key={field.field_id} className="card">
               <img
-              onClick={() => router.push(`/profile/${field.field_id}`)}
+                onClick={() => router.push(`/profile/${field.field_id}`)}
                 src={
                   field.img_field
                     ? `${API_URL}/${field.img_field}`
@@ -151,9 +165,7 @@ export default function MyFieldPage() {
               <p className="custom-owner-info">
                 เจ้าของ: {field.first_name} {field.last_name}
               </p>
-              {/* <p className="custom-owner-info">
-                  ประเภทกีฬา: {field.sport_name}
-                </p> */}
+              <p className="custom-owner-info">: {field.status}</p>
               <div className="custom-button-group">
                 <button
                   onClick={() => router.push(`/checkField/${field.field_id}`)}
@@ -161,12 +173,14 @@ export default function MyFieldPage() {
                 >
                   ดูรายละเอียด
                 </button>
-                <button
-                  onClick={() => router.push(`/editField/${field.field_id}`)}
-                  className="custom-button-edit"
-                >
-                  แก้ไข
-                </button>
+                {field.status !== "รอตรวจสอบ" && (
+                  <button
+                    onClick={() => router.push(`/editField/${field.field_id}`)}
+                    className="custom-button-edit"
+                  >
+                    แก้ไข
+                  </button>
+                )}
                 <button
                   onClick={() => handleDeleteField(field.field_id)}
                   className="custom-button-delete"

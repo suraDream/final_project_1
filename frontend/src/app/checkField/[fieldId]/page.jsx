@@ -35,6 +35,10 @@ export default function CheckFieldDetail() {
     const user = JSON.parse(storedUser);
     setCurrentUser(user);
 
+    if (user.status !== "ตรวจสอบแล้ว") {
+      router.push("/verification");
+    }
+
     if (user.role !== "admin" && user.role !== "field_owner") {
       router.push("/login");
     }

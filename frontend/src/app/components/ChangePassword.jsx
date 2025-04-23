@@ -12,34 +12,36 @@ export default function ChangePassword() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
   const router = useRouter();
 
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (!storedUser) {
+      setMessage("กรุณาล็อกอินก่อน");
+      setMessageType("error");
+      router.push("/login");
+      return;
+    }
+
+    const user = JSON.parse(storedUser);
+    if (user.status !== "ตรวจสอบแล้ว") {
+      router.push("/verification");
+    }
+  }, [router]);
+
   const handlePasswordChange = async (e) => {
     e.preventDefault();
 
+    // ตรวจสอบความถูกต้องของรหัสผ่านใหม่กับการยืนยันรหัสผ่าน
     if (newPassword !== confirmPassword) {
       setMessage("รหัสใหม่และการยืนยันรหัสไม่ตรงกัน");
       setMessageType("error");
       return;
     }
 
-    const storedUser = localStorage.getItem("user");
-
-    if (!storedUser) {
-      setMessage("กรุณาล็อกอินก่อน");
-      setMessageType("error");
-      router.push("/login"); // เปลี่ยนเส้นทางไปที่หน้า Login
-      return;
-    }
-
-    const user = JSON.parse(storedUser);
-
-    if (!user.user_id) {
-      setMessage("ข้อมูลผู้ใช้ไม่สมบูรณ์");
-      setMessageType("error");
-      return;
-    }
     const token = localStorage.getItem("token");
-    // เรียก API เพื่อตรวจสอบรหัสเดิม
+    const user = JSON.parse(localStorage.getItem("user"));
+
     try {
+      // ส่ง request ไปตรวจสอบรหัสเดิม
       const response = await fetch(
         `${API_URL}/users/${user.user_id}/check-password`,
         {
@@ -48,13 +50,14 @@ export default function ChangePassword() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ currentPassword }),
+          body: JSON.stringify({ currentPassword }), 
         }
       );
 
       const data = await response.json();
 
       if (data.success) {
+        // ถ้ารหัสเดิมถูกต้อง อัปเดตรหัสผ่านใหม่
         const updateResponse = await fetch(
           `${API_URL}/users/${user.user_id}/change-password`,
           {
@@ -64,11 +67,7 @@ export default function ChangePassword() {
               Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({
-              password: newPassword,
-              first_name: user.first_name,
-              last_name: user.last_name,
-              email: user.email,
-              role: user.role,
+              password: newPassword, // ส่งแค่รหัสผ่านใหม่
             }),
           }
         );
@@ -90,8 +89,10 @@ export default function ChangePassword() {
     } catch (err) {
       setMessage("เกิดข้อผิดพลาดในการตรวจสอบรหัสเดิม");
       setMessageType("error");
+      console.error(err);
     }
   };
+
   useEffect(() => {
     if (message) {
       const timer = setTimeout(() => {

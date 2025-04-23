@@ -135,6 +135,39 @@ router.get("/:field_id", async (req, res) => {
   }
 });
 
+router.get("/", async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT 
+          p.post_id,
+          p.field_id,
+          p.title,
+          p.content,
+          (p.created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Asia/Bangkok') AS created_at,
+          COALESCE(
+            json_agg(
+              json_build_object('image_url', pi.image_url)
+            ) FILTER (WHERE pi.image_url IS NOT NULL), '[]'
+          ) AS images
+        FROM posts p
+        LEFT JOIN post_images pi ON p.post_id = pi.post_id
+        GROUP BY p.post_id
+        ORDER BY p.created_at DESC
+        LIMIT 5;`  // ใช้ LIMIT 5 เพื่อดึงแค่ 5 โพสล่าสุด
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(200).json({ message: "ไม่มีโพส" });
+    }
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Database Error:", error);
+    res.status(500).json({ error: "เกิดข้อผิดพลาดในการดึงข้อมูลโพส" });
+  }
+});
+
+
 // PATCH แก้ไขโพส
 router.patch("/update/:post_id", authMiddleware, upload.array("img_url"), async (req, res) => {
   const client = await pool.connect();

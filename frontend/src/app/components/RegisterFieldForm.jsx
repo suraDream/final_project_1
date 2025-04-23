@@ -13,8 +13,16 @@ export default function RegisterFieldForm() {
   const [subFields, setSubFields] = useState([]);
   const [newFacility, setNewFacility] = useState("");
   const [showNewFacilityInput, setShowNewFacilityInput] = useState(false);
-  const [message, setMessage] = useState(""); // State สำหรับข้อความ
-  const [messageType, setMessageType] = useState(""); // State สำหรับประเภทของข้อความ (error, success)
+  const [message, setMessage] = useState(""); 
+  const [messageType, setMessageType] = useState(""); 
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    const user = JSON.parse(storedUser);
+    if (user.status !== "ตรวจสอบแล้ว") {
+      router.push("/verification");
+    }
+  },[router]);
 
   const [fieldData, setFieldData] = useState({
     field_name: "",

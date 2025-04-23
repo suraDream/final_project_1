@@ -40,6 +40,10 @@ export default function RegisterFieldForm() {
     const user = JSON.parse(storedUser);
     setCurrentUser(user);
 
+    if(user.status !== "ตรวจสอบแล้ว"){
+      router.push("/verification")
+    }
+
     if (user.role !== "admin") {
       router.push("/");
     }

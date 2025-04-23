@@ -42,6 +42,10 @@ export default function AdminManager() {
     const user = JSON.parse(storedUser);
     setCurrentUser(user);
 
+    if (user.status !== "ตรวจสอบแล้ว") {
+      router.push("/verification");
+    }
+
     if (user.role !== "admin") {
       router.push("/");
     }
@@ -137,44 +141,44 @@ export default function AdminManager() {
     setShowDeleteUserModal(false); // ปิดโมดอลลบผู้ใช้
   };
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    fetch(`${API_URL}/field/pending`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("Data from API:", data);
-        setPendingFields(Array.isArray(data) ? data : []);
-      })
-      .catch((error) => console.error("Error fetching pending fields:", error));
-  }, []);
+  // useEffect(() => {
+  //   const token = localStorage.getItem("token");
+  //   fetch(`${API_URL}/field/pending`, {
+  //     headers: { Authorization: `Bearer ${token}` },
+  //   })
+  //     .then((res) => res.json())
+  //     .then((data) => {
+  //       console.log("Data from API:", data);
+  //       setPendingFields(Array.isArray(data) ? data : []);
+  //     })
+  //     .catch((error) => console.error("Error fetching pending fields:", error));
+  // }, []);
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    fetch(`${API_URL}/field/allow`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("Data from API:", data);
-        setAllowFields(Array.isArray(data) ? data : []);
-      })
-      .catch((error) => console.error("Error fetching allow fields:", error));
-  }, []);
+  // useEffect(() => {
+  //   const token = localStorage.getItem("token");
+  //   fetch(`${API_URL}/field/allow`, {
+  //     headers: { Authorization: `Bearer ${token}` },
+  //   })
+  //     .then((res) => res.json())
+  //     .then((data) => {
+  //       console.log("Data from API:", data);
+  //       setAllowFields(Array.isArray(data) ? data : []);
+  //     })
+  //     .catch((error) => console.error("Error fetching allow fields:", error));
+  // }, []);
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    fetch(`${API_URL}/field/refuse`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("Data from API:", data);
-        setRefuseFields(Array.isArray(data) ? data : []);
-      })
-      .catch((error) => console.error("Error fetching refuse fields:", error));
-  }, []);
+  // useEffect(() => {
+  //   const token = localStorage.getItem("token");
+  //   fetch(`${API_URL}/field/refuse`, {
+  //     headers: { Authorization: `Bearer ${token}` },
+  //   })
+  //     .then((res) => res.json())
+  //     .then((data) => {
+  //       console.log("Data from API:", data);
+  //       setRefuseFields(Array.isArray(data) ? data : []);
+  //     })
+  //     .catch((error) => console.error("Error fetching refuse fields:", error));
+  // }, []);
 
   if (isLoading)
     return (
@@ -324,25 +328,40 @@ export default function AdminManager() {
         </table>
 
         {/* 🔹 ตารางสำหรับลูกค้า */}
-        <h3>ลูกค้า</h3>
+        <h3>ผู้ใช้ทั้งหมด</h3>
         <table>
           <thead>
             <tr>
               <th>ชื่อ-สกุล</th>
               <th>อีเมล</th>
+              <th>สถานะบัญชี</th>
+              <th>บทบาท</th>
               <th>แก้ไขข้อมูล</th>
               <th>จัดการ</th>
             </tr>
           </thead>
           <tbody>
             {users
-              .filter((user) => user.role === "customer")
+              .filter(
+                (user) =>
+                  user.role === "customer" || user.role === "field_owner"
+              )
               .map((user) => (
                 <tr key={user.user_id}>
                   <td>
                     {user.first_name} - {user.last_name}
                   </td>
                   <td>{user.email}</td>
+                  <td>{user.status}</td>
+                  <td>
+                    {
+                      user.role === "customer"
+                        ? "ลูกค้า"
+                        : user.role === "field_owner"
+                        ? "เจ้าของสนาม"
+                        : user.role
+                    }
+                  </td>
                   <td>
                     <button
                       className="edit-btn"
@@ -363,7 +382,7 @@ export default function AdminManager() {
               ))}
           </tbody>
         </table>
-        <h3>เจ้าของสนามกีฬา</h3>
+        {/* <h3>เจ้าของสนามกีฬา</h3>
         <table>
           <thead>
             <tr>
@@ -401,9 +420,9 @@ export default function AdminManager() {
                 </tr>
               ))}
           </tbody>
-        </table>
+        </table> */}
         {/* 🔹 ตารางสำหรับสนามกีฬาที่รอตรวจสอบ */}
-        <div className="apv">
+        {/* <div className="apv">
           <h3>สนามที่อนุมัติแล้ว</h3>
         </div>
         <table>
@@ -448,8 +467,8 @@ export default function AdminManager() {
               </tr>
             )}
           </tbody>
-        </table>
-        <div className="rej">
+        </table> */}
+        {/* <div className="rej">
           <h3>สนามที่ไม่อนุมัติ</h3>
         </div>
         <table>
@@ -469,7 +488,6 @@ export default function AdminManager() {
                     {field.first_name}-{field.last_name}
                   </td>
                   <td>
-                    {/* ✅ กดปุ่มแล้วไปหน้าตรวจสอบ */}
                     <button
                       onClick={() =>
                         router.push(`/checkField/${field.field_id}`)
@@ -495,9 +513,8 @@ export default function AdminManager() {
               </tr>
             )}
           </tbody>
-        </table>
-        {/* 🔹 ตารางสำหรับสนามกีฬาที่รอตรวจสอบ */}
-        <div className="pen">
+        </table> */}
+        {/* <div className="pen">
           <h3>สนามกีฬาที่รอตรวจสอบ</h3>
         </div>
         <table>
@@ -544,7 +561,7 @@ export default function AdminManager() {
               </tr>
             )}
           </tbody>
-        </table>
+        </table> */}
 
         {/* 📝 Modal สำหรับแก้ไขข้อมูล */}
         {selectedUser && (

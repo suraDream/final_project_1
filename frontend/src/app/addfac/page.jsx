@@ -39,6 +39,10 @@ export default function RegisterFieldForm() {
     const user = JSON.parse(storedUser);
     setCurrentUser(user);
 
+    if (user.status !== "ตรวจสอบแล้ว") {
+      router.push("/verification");
+    }   
+
     if (user.role !== "admin") {
       router.push("/");
     }
@@ -148,7 +152,7 @@ export default function RegisterFieldForm() {
     setEditingFacility(null); // รีเซ็ตการแก้ไข
     setNewFacilityName(""); // รีเซ็ตชื่อใหม่
   };
-  
+
   if (isLoading)
     return (
       <div className="load">
@@ -160,9 +164,9 @@ export default function RegisterFieldForm() {
     <>
       {/* สิ่งอำนวยความสะดวก */}
       <div className="container">
-      <div className="input-group">
-        <label>สิ่งอำนวยความสะดวกทั้งหมด</label>
-      </div>
+        <div className="input-group">
+          <label>สิ่งอำนวยความสะดวกทั้งหมด</label>
+        </div>
         {/* Display List of Facilities */}
         <div className="factcon">
           {facilities.map((fac) => (
@@ -288,4 +292,5 @@ export default function RegisterFieldForm() {
       </div>
     </>
   );
+
 }

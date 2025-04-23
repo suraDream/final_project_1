@@ -1,7 +1,7 @@
 import { Kanit } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/app/components/Navbar";
-// import  Footer from "@/app/components/Footer"
+import Footer from "@/app/components/Footer";
 
 const kanitFont = Kanit({
   variable: "--font-kanit",
@@ -21,11 +21,13 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={`${kanitFont.variable} antialiased`}>
-        {children}
-        {/* <div className="navbar">
+        <div className="navbar">
           <Navbar></Navbar>
-        </div> *
-        {/* <Footer></Footer> */}
+        </div>
+        <div className="body">{children}</div>
+        <footer>
+          <Footer></Footer>
+        </footer>
       </body>
     </html>
   );

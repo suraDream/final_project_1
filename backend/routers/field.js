@@ -5,7 +5,8 @@ const fs = require("fs");
 const router = express.Router();
 const pool = require("../db");
 const authMiddleware = require("../middlewares/auth");
-const { Resend } = require('resend'); 
+const {Resend} = require("resend")
+require("dotenv").config();
 const resend = new Resend(process.env.Resend_API);
 
 // ตั้งค่า multer เพื่อบันทึกไฟล์ลงโฟลเดอร์ `uploads/`
@@ -16,7 +17,7 @@ const storage = multer.diskStorage({
     if (file.fieldname === "documents") {
       uploadDir = "uploads/documents/"; // โฟลเดอร์สำหรับเอกสาร
     } else if (file.fieldname === "img_field") {
-      uploadDir = "uploads/images/profile_field"; // โฟลเดอร์สำหรับรูปภาพ
+      uploadDir = "uploads/images/"; // โฟลเดอร์สำหรับรูปภาพ
     }
 
     if (!fs.existsSync(uploadDir)) {
@@ -31,7 +32,13 @@ const storage = multer.diskStorage({
 });
 
 // รองรับการอัปโหลด **หลายไฟล์**
-const upload = multer({ storage: storage });
+const upload = multer({
+  storage: storage,
+  limits: {
+    files: 10,
+    fileSize: 8 * 1024 * 1024, 
+  },
+});
 
 // ลงทะเบียนสนามกีฬา
 router.post("/register", upload.fields([{ name: "documents" }, { name: "img_field" }]),authMiddleware, async (req, res) => {
@@ -54,9 +61,12 @@ router.post("/register", upload.fields([{ name: "documents" }, { name: "img_fiel
       field_description  // New field for description
     } = JSON.parse(req.body.data);
 
-    // ✅ ตรวจสอบว่ามีไฟล์เอกสารอัปโหลดหรือไม่
-    const documents = req.files["documents"] ? req.files["documents"].map(file => file.path) : [];
-    const imgField = req.files["img_field"] && req.files["img_field"].length > 0 ? req.files["img_field"][0].path : null;
+         // ✅ ตรวจสอบว่ามีไฟล์เอกสารอัปโหลดหรือไม่
+      const documents = req.files["documents"]
+            ? req.files["documents"].map((file) => file.path.replace(/\\/g, "/")).join(", ") // คลีนพาธแล้วคั่นด้วย ", "
+            : [];
+
+      const imgField = req.files["img_field"] && req.files["img_field"].length > 0 ? req.files["img_field"][0].path : null;
 
     // ตรวจสอบว่าเอกสารได้รับการอัปโหลดหรือไม่
     if (documents.length === 0) {
@@ -68,6 +78,7 @@ router.post("/register", upload.fields([{ name: "documents" }, { name: "img_fiel
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING field_id`,
       [user_id, field_name, address, gps_location, open_hours, close_hours, number_bank, account_holder, price_deposit, name_bank, documents, imgField, status || "รอตรวจสอบ", open_days, field_description]  // Save the description
     );
+        
 
     const field_id = fieldResult.rows[0].field_id;
     
@@ -96,8 +107,27 @@ router.post("/register", upload.fields([{ name: "documents" }, { name: "img_fiel
         [field_id, facId, selectedFacilities[facId]]
       );
     }
-    
-    res.status(200).send({ message: "ลงทะเบียนสนามเรียบร้อย!", field_id });
+     // ดึงข้อมูลผู้ใช้ (รวมถึง user_email)
+     const userData = await pool.query("SELECT * FROM users WHERE user_id = $1", [user_id]);
+
+     // สมมุติว่าในตาราง users มีคอลัมน์ชื่อ user_email
+     const userEmail = userData.rows[0].email; // << ใช้ค่านี้ส่งอีเมล
+
+     // ส่งอีเมล
+     try {
+       const resultEmail = await resend.emails.send({
+         from: process.env.Sender_Email,
+         to: userEmail, // ใช้ค่าที่ดึงมา
+         subject: "ลงทะเบียนสนาม",
+         text: "คุณได้ลงทะเบียนสนามเรียบร้อยแล้ว รอผู้ดูแลตรวจสอบ",
+       });
+       console.log("อีเมลส่งสำเร็จ:", resultEmail);
+     } catch (error) {
+       console.log("ส่งอีเมลไม่สำเร็จ:", error);
+       return res.status(500).json({ error: "ไม่สามารถส่งอีเมลได้", details: error.message });
+     }
+     res.status(200).send({ message: "ลงทะเบียนสนามเรียบร้อย!", field_id });
+
 
   } catch (error) {
     console.error("Error:", error);
@@ -108,74 +138,127 @@ router.post("/register", upload.fields([{ name: "documents" }, { name: "img_fiel
 
 // admin api ////////////////////////////////////////////////////////////////////////////////////////
 // API สำหรับดึงข้อมูลสนามที่รอตรวจสอบ
-router.get('/pending', authMiddleware, async (req, res) => {
+// router.get('/pending', authMiddleware, async (req, res) => {
+//   try {
+//     // ตรวจสอบว่า user เป็น admin หรือไม่
+//     if (req.user.role !== 'admin') {
+//       return res.status(403).json({ error: "คุณไม่มีสิทธิ์เข้าถึงข้อมูลนี้" });
+//     }
+
+//     const result = await pool.query(`
+//       SELECT users.user_id, users.first_name, users.last_name, users.email, 
+//              field.field_id, field.field_name, field.address, field.gps_location, 
+//              field.documents, field.open_hours, field.close_hours, field.img_field, 
+//              field.number_bank, field.account_holder, field.status, field.price_deposit 
+//       FROM field 
+//       INNER JOIN users ON field.user_id = users.user_id
+//       WHERE status = 'รอตรวจสอบ'`);
+      
+//     res.json(result.rows);
+//   } catch (error) {
+//     res.status(500).json({ error: 'Database error fetching pending fields' });
+//   }
+// });
+
+// // API สำหรับดึงข้อมูลสนามที่ผ่านการอนุมัติ
+// router.get('/allow', authMiddleware, async (req, res) => {
+//   try {
+//     // ตรวจสอบว่า user เป็น admin หรือไม่
+//     if (req.user.role !== 'admin') {
+//       return res.status(403).json({ error: "คุณไม่มีสิทธิ์เข้าถึงข้อมูลนี้" });
+//     }
+
+//     const result = await pool.query(`
+//       SELECT users.user_id, users.first_name, users.last_name, users.email, 
+//              field.field_id, field.field_name, field.address, field.gps_location, 
+//              field.documents, field.open_hours, field.close_hours, field.img_field, 
+//              field.number_bank, field.account_holder, field.status, field.price_deposit 
+//       FROM field 
+//       INNER JOIN users ON field.user_id = users.user_id
+//       WHERE status = 'ผ่านการอนุมัติ'`);
+      
+//     res.json(result.rows);
+//   } catch (error) {
+//     res.status(500).json({ error: 'Database error fetching allowed fields' });
+//   }
+// });
+
+// // API สำหรับดึงข้อมูลสนามที่ไม่ผ่านการอนุมัติ
+// router.get('/refuse', authMiddleware, async (req, res) => {
+//   try {
+//     // ตรวจสอบว่า user เป็น admin หรือไม่
+//     if (req.user.role !== 'admin') {
+//       return res.status(403).json({ error: "คุณไม่มีสิทธิ์เข้าถึงข้อมูลนี้" });
+//     }
+
+//     const result = await pool.query(`
+//       SELECT users.user_id, users.first_name, users.last_name, users.email, 
+//              field.field_id, field.field_name, field.address, field.gps_location, 
+//              field.documents, field.open_hours, field.close_hours, field.img_field, 
+//              field.number_bank, field.account_holder, field.status, field.price_deposit 
+//       FROM field 
+//       INNER JOIN users ON field.user_id = users.user_id
+//       WHERE status = 'ไม่ผ่านการอนุมัติ'`);
+      
+//     res.json(result.rows);
+//   } catch (error) {
+//     res.status(500).json({ error: 'Database error fetching refused fields' });
+//   }
+// });
+
+router.put("/update-status/:field_id", authMiddleware, async (req, res) => {
   try {
-    // ตรวจสอบว่า user เป็น admin หรือไม่
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: "คุณไม่มีสิทธิ์เข้าถึงข้อมูลนี้" });
+    const { field_id } = req.params;  // รับ field_id จาก URL params
+    const { status } = req.body;      // รับ status ที่จะอัปเดตจาก body
+    const { user_id, role } = req.user;  // ดึงข้อมูลจาก token เพื่อเช็ค role ของผู้ใช้
+
+    // ตรวจสอบว่า status ที่ส่งมาถูกต้องหรือไม่ (ต้องเป็น "รออนุมัติ")
+    if (status !== "รอตรวจสอบ") {
+      return res.status(400).json({ error: "สถานะที่ส่งมาไม่ถูกต้อง" });
     }
 
-    const result = await pool.query(`
-      SELECT users.user_id, users.first_name, users.last_name, users.email, 
-             field.field_id, field.field_name, field.address, field.gps_location, 
-             field.documents, field.open_hours, field.close_hours, field.img_field, 
-             field.number_bank, field.account_holder, field.status, field.price_deposit 
-      FROM field 
-      INNER JOIN users ON field.user_id = users.user_id
-      WHERE status = 'รอตรวจสอบ'`);
-      
-    res.json(result.rows);
-  } catch (error) {
-    res.status(500).json({ error: 'Database error fetching pending fields' });
-  }
-});
+    console.log("field_id ที่ได้รับ:", field_id);
+    console.log("ข้อมูลที่ได้รับจาก Frontend:", req.body);
 
-// API สำหรับดึงข้อมูลสนามที่ผ่านการอนุมัติ
-router.get('/allow', authMiddleware, async (req, res) => {
-  try {
-    // ตรวจสอบว่า user เป็น admin หรือไม่
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: "คุณไม่มีสิทธิ์เข้าถึงข้อมูลนี้" });
+    // ตรวจสอบว่า field_id ถูกต้อง
+    if (!field_id || isNaN(field_id)) {
+      console.log("field_id ไม่ถูกต้อง");
+      return res.status(400).json({ error: "field_id ไม่ถูกต้อง" });
     }
 
-    const result = await pool.query(`
-      SELECT users.user_id, users.first_name, users.last_name, users.email, 
-             field.field_id, field.field_name, field.address, field.gps_location, 
-             field.documents, field.open_hours, field.close_hours, field.img_field, 
-             field.number_bank, field.account_holder, field.status, field.price_deposit 
-      FROM field 
-      INNER JOIN users ON field.user_id = users.user_id
-      WHERE status = 'ผ่านการอนุมัติ'`);
-      
-    res.json(result.rows);
-  } catch (error) {
-    res.status(500).json({ error: 'Database error fetching allowed fields' });
-  }
-});
+    // ตรวจสอบว่า user เป็นเจ้าของสนามหรือ admin หรือไม่
+    const checkField = await pool.query("SELECT * FROM field WHERE field_id = $1", [field_id]);
+    console.log("ข้อมูลจากฐานข้อมูล:", checkField.rows);
 
-// API สำหรับดึงข้อมูลสนามที่ไม่ผ่านการอนุมัติ
-router.get('/refuse', authMiddleware, async (req, res) => {
-  try {
-    // ตรวจสอบว่า user เป็น admin หรือไม่
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: "คุณไม่มีสิทธิ์เข้าถึงข้อมูลนี้" });
+    if (checkField.rows.length === 0) {
+      console.log("ไม่พบข้อมูลสนามกีฬาในฐานข้อมูล");
+      return res.status(404).json({ error: "ไม่พบข้อมูลสนามกีฬา" });
     }
 
-    const result = await pool.query(`
-      SELECT users.user_id, users.first_name, users.last_name, users.email, 
-             field.field_id, field.field_name, field.address, field.gps_location, 
-             field.documents, field.open_hours, field.close_hours, field.img_field, 
-             field.number_bank, field.account_holder, field.status, field.price_deposit 
-      FROM field 
-      INNER JOIN users ON field.user_id = users.user_id
-      WHERE status = 'ไม่ผ่านการอนุมัติ'`);
-      
-    res.json(result.rows);
+    const fieldOwnerId = checkField.rows[0].user_id;  // user_id ของเจ้าของสนาม
+
+    // ถ้าผู้ใช้ไม่ใช่ admin และไม่ใช่เจ้าของสนาม จะไม่อนุญาตให้เปลี่ยนแปลง
+    if (role !== "admin" && user_id !== fieldOwnerId) {
+      return res.status(403).json({ error: "คุณไม่มีสิทธิ์ในการแก้ไขข้อมูลนี้" });
+    }
+
+    // อัปเดตสถานะของสนามให้เป็น "รออนุมัติ"
+    const result = await pool.query(
+      `UPDATE field 
+       SET status = $1  -- อัปเดตสถานะ
+       WHERE field_id = $2 
+       RETURNING *;`,
+      [status, field_id]
+    );
+
+    console.log("ข้อมูลอัปเดตสำเร็จ:", result.rows[0]);
+
+    res.json({ message: "อัปเดตสถานะสำเร็จ", data: result.rows[0] });
   } catch (error) {
-    res.status(500).json({ error: 'Database error fetching refused fields' });
+    console.error("Database Error:", error);
+    res.status(500).json({ error: "เกิดข้อผิดพลาดในการอัปเดตสนามกีฬา", details: error.message });
   }
 });
-
 
 
 router.get("/:field_id", authMiddleware, async (req, res) => {
@@ -304,59 +387,53 @@ router.put("/:field_id", authMiddleware, async (req, res) => {
 
     const userData = await pool.query("SELECT * FROM users WHERE user_id = $1", [checkField.rows[0].user_id]);
 
-    // ตรวจสอบค่าของ status ที่ได้รับมา
-    if (status !== "ผ่านการอนุมัติ" && status !== "ไม่ผ่านการอนุมัติ") {
-      return res.status(400).json({ error: "สถานะไม่ถูกต้อง" });
-    }
-
-    // ถ้าสถานะเป็น "ผ่านการอนุมัติ" ให้เปลี่ยน role ของผู้ใช้งานเป็น "field_owner"
-    if (status === "ผ่านการอนุมัติ") {
-      const userId = checkField.rows[0].user_id;  // ดึง user_id ของเจ้าของสนาม
-      const userRole = checkField.rows[0].role;
-      if (userRole === "customer") {
-        await pool.query(
-          "UPDATE users SET role = 'field_owner' WHERE user_id = $1",
-          [userId]
-        );
-      }
-      try {
-        const resultEmail = await resend.emails.send({
-          from: 'onboarding@resend.dev', // อีเมลทดสอบจาก Resend ที่ส่งได้แน่นอน
-          to: userData.rows[0].email,
-          subject: "การอนุมัติสนามกีฬา",
-          text: "สนามกีฬาได้รับการอนุมัติเรียบร้อยแล้ว",
-        });
-        console.log("อีเมลส่งสำเร็จ:", resultEmail);
-      } catch (error) {
-        console.log("ส่งอีเมลไม่สำเร็จ:", error);
-        return res.status(500).json({ error: "ไม่สามารถส่งอีเมลได้", details: error.message });
-      }
-      
-    }
-
-    // ถ้าสถานะเป็น "ไม่ผ่านการอนุมัติ" ให้เปลี่ยน role ของผู้ใช้งานเป็น "customer"
-    else if (status === "ไม่ผ่านการอนุมัติ") {
-      const userId = checkField.rows[0].user_id;  // ดึง user_id ของเจ้าของสนาม
-      const userRole = checkField.rows[0].role;  // ดึง user_id ของเจ้าของสนาม
-      if(userRole === "field_owner") {
+   if (status === "ผ่านการอนุมัติ") {
+    const userId = checkField.rows[0].user_id; 
+    const userRole = checkField.rows[0].role;
+    if (userRole === "customer") {
       await pool.query(
-        "UPDATE users SET role = 'customer' WHERE user_id = $1",  // แก้ไขเป็น "customer" ถ้าไม่ผ่านการอนุมัติ
+        "UPDATE users SET role = 'field_owner' WHERE user_id = $1",
         [userId]
       );
     }
-      try {
-        const resultEmail = await resend.emails.send({
-          from: 'onboarding@resend.dev', // อีเมลทดสอบจาก Resend ที่ส่งได้แน่นอน
-          to: userData.rows[0].email,
-          subject: "การอนุมัติสนามกีฬา",
-          text: "สนามกีฬาไม่ได้รับการอนุมัติ",
-        });
-        console.log("อีเมลส่งสำเร็จ:", resultEmail);
-      } catch (error) {
-        console.log("ส่งอีเมลไม่สำเร็จ:", error);
-        return res.status(500).json({ error: "ไม่สามารถส่งอีเมลได้", details: error.message });
-      }
+    try {
+      const resultEmail = await resend.emails.send({
+        from: process.env.Sender_Email,
+        to: userData.rows[0].email,
+        subject: "การอนุมัติสนามกีฬา",
+        text: "สนามกีฬาได้รับการอนุมัติเรียบร้อยแล้ว",
+      });
+      console.log("อีเมลส่งสำเร็จ:", resultEmail);
+    } catch (error) {
+      console.log("ส่งอีเมลไม่สำเร็จ:", error);
+      return res.status(500).json({ error: "ไม่สามารถส่งอีเมลได้", details: error.message });
     }
+    
+  }
+
+  else if (status === "ไม่ผ่านการอนุมัติ") {
+    const userId = checkField.rows[0].user_id; 
+    const userRole = checkField.rows[0].role; 
+    if(userRole === "field_owner") {
+    await pool.query(
+      "UPDATE users SET role = 'field_owner' WHERE user_id = $1", 
+      [userId]
+    );
+  }
+    try {
+      const resultEmail = await resend.emails.send({
+        from: process.env.Sender_Email,
+        to: userData.rows[0].email,
+        subject: "การอนุมัติสนามกีฬา",
+        text: "สนามกีฬาไม่ได้รับการอนุมัติ",
+      });
+      console.log("อีเมลส่งสำเร็จ:", resultEmail);
+    } catch (error) {
+      console.log("ส่งอีเมลไม่สำเร็จ:", error);
+      return res.status(500).json({ error: "ไม่สามารถส่งอีเมลได้", details: error.message });
+    }
+  }
+
 
     // อัปเดตแค่สถานะของสนาม
     const result = await pool.query(
@@ -376,7 +453,106 @@ router.put("/:field_id", authMiddleware, async (req, res) => {
   }
 });
 
+// DELETE ลบสนามหลัก พร้อมลบ sub_field, add_on, โพส, รูป, เอกสาร
+router.delete("/delete/field/:id", authMiddleware, async (req, res) => {
+  const { id: fieldId } = req.params;
 
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // ลบ add_on
+    const subFields = await client.query("SELECT sub_field_id FROM sub_field WHERE field_id = $1", [fieldId]);
+    for (const sub of subFields.rows) {
+      await client.query("DELETE FROM add_on WHERE sub_field_id = $1", [sub.sub_field_id]);
+    }
+
+    // ลบ sub_field
+    await client.query("DELETE FROM sub_field WHERE field_id = $1", [fieldId]);
+
+    // ลบ post_images และไฟล์ภาพ
+    const postImages = await client.query(
+      `SELECT pi.image_url FROM post_images pi JOIN posts p ON pi.post_id = p.post_id WHERE p.field_id = $1`,
+      [fieldId]
+    );
+    for (const img of postImages.rows) {
+      const filePath = path.join(__dirname, "..", img.image_url);
+      if (fs.existsSync(filePath)) {
+        try {
+          fs.unlinkSync(filePath);
+        } catch (e) {
+          console.error("Error deleting file:", e);
+        }
+      }
+    }
+    await client.query(`DELETE FROM post_images WHERE post_id IN (SELECT post_id FROM posts WHERE field_id = $1)`, [fieldId]);
+
+    // ลบ posts
+    await client.query("DELETE FROM posts WHERE field_id = $1", [fieldId]);
+
+     // ดึง img_field และ documents เพื่อลบไฟล์แนบใน field
+     const fieldFiles = await client.query("SELECT img_field, documents FROM field WHERE field_id = $1", [fieldId]);
+     const { img_field, documents } = fieldFiles.rows[0] || {};
+ 
+     if (img_field) {
+       const imgPath = path.join(__dirname, "..", img_field);
+       if (fs.existsSync(imgPath)) {
+         try {
+           fs.unlinkSync(imgPath);
+         } catch (e) {
+           console.error("Error deleting img_field:", e);
+         }
+       }
+     }
+ 
+     if (documents) {
+      let docPaths = [];
+    
+      if (Array.isArray(documents)) {
+        docPaths = documents;
+      } else if (typeof documents === "string") {
+        const cleaned = documents
+          .replace(/^{|}$/g, "") // ตัด {} ข้างนอก
+          .split(",") // แยกแต่ละ path
+          .map((s) =>
+            s.replace(/\\/g, "/").replace(/"/g, "").trim() // ลบ " และแก้ path
+          );
+    
+        docPaths = cleaned;
+      } else {
+        docPaths = [documents.toString().replace(/\\/g, "/").replace(/"/g, "")];
+      }
+    
+      for (const doc of docPaths) {
+        const docPath = path.resolve(__dirname, "..", doc);
+        if (fs.existsSync(docPath)) {
+          try {
+            fs.unlinkSync(docPath);
+            console.log("ลบไฟล์สำเร็จ:", docPath);
+          } catch (e) {
+            console.error("ลบไฟล์เอกสารไม่สำเร็จ:", e);
+          }
+        } else {
+          console.warn("ไม่พบไฟล์:", docPath);
+        }
+      }
+    }
+    
+    
+    
+    // ลบ field
+    await client.query("DELETE FROM field WHERE field_id = $1", [fieldId]);
+
+    await client.query("COMMIT");
+    res.status(200).json({ message: "Field, subfields, addons, posts, and images deleted successfully" });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error deleting field:", error);
+    res.status(500).json({ message: "Server error" });
+  } finally {
+    client.release();
+  }
+});
 
 router.put("/edit/:field_id", authMiddleware, async (req, res) => {
   try {
@@ -476,6 +652,12 @@ router.post("/:field_id/upload-image", authMiddleware, upload.single("img_field"
 
     if (!filePath) return res.status(400).json({ error: "ไม่พบไฟล์รูปภาพ" });
 
+    const oldImg = await pool.query("SELECT img_field FROM field WHERE field_id = $1", [field_id]);
+    const oldPath = oldImg.rows[0]?.img_field;
+
+    if (oldPath && fs.existsSync(oldPath)) {
+      fs.unlinkSync(oldPath); // ลบรูปเดิม
+    }
     // อัปเดต path ของไฟล์ในฐานข้อมูล
     await pool.query(
       `UPDATE field SET img_field = $1 WHERE field_id = $2`,
@@ -497,7 +679,24 @@ router.post("/:field_id/upload-document", upload.array("documents", 10), authMid
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ error: "ไม่พบไฟล์เอกสาร" });
     }
-
+    
+    const oldDocs = await pool.query("SELECT documents FROM field WHERE field_id = $1", [field_id]);
+    const docPaths = oldDocs.rows[0]?.documents;
+    
+    if (docPaths) {
+      const cleanedPaths = docPaths
+        .replace(/^{|}$/g, "")
+        .split(",")
+        .map((p) => p.replace(/"/g, "").replace(/\\/g, "/").trim());
+    
+      cleanedPaths.forEach((doc) => {
+        const fullPath = path.resolve(__dirname, "..", doc);
+        if (fs.existsSync(fullPath)) {
+          fs.unlinkSync(fullPath); // ลบไฟล์แต่ละไฟล์
+        }
+      });
+    }
+    
     // บันทึกไฟล์ทุกไฟล์ที่อัปโหลด
     const filePaths = req.files.map(file => file.path);
 
@@ -644,45 +843,6 @@ if (isNaN(subFieldId) || !Number.isInteger(Number(subFieldId))) {
   } catch (error) {
     console.error("Error deleting subfield:", error);
     return res.status(500).json({ error: "Server error" });
-  }
-});
-
-
-router.delete("/delete/field/:id", async (req, res) => {
-  const { id: fieldId } = req.params; // เปลี่ยนชื่อจาก filedId เป็น fieldId
-
-  try {
-    // ดึงข้อมูลจาก sub_field ตาม fieldId
-    const resultSubfield = await pool.query("SELECT * FROM sub_field WHERE field_id = $1", [fieldId]);
-
-    // ลูปผ่าน sub_field ที่ได้รับมา
-    for (const subField of resultSubfield.rows) {
-      const subFieldId = subField.sub_field_id;
-
-      // ดึงข้อมูล add_on ที่เกี่ยวข้อง
-      const resultAddon = await pool.query("SELECT * FROM add_on WHERE sub_field_id = $1", [subFieldId]);
-
-      // ถ้ามีข้อมูล add_on ให้ทำการลบ
-      if (resultAddon.rows.length > 0) {
-        for (const addon of resultAddon.rows) {
-          const addonId = addon.add_on_id;
-          await pool.query("DELETE FROM add_on WHERE add_on_id = $1", [addonId]);
-        }
-      }
-
-      // ลบข้อมูลจาก sub_field
-      await pool.query("DELETE FROM sub_field WHERE sub_field_id = $1", [subFieldId]);
-    }
-
-    // ลบข้อมูลจาก field หลังจากลบ sub_field และ add_on เสร็จแล้ว
-    await pool.query("DELETE FROM field WHERE field_id = $1", [fieldId]);
-
-    // ส่งคำตอบกลับว่าเสร็จสิ้น
-    res.status(200).json({ message: "Field and related subfields and addons deleted successfully" });
-
-  } catch (error) {
-    console.error("Error deleting field:", error);
-    res.status(500).json({ message: "Server error" });
   }
 });
 

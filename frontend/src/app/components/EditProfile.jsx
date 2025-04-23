@@ -1,9 +1,10 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import "@/app/css/editProfile.css";
 
 export default function EditProfile() {
+  const [isLoading, setIsLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
   const [updatedUser, setUpdatedUser] = useState({
     first_name: "",
@@ -18,8 +19,11 @@ export default function EditProfile() {
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
+    const user = JSON.parse(storedUser);
+    if (user.status !== "ตรวจสอบแล้ว") {
+      router.push("/verification");
+    }
     if (storedUser) {
-      const user = JSON.parse(storedUser);
       setCurrentUser(user);
       setUpdatedUser({
         first_name: user.first_name,
@@ -30,7 +34,10 @@ export default function EditProfile() {
     } else {
       router.push("/login");
     }
+    setIsLoading(false);
+
   }, []);
+  
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
@@ -114,14 +121,21 @@ export default function EditProfile() {
     }
   };
   useEffect(() => {
-      if (message) {
-        const timer = setTimeout(() => {
-          setMessage("");
-        }, 2000);
+    if (message) {
+      const timer = setTimeout(() => {
+        setMessage("");
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
   
-        return () => clearTimeout(timer);
-      }
-    }, [message]);
+  if (isLoading)
+    return (
+      <div className="load">
+        <span className="spinner"></span> กำลังโหลด...
+      </div>
+    );
 
   return (
     <>

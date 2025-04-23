@@ -153,17 +153,17 @@ export default function Register() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-      const errorData = await response.json();
-      setSuccessMessage("ลงทะเบียนสำเร็จ ! กรุณาเข้าสู่ระบบ");
-      setTimeout(() => {        
-        router.push("/login");
-      }, 2000); 
 
       if (!response.ok) {
-        
+        const errorData = await response.json();
         setErrors({ serverError: errorData.message || "การลงทะเบียนล้มเหลว" });
         return;
       }
+      
+      setSuccessMessage("ลงทะเบียนสำเร็จ");
+      setTimeout(() => {        
+        router.push("/login");
+      }, 1500); 
 
       setFormData({
         user_name: "",
