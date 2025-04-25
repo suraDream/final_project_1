@@ -5,7 +5,8 @@ const fs = require("fs");
 const router = express.Router();
 const pool = require("../db");
 const authMiddleware = require("../middlewares/auth");
-const {Resend} = require("resend")
+const {Resend} = require("resend");
+const { error } = require("console");
 require("dotenv").config();
 const resend = new Resend(process.env.Resend_API);
 
@@ -843,6 +844,41 @@ if (isNaN(subFieldId) || !Number.isInteger(Number(subFieldId))) {
   } catch (error) {
     console.error("Error deleting subfield:", error);
     return res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.get("/open-days/:sub_field_id", async (req, res) => {
+  const { sub_field_id } = req.params;
+  if (isNaN(sub_field_id)) {
+    return res.status(404).json({ error: "Invalid subfield ID" });
+  }
+  try {
+    
+    const field_id_result = await pool.query(
+      `SELECT field_id FROM sub_field WHERE sub_field_id = $1`,
+      [sub_field_id]
+    );
+
+   
+    if (field_id_result.rows.length === 0) {
+      return res.status(404).json({ error: "Subfield not found" });
+    }
+
+    // ใช้ field_id ที่ดึงมาไป query ที่สอง
+    const field_id = field_id_result.rows[0].field_id;
+
+    // ดึงข้อมูลจาก table field
+    const result = await pool.query(`SELECT open_days FROM field WHERE field_id = $1`, [
+      field_id,
+    ]);
+
+    return res.status(200).json({
+      message: "get data successfully",
+      data: result.rows,
+    });
+  } catch (error) {
+    console.error("Error:", error);
+    return res.status(404).json({ error: "Error getData" });
   }
 });
 

@@ -42,7 +42,7 @@ export default function CheckFieldDetail() {
     if (!fieldId) return;
 
     const token = localStorage.getItem("token"); // ดึง token จาก localStorage
-
+    
     fetch(`${API_URL}/profile/${fieldId}`, {
       method: "GET", // ใช้ method GET ในการดึงข้อมูล
       headers: {
@@ -552,7 +552,7 @@ export default function CheckFieldDetail() {
             <h1>สนามย่อย</h1>
             {fieldData?.sub_fields && fieldData.sub_fields.length > 0 ? (
               fieldData.sub_fields.map((sub) => (
-                <div key={sub.sub_field_id} className="sub-field-card">
+                <div key={sub.sub_field_id} className="sub-field-card" onClick={()=> router.push(`/booking/${sub.sub_field_id}`)}>
                   <p>
                     <strong>ชื่อสนาม:</strong> {sub.sub_field_name}
                   </p>

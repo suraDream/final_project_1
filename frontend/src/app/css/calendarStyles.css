@@ -22,7 +22,7 @@
   /* ปรับขนาดวันที่ที่ปัจจุบัน */
   .react-calendar__tile--now {
     font-weight: bold;
-    background-color: #ffb6c1;  /* สีพื้นหลังวันที่ปัจจุบัน */
+      /* สีพื้นหลังวันที่ปัจจุบัน */
     color: black;  /* สีข้อความ */
   }
   

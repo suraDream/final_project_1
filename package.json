@@ -1,6 +1,8 @@
 {
   "dependencies": {
     "dayjs": "^1.11.13",
-    "react-calendar": "^5.1.0"
+    "react-big-calendar": "^1.18.0",
+    "react-calendar": "^5.1.0",
+    "react-modal": "^3.16.3"
   }
 }
