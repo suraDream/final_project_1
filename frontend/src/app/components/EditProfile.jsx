@@ -1,10 +1,10 @@
 "use client";
-import React, { use, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import "@/app/css/editProfile.css";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 export default function EditProfile() {
-  const [isLoading, setIsLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
   const [updatedUser, setUpdatedUser] = useState({
     first_name: "",
@@ -12,44 +12,40 @@ export default function EditProfile() {
     email: "",
     role: "",
   });
-  const [message, setMessage] = useState({ text: "", type: "" }); // สำหรับเก็บข้อความสำเร็จและข้อผิดพลาด
+  const [message, setMessage] = useState({ text: "", type: "" }); 
   const [users, setUsers] = useState([]);
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
   const router = useRouter();
+  const { user, isLoading } = useAuth();
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    const user = JSON.parse(storedUser);
-    if (user.status !== "ตรวจสอบแล้ว") {
-      router.push("/verification");
-    }
-    if (storedUser) {
-      setCurrentUser(user);
-      setUpdatedUser({
-        first_name: user.first_name,
-        last_name: user.last_name,
-        email: user.email,
-        role: user.role,
-      });
-    } else {
-      router.push("/login");
-    }
-    setIsLoading(false);
 
-  }, []);
-  
+    if (isLoading) return;
 
-  const handleUpdateProfile = async (e) => {
-    e.preventDefault();
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      setMessage({ text: "กรุณาเข้าสู่ระบบอีกครั้ง", type: "error" });
+    if (!user) {
       router.push("/login");
       return;
     }
 
-    // ✅ ตรวจสอบว่า user_id ถูกต้อง
+    if (user?.status !== "ตรวจสอบแล้ว") {
+      router.push("/verification");
+    }
+    if (user) {
+      setCurrentUser(user);
+      setUpdatedUser({
+        first_name: user?.first_name,
+        last_name: user?.last_name,
+        email: user?.email,
+        role: user?.role,
+      });
+    } else {
+      router.push("/login");
+    }
+  }, [user,isLoading,router]);
+
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+
     if (!currentUser || !currentUser.user_id) {
       setMessage({ text: "ไม่พบข้อมูลผู้ใช้", type: "error" });
       return;
@@ -59,8 +55,8 @@ export default function EditProfile() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
+        credentials: "include",
         body: JSON.stringify({ email: updatedUser.email }),
       });
 
@@ -89,8 +85,8 @@ export default function EditProfile() {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
+        credentials: "include",
         body: JSON.stringify(updatedUser),
       });
 
@@ -107,12 +103,6 @@ export default function EditProfile() {
         });
         return;
       }
-
-      // ✅ บันทึกข้อมูลที่อัปเดตลงใน LocalStorage
-      localStorage.setItem(
-        "user",
-        JSON.stringify({ ...currentUser, ...updatedUser })
-      );
       setMessage({ text: "ข้อมูลโปรไฟล์ของคุณถูกอัปเดตแล้ว", type: "success" });
       router.push("/editprofile");
     } catch (error) {
@@ -129,7 +119,7 @@ export default function EditProfile() {
       return () => clearTimeout(timer);
     }
   }, [message]);
-  
+
   if (isLoading)
     return (
       <div className="load">

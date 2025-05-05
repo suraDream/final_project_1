@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import "@/app/css/changePassword.css";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 export default function ChangePassword() {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -11,24 +12,53 @@ export default function ChangePassword() {
   const [messageType, setMessageType] = useState(""); // State สำหรับประเภทของข้อความ (error, success)
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
   const router = useRouter();
+  const { user, isLoading } = useAuth();
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (!storedUser) {
-      setMessage("กรุณาล็อกอินก่อน");
-      setMessageType("error");
+    if (isLoading) return;
+
+    if (!user) {
       router.push("/login");
       return;
     }
 
-    const user = JSON.parse(storedUser);
-    if (user.status !== "ตรวจสอบแล้ว") {
+    if (user?.status !== "ตรวจสอบแล้ว") {
       router.push("/verification");
     }
-  }, [router]);
+  }, [user, isLoading, router]);
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();
+
+    if (newPassword.length < 10) {
+      setMessage("รหัสผ่านใหม่ต้องขั้นต่ำ 10 ตัว");
+      setMessageType("error");
+      return;
+    }
+    if (confirmPassword.length < 10) {
+      setMessage("ยืนยันรหัสผ่านต้องขั้นต่ำ 10 ตัว");
+      setMessageType("error");
+      return;
+    }
+
+    // ตรวจสอบรูปแบบรหัสผ่านที่แข็งแกร่ง
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/;
+
+    if (!passwordRegex.test(newPassword)) {
+      setMessage(
+        "รหัสผ่านใหม่ต้องประกอบด้วยตัวอักษรพิมพ์ใหญ่[A-Z], พิมพ์เล็ก[a-z], ตัวเลข[0-9] และอักขระพิเศษ[!@#$%^&*]"
+      );
+      setMessageType("error");
+      return;
+    }
+    if (!passwordRegex.test(confirmPassword)) {
+      setMessage(
+        "ยืนยันรหัสผ่านต้องประกอบด้วยตัวอักษรพิมพ์ใหญ่[A-Z], พิมพ์เล็ก[a-z], ตัวเลข[0-9] และอักขระพิเศษ[!@#$%^&*]"
+      );
+      setMessageType("error");
+      return;
+    }
 
     // ตรวจสอบความถูกต้องของรหัสผ่านใหม่กับการยืนยันรหัสผ่าน
     if (newPassword !== confirmPassword) {
@@ -36,9 +66,6 @@ export default function ChangePassword() {
       setMessageType("error");
       return;
     }
-
-    const token = localStorage.getItem("token");
-    const user = JSON.parse(localStorage.getItem("user"));
 
     try {
       // ส่ง request ไปตรวจสอบรหัสเดิม
@@ -48,9 +75,9 @@ export default function ChangePassword() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ currentPassword }), 
+          credentials: "include",
+          body: JSON.stringify({ currentPassword }),
         }
       );
 
@@ -64,8 +91,8 @@ export default function ChangePassword() {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
             },
+            credentials: "include",
             body: JSON.stringify({
               password: newPassword, // ส่งแค่รหัสผ่านใหม่
             }),

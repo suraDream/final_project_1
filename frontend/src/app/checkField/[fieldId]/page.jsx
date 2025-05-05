@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import "@/app/css/checkField.css";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 export default function CheckFieldDetail() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -13,48 +14,33 @@ export default function CheckFieldDetail() {
   const router = useRouter();
   const [message, setMessage] = useState(""); // State สำหรับข้อความ
   const [messageType, setMessageType] = useState(""); // State สำหรับประเภทของข้อความ (error, success)
+  const { user, isLoading } = useAuth();
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    const token = localStorage.getItem("token");
-    const expiresAt = localStorage.getItem("expiresAt");
+    if (isLoading) return;
 
-    if (
-      !token ||
-      !storedUser ||
-      !expiresAt ||
-      Date.now() > parseInt(expiresAt)
-    ) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      localStorage.removeItem("expiresAt");
+    if (!user) {
       router.push("/login");
-      return;
     }
 
-    const user = JSON.parse(storedUser);
-    setCurrentUser(user);
-
-    if (user.status !== "ตรวจสอบแล้ว") {
+    if (user?.status !== "ตรวจสอบแล้ว") {
       router.push("/verification");
     }
 
-    if (user.role !== "admin" && user.role !== "field_owner") {
-      router.push("/login");
+    if (user?.role !== "admin" && user?.role !== "field_owner") {
+      router.push("/");
     }
-  }, []);
+  }, [user, isLoading, , router]);
 
   useEffect(() => {
     if (!fieldId) return;
-
-    const token = localStorage.getItem("token"); // ดึง token จาก localStorage
 
     fetch(`${API_URL}/field/${fieldId}`, {
       method: "GET", // ใช้ method GET ในการดึงข้อมูล
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`, // ส่ง token ใน Authorization header
       },
+      credentials: "include",
     })
       .then((res) => res.json())
       .then((data) => {
@@ -84,14 +70,12 @@ export default function CheckFieldDetail() {
   // ฟังก์ชันอัปเดตสถานะสนามกีฬา
   const updateFieldStatus = async (fieldId, newStatus) => {
     try {
-      const token = localStorage.getItem("token");
-
       const response = await fetch(`${API_URL}/field/${fieldId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
+        credentials: "include",
         body: JSON.stringify({ status: newStatus }),
       });
 
@@ -274,7 +258,7 @@ export default function CheckFieldDetail() {
           )}
         </div>
         <div className="status-buttons">
-          {currentUser?.role === "admin" && (
+          {user?.role === "admin" && (
             <>
               <button
                 className="approve-btn"

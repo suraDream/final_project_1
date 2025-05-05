@@ -262,7 +262,7 @@ router.put("/update-status/:field_id", authMiddleware, async (req, res) => {
 });
 
 
-router.get("/:field_id", authMiddleware, async (req, res) => {
+router.get("/:field_id", async (req, res) => {
   try {
     const { field_id } = req.params;
     const { user_id, role } = req.user;  // ดึง user_id และ role จาก token
@@ -310,7 +310,7 @@ router.get("/:field_id", authMiddleware, async (req, res) => {
     }
 
     // ตรวจสอบว่าเป็น field_owner และ field_id ตรงกับ user_id หรือไม่
-    if (role === "field_owner") {
+    else  {
       const result = await pool.query(
         `SELECT 
           f.field_id, f.field_name, f.address, f.gps_location, f.documents,
@@ -350,8 +350,7 @@ router.get("/:field_id", authMiddleware, async (req, res) => {
       return res.json(result.rows[0]);
     }
 
-    // หากไม่ใช่ admin หรือ field_owner
-    return res.status(403).json({ error: "คุณไม่มีสิทธิ์เข้าถึงข้อมูลนี้" });
+  
   } catch (error) {
     console.error("Database Error:", error);
     res.status(500).json({ error: "เกิดข้อผิดพลาดในการดึงข้อมูลสนามกีฬา" });
@@ -847,40 +846,154 @@ if (isNaN(subFieldId) || !Number.isInteger(Number(subFieldId))) {
   }
 });
 
-router.get("/open-days/:sub_field_id", async (req, res) => {
-  const { sub_field_id } = req.params;
-  if (isNaN(sub_field_id)) {
-    return res.status(404).json({ error: "Invalid subfield ID" });
-  }
-  try {
-    
-    const field_id_result = await pool.query(
-      `SELECT field_id FROM sub_field WHERE sub_field_id = $1`,
-      [sub_field_id]
-    );
 
-   
-    if (field_id_result.rows.length === 0) {
-      return res.status(404).json({ error: "Subfield not found" });
-    }
 
-    // ใช้ field_id ที่ดึงมาไป query ที่สอง
-    const field_id = field_id_result.rows[0].field_id;
+router.get("/field-data/:sub_field_id", async (req, res) => {
+const { sub_field_id } = req.params;
+if (isNaN(sub_field_id)) {
+return res.status(404).json({ error: "Invalid subfield ID" });
+}
+try {
 
-    // ดึงข้อมูลจาก table field
-    const result = await pool.query(`SELECT open_days FROM field WHERE field_id = $1`, [
-      field_id,
-    ]);
+const field_id_result = await pool.query(
+`SELECT field_id FROM sub_field WHERE sub_field_id = $1`,
+[sub_field_id]
+);
 
-    return res.status(200).json({
-      message: "get data successfully",
-      data: result.rows,
-    });
-  } catch (error) {
-    console.error("Error:", error);
-    return res.status(404).json({ error: "Error getData" });
-  }
+
+if (field_id_result.rows.length === 0) {
+return res.status(404).json({ error: "Subfield not found" });
+}
+
+const field_id = field_id_result.rows[0].field_id;
+
+const result = await pool.query(`SELECT 
+    f.field_id, f.field_name, f.address, f.gps_location, f.documents,
+    f.open_hours, f.close_hours, f.img_field, f.name_bank, 
+    f.number_bank, f.account_holder, f.status, f.price_deposit, 
+    f.open_days, f.field_description,
+    u.user_id, u.first_name, u.last_name, u.email,
+    COALESCE(json_agg(
+      DISTINCT jsonb_build_object(
+        'sub_field_id', s.sub_field_id,
+        'sub_field_name', s.sub_field_name,
+        'price', s.price,
+        'sport_name', sp.sport_name,
+        'add_ons', (
+          SELECT COALESCE(json_agg(jsonb_build_object(
+            'add_on_id', a.add_on_id,
+            'content', a.content,
+            'price', a.price
+          )), '[]'::json) 
+          FROM add_on a 
+          WHERE a.sub_field_id = s.sub_field_id
+        )
+      )
+    ) FILTER (WHERE s.sub_field_id IS NOT NULL), '[]'::json) AS sub_fields
+  FROM field f
+  INNER JOIN users u ON f.user_id = u.user_id
+  LEFT JOIN sub_field s ON f.field_id = s.field_id
+  LEFT JOIN sports_types sp ON s.sport_id = sp.sport_id
+  WHERE f.field_id = $1
+  GROUP BY f.field_id, u.user_id;`,
+[field_id]
+);
+
+if (result.rows.length === 0) {
+return res.status(404).json({ message: "ไม่พบข้อมูล" });
+}
+
+return res.status(200).json({
+  message: "get data successfully",
+  data: result.rows,
 });
+} catch (error) {
+console.error("Error:", error);
+return res.status(404).json({ error: "Error Fetch Data" });
+}
+});
+router.get("/open-days/:sub_field_id", async (req, res) => {
+const { sub_field_id } = req.params;
+if (isNaN(sub_field_id)) {
+return res.status(404).json({ error: "Invalid subfield ID" });
+}
+try {
+
+const field_id_result = await pool.query(
+`SELECT field_id FROM sub_field WHERE sub_field_id = $1`,
+[sub_field_id]
+);
+
+
+if (field_id_result.rows.length === 0) {
+return res.status(404).json({ error: "Subfield not found" });
+}
+
+const field_id = field_id_result.rows[0].field_id;
+
+const result = await pool.query(`SELECT 
+    f.field_id, f.field_name, f.address, f.gps_location, f.documents,
+    f.open_hours, f.close_hours, f.img_field, f.name_bank, 
+    f.number_bank, f.account_holder, f.status, f.price_deposit, 
+    f.open_days, f.field_description,
+    u.user_id, u.first_name, u.last_name, u.email,
+    COALESCE(json_agg(
+      DISTINCT jsonb_build_object(
+        'sub_field_id', s.sub_field_id,
+        'sub_field_name', s.sub_field_name,
+        'price', s.price,
+        'sport_name', sp.sport_name,
+        'add_ons', (
+          SELECT COALESCE(json_agg(jsonb_build_object(
+            'add_on_id', a.add_on_id,
+            'content', a.content,
+            'price', a.price
+          )), '[]'::json) 
+          FROM add_on a 
+          WHERE a.sub_field_id = s.sub_field_id
+        )
+      )
+    ) FILTER (WHERE s.sub_field_id IS NOT NULL), '[]'::json) AS sub_fields
+  FROM field f
+  INNER JOIN users u ON f.user_id = u.user_id
+  LEFT JOIN sub_field s ON f.field_id = s.field_id
+  LEFT JOIN sports_types sp ON s.sport_id = sp.sport_id
+  WHERE f.field_id = $1
+  GROUP BY f.field_id, u.user_id;`,
+[field_id]
+);
+
+if (result.rows.length === 0) {
+return res.status(404).json({ message: "ไม่พบข้อมูล" });
+}
+
+return res.json(result.rows);
+} catch (error) {
+console.error("Error:", error);
+return res.status(404).json({ error: "Error Fetch Data" });
+}
+});
+
+router.get('/field-fac/:field_id',async (req,res)=>{
+  const { field_id} = req.params;
+  try{
+     const result = await pool.query(`SELECT fi.field_fac_id , fi.field_id , fi.facility_id , fi.fac_price ,fa.fac_name  
+      FROM field_facilities fi
+    INNER JOIN facilities fa ON fi.facility_id = fa.fac_id
+    WHERE fi.field_id = $1
+       `,[ field_id])
+       return res.status(200).json({
+        message: "get data successfully",
+        data: result.rows,
+      });
+
+  }
+catch(error){
+  return res.status(400).json({message:"error"})
+}
+
+})
+
 
 
 module.exports = router;

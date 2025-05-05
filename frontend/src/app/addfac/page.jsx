@@ -1,13 +1,12 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, use } from "react";
 import "@/app/css/add.css";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 export default function RegisterFieldForm() {
   const router = useRouter("");
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
-  const [currentUser, setCurrentUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [facilities, setFacilities] = useState([]);
   const [newFacility, setNewFacility] = useState("");
   const [showNewFacilityInput, setShowNewFacilityInput] = useState(false);
@@ -17,44 +16,24 @@ export default function RegisterFieldForm() {
   const [facilityToDelete, setFacilityToDelete] = useState(null); // เก็บข้อมูลสิ่งอำนวยความสะดวกที่จะลบ
   const [editingFacility, setEditingFacility] = useState(null); // สำหรับเก็บข้อมูลสิ่งอำนวยความสะดวกที่กำลังแก้ไข
   const [newFacilityName, setNewFacilityName] = useState(""); // สำหรับเก็บชื่อใหม่ของสิ่งอำนวยความสะดวก
+  const { user, isLoading } = useAuth();
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    const token = localStorage.getItem("token");
-    const expiresAt = localStorage.getItem("expiresAt");
-
-    if (
-      !token ||
-      !storedUser ||
-      !expiresAt ||
-      Date.now() > parseInt(expiresAt)
-    ) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      localStorage.removeItem("expiresAt");
-      router.push("/login");
-      return;
+    if (isLoading) return;
+    
+    if (user?.status !== "ตรวจสอบแล้ว") {
+      router.push("/verification");
     }
 
-    const user = JSON.parse(storedUser);
-    setCurrentUser(user);
-
-    if (user.status !== "ตรวจสอบแล้ว") {
-      router.push("/verification");
-    }   
-
-    if (user.role !== "admin") {
+    if (user?.role !== "admin") {
       router.push("/");
     }
-
-    setIsLoading(false);
-  }, []);
+  }, [user, isLoading, router]);
 
   //  โหลดสิ่งอำนวยความสะดวก
   useEffect(() => {
-    const token = localStorage.getItem("token");
     fetch(`${API_URL}/facilities`, {
-      headers: { Authorization: `Bearer ${token}` },
+      credentials: "include",
     })
       .then((res) => res.json())
       .then((data) => setFacilities(data))
@@ -64,13 +43,12 @@ export default function RegisterFieldForm() {
   // ฟังก์ชันเพิ่มสิ่งอำนวยความสะดวกใหม่
   const addNewFacility = async () => {
     if (!newFacility.trim()) return;
-    const token = localStorage.getItem("token");
     const res = await fetch(`${API_URL}/facilities/add`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
       },
+      credentials: "include",
       body: JSON.stringify({ fac_name: newFacility }),
     });
 
@@ -92,18 +70,16 @@ export default function RegisterFieldForm() {
     setShowConfirmModal(true);
   };
 
-  // ฟังก์ชันลบสิ่งอำนวยความสะดวกจริงๆ
   const deleteFacility = async () => {
     if (!facilityToDelete) return;
-    const token = localStorage.getItem("token");
     const res = await fetch(
       `${API_URL}/facilities/delete/${facilityToDelete}`,
       {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
+        credentials: "include",
       }
     );
 
@@ -121,15 +97,14 @@ export default function RegisterFieldForm() {
   // ฟังก์ชันแก้ไขชื่อสิ่งอำนวยความสะดวก
   const editFacility = async () => {
     if (!newFacilityName.trim()) return;
-    const token = localStorage.getItem("token");
     const res = await fetch(
       `${API_URL}/facilities/update/${editingFacility.fac_id}`,
       {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
+        credentials: "include",
         body: JSON.stringify({ fac_name: newFacilityName }),
       }
     );
@@ -292,5 +267,4 @@ export default function RegisterFieldForm() {
       </div>
     </>
   );
-
 }

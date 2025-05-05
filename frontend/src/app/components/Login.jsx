@@ -1,44 +1,40 @@
 "use client";
 import { useRouter } from "next/navigation";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, use } from "react";
 import "@/app/css/login.css";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 export default function Login() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
-  const router = useRouter();
-  
-  // เก็บข้อมูลฟอร์ม
+  const { user, setUser, isLoading } = useAuth();
   const [formData, setFormData] = useState({
     identifier: "",
     password: "",
   });
+  useEffect(() => {
+    if (isLoading) return;
 
-  // ใช้สำหรับจัดการข้อความ
+    if (!user) {
+      router.push("/login");
+    } else {
+      router.push("/");
+    }
+  }, [user, isLoading]);
+
+  // เพิ่ม useState สำหรับการจัดการข้อความ
   const [message, setMessage] = useState({ text: "", type: "" });
 
-  // ตรวจสอบสถานะผู้ใช้ก่อนโหลดหน้า
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const expiresAt = localStorage.getItem("expiresAt");
+  const router = useRouter();
 
-    // ตรวจสอบว่า token มีอยู่และยังไม่หมดอายุ
-    if (token && Date.now() < expiresAt) {
-      router.push("/"); // เปลี่ยนเส้นทางไปหน้าแรก
-    }
-  }, [router]);
-
-  // การเปลี่ยนแปลงข้อมูลฟอร์ม
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  // การส่งฟอร์ม
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      // ส่งคำขอ login ไปที่ Backend
       const response = await fetch(`${API_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -47,41 +43,24 @@ export default function Login() {
       });
 
       const data = await response.json();
-      console.log("Login response data:", data);
 
-      // หากคำขอไม่สำเร็จ
       if (!response.ok) {
         setMessage({ text: data.message || "เกิดข้อผิดพลาด", type: "error" });
         return;
       }
 
-      // หากมี token
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
-        localStorage.setItem("expiresAt", data.expiresAt);
+      const res = await fetch(`${API_URL}/users/me`, {
+        credentials: "include",
+      });
+      if (res.ok) {
+        const userData = await res.json();
+        setUser(userData);
+      }
 
-        const storedUser = JSON.parse(localStorage.getItem("user"));
-        console.log("Stored user:", storedUser);
-
-        if (storedUser) {
-          const userStatus = storedUser.status;
-
-          if (userStatus === "รอยืนยัน") {
-            router.push("/verication");
-          } else {
-            // ถ้าได้รับการยืนยันแล้ว, เปลี่ยนเส้นทางไปหน้าแรก
-            router.push("/");
-          }
-        } else {
-          console.error("User data is missing in localStorage");
-        }
+      if (data.status !== "ตรวจสอบแล้ว") {
+        router.push("/verification");
       } else {
-        console.error("Token is missing from response:", data);
-        setMessage({
-          text: "ไม่สามารถรับ Token ได้ โปรดลองอีกครั้ง",
-          type: "error",
-        });
+        router.push("/");
       }
     } catch (error) {
       console.error("Error:", error);
@@ -114,6 +93,14 @@ export default function Login() {
           />
         </div>
         <button type="submit">Login</button>
+        <div className="reset-password">
+          <a href="/resetPassword" className="reset-link">
+            ลืมรหัสผ่าน
+          </a>
+          <a href="/register" className="register-link">
+            ลงทะเบียน
+          </a>
+        </div>
       </form>
 
       {/* แสดงข้อความที่ได้จาก setMessage */}

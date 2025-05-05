@@ -2,16 +2,14 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import "@/app/css/manager.css";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 export default function AdminManager() {
-  const [pendingFields, setPendingFields] = useState([]);
   const [allowFields, setAllowFields] = useState([]);
-  const [refuseFields, setRefuseFields] = useState([]);
   const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [emailError, setEmailError] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
   const router = useRouter();
   const [message, setMessage] = useState(""); // State สำหรับข้อความ
@@ -20,51 +18,31 @@ export default function AdminManager() {
   const [showDeleteUserModal, setShowDeleteUserModal] = useState(false); // สำหรับโมดอลลบผู้ใช้
   const [fieldIdToDelete, setFieldIdToDelete] = useState(null); // เก็บ ID ของสนามที่ต้องการลบ
   const [userIdToDelete, setUserIdToDelete] = useState(null); // เก็บ ID ของผู้ใช้ที่ต้องการลบ
+  const { user, isLoading } = useAuth();
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    const token = localStorage.getItem("token");
-    const expiresAt = localStorage.getItem("expiresAt");
+    if (isLoading) return;
 
-    if (
-      !token ||
-      !storedUser ||
-      !expiresAt ||
-      Date.now() > parseInt(expiresAt)
-    ) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      localStorage.removeItem("expiresAt");
+    if (!user) {
       router.push("/login");
-      return;
     }
 
-    const user = JSON.parse(storedUser);
-    setCurrentUser(user);
-
-    if (user.status !== "ตรวจสอบแล้ว") {
+    if (user?.status !== "ตรวจสอบแล้ว") {
       router.push("/verification");
     }
 
-    if (user.role !== "admin") {
+    if (user?.role !== "admin") {
       router.push("/");
     }
-
-    setIsLoading(false);
-  }, []);
+  }, [user, isLoading, router]);
 
   useEffect(() => {
-    if (currentUser?.role === "admin") {
-      const token = localStorage.getItem("token");
-
+    if (user?.role === "admin") {
       fetch(`${API_URL}/users`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include",
       })
         .then((response) => {
           if (response.status === 401) {
-            localStorage.removeItem("token");
-            localStorage.removeItem("user");
-            localStorage.removeItem("expiresAt");
             router.replace("/login");
             return;
           }
@@ -73,7 +51,7 @@ export default function AdminManager() {
         .then((data) => setUsers(data))
         .catch((error) => console.error("Error fetching users:", error));
     }
-  }, [currentUser]);
+  }, [user]);
 
   useEffect(() => {
     if (message) {
@@ -141,45 +119,6 @@ export default function AdminManager() {
     setShowDeleteUserModal(false); // ปิดโมดอลลบผู้ใช้
   };
 
-  // useEffect(() => {
-  //   const token = localStorage.getItem("token");
-  //   fetch(`${API_URL}/field/pending`, {
-  //     headers: { Authorization: `Bearer ${token}` },
-  //   })
-  //     .then((res) => res.json())
-  //     .then((data) => {
-  //       console.log("Data from API:", data);
-  //       setPendingFields(Array.isArray(data) ? data : []);
-  //     })
-  //     .catch((error) => console.error("Error fetching pending fields:", error));
-  // }, []);
-
-  // useEffect(() => {
-  //   const token = localStorage.getItem("token");
-  //   fetch(`${API_URL}/field/allow`, {
-  //     headers: { Authorization: `Bearer ${token}` },
-  //   })
-  //     .then((res) => res.json())
-  //     .then((data) => {
-  //       console.log("Data from API:", data);
-  //       setAllowFields(Array.isArray(data) ? data : []);
-  //     })
-  //     .catch((error) => console.error("Error fetching allow fields:", error));
-  // }, []);
-
-  // useEffect(() => {
-  //   const token = localStorage.getItem("token");
-  //   fetch(`${API_URL}/field/refuse`, {
-  //     headers: { Authorization: `Bearer ${token}` },
-  //   })
-  //     .then((res) => res.json())
-  //     .then((data) => {
-  //       console.log("Data from API:", data);
-  //       setRefuseFields(Array.isArray(data) ? data : []);
-  //     })
-  //     .catch((error) => console.error("Error fetching refuse fields:", error));
-  // }, []);
-
   if (isLoading)
     return (
       <div className="load">
@@ -194,15 +133,13 @@ export default function AdminManager() {
   };
 
   const handleDelete = async (id) => {
-    const token = localStorage.getItem("token");
-
     try {
       const response = await fetch(`${API_URL}/users/${id}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -249,7 +186,6 @@ export default function AdminManager() {
 
   const handleUpdateUser = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem("token");
 
     if (isEmailDuplicate(selectedUser.email)) {
       setEmailError("อีเมลนี้มีการใช้งานแล้ว");
@@ -261,8 +197,8 @@ export default function AdminManager() {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
+        credentials: "include",
         body: JSON.stringify(selectedUser),
       });
 
@@ -280,7 +216,6 @@ export default function AdminManager() {
       setSelectedUser(null);
       setEmailError("");
     } catch (error) {
-      // console.error("Error updating user:", error);
       setMessage(`${error.message}`);
       setMessageType("error");
     }
@@ -304,7 +239,7 @@ export default function AdminManager() {
       )}
       <div className="admin-manager-container">
         <h2>รายชื่อผู้ใช้งาน</h2>
-        {/* 🔹 ตารางสำหรับแอดมิน */}
+        {/*ตารางสำหรับแอดมิน */}
         <h3>ผู้ดูแลระบบ</h3>
         <table>
           <thead>
@@ -327,7 +262,7 @@ export default function AdminManager() {
           </tbody>
         </table>
 
-        {/* 🔹 ตารางสำหรับลูกค้า */}
+        {/* ตารางสำหรับลูกค้า */}
         <h3>ผู้ใช้ทั้งหมด</h3>
         <table>
           <thead>
@@ -354,13 +289,11 @@ export default function AdminManager() {
                   <td>{user.email}</td>
                   <td>{user.status}</td>
                   <td>
-                    {
-                      user.role === "customer"
-                        ? "ลูกค้า"
-                        : user.role === "field_owner"
-                        ? "เจ้าของสนาม"
-                        : user.role
-                    }
+                    {user.role === "customer"
+                      ? "ลูกค้า"
+                      : user.role === "field_owner"
+                      ? "เจ้าของสนาม"
+                      : user.role}
                   </td>
                   <td>
                     <button
@@ -382,188 +315,6 @@ export default function AdminManager() {
               ))}
           </tbody>
         </table>
-        {/* <h3>เจ้าของสนามกีฬา</h3>
-        <table>
-          <thead>
-            <tr>
-              <th>ชื่อ-สกุล</th>
-              <th>อีเมล</th>
-              <th>แก้ไขข้อมูล</th>
-              <th>จัดการ</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users
-              .filter((user) => user.role === "field_owner")
-              .map((user) => (
-                <tr key={user.user_id}>
-                  <td>
-                    {user.first_name} - {user.last_name}
-                  </td>
-                  <td>{user.email}</td>
-                  <td>
-                    <button
-                      className="edit-btn"
-                      onClick={() => setSelectedUser(user)}
-                    >
-                      แก้ไข
-                    </button>
-                  </td>
-                  <td>
-                    <button
-                      className="delete-btn"
-                      onClick={() => openDeleteUserModal(user.user_id)}
-                    >
-                      ลบ
-                    </button>
-                  </td>
-                </tr>
-              ))}
-          </tbody>
-        </table> */}
-        {/* 🔹 ตารางสำหรับสนามกีฬาที่รอตรวจสอบ */}
-        {/* <div className="apv">
-          <h3>สนามที่อนุมัติแล้ว</h3>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>ชื่อสนาม</th>
-              <th>ชื่อเจ้าของสนาม</th>
-              <th>จัดการสนามกีฬา</th>
-            </tr>
-          </thead>
-          <tbody>
-            {allowFields.length > 0 ? (
-              allowFields.map((field) => (
-                <tr key={field.field_id}>
-                  <td>{field.field_name}</td>
-                  <td>
-                    {field.first_name}-{field.last_name}
-                  </td>
-                  <td>
-                    <button
-                      onClick={() =>
-                        router.push(`/checkField/${field.field_id}`)
-                      }
-                      className="ProveEdit-btn"
-                    >
-                      ตรวจสอบสนาม
-                    </button>
-                    <button
-                      className="ProveDelete-btn"
-                      onClick={() => openDeleteFieldModal(field.field_id)}
-                    >
-                      ลบ
-                    </button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="4" style={{ textAlign: "center" }}>
-                  ไม่มีสนามกีฬาที่ผ่านการอนุมัติ
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table> */}
-        {/* <div className="rej">
-          <h3>สนามที่ไม่อนุมัติ</h3>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>ชื่อสนาม</th>
-              <th>ชื่อเจ้าของสนาม</th>
-              <th>จัดการสนามกีฬา</th>
-            </tr>
-          </thead>
-          <tbody>
-            {refuseFields.length > 0 ? (
-              refuseFields.map((field) => (
-                <tr key={field.field_id}>
-                  <td>{field.field_name}</td>
-                  <td>
-                    {field.first_name}-{field.last_name}
-                  </td>
-                  <td>
-                    <button
-                      onClick={() =>
-                        router.push(`/checkField/${field.field_id}`)
-                      }
-                      className="ProveEdit-btn"
-                    >
-                      ตรวจสอบสนาม
-                    </button>
-                    <button
-                      className="ProveDelete-btn"
-                      onClick={() => openDeleteFieldModal(field.field_id)}
-                    >
-                      ลบ
-                    </button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="4" style={{ textAlign: "center" }}>
-                  ไม่มีสนามกีฬาที่ไม่ผ่านการอนุมัติ
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table> */}
-        {/* <div className="pen">
-          <h3>สนามกีฬาที่รอตรวจสอบ</h3>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>ชื่อสนาม</th>
-              <th>ชื่อเจ้าของสนาม</th>
-              <th>จัดการสนามกีฬา</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pendingFields.length > 0 ? (
-              pendingFields.map((field) => (
-                <tr key={field.field_id}>
-                  <td>{field.field_name}</td>
-                  <td>
-                    {" "}
-                    {field.first_name}-{field.last_name}
-                  </td>
-
-                  <td>
-                    <button
-                      onClick={() =>
-                        router.push(`/checkField/${field.field_id}`)
-                      }
-                      className="ProveEdit-btn"
-                    >
-                      ตรวจสอบสนาม
-                    </button>
-                    <button
-                      className="ProveDelete-btn"
-                      onClick={() => openDeleteFieldModal(field.field_id)}
-                    >
-                      ลบ
-                    </button>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="4" style={{ textAlign: "center" }}>
-                  ไม่มีสนามกีฬาที่รอการอนุมัติ
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table> */}
-
-        {/* 📝 Modal สำหรับแก้ไขข้อมูล */}
         {selectedUser && (
           <div className="modal">
             <div className="modal-content">

@@ -12,7 +12,6 @@ const CreatePost = ({ fieldId,onPostSuccess }) => {
   const [message, setMessage] = useState(""); // State for messages
   const [messageType, setMessageType] = useState(""); // State for message type (error, success)
 
-
   const MAX_FILE_SIZE = 8 * 1024 * 1024; // 8 MB
   const MAX_FILES = 10; // Limit to 10 files
 
@@ -86,12 +85,9 @@ const CreatePost = ({ fieldId,onPostSuccess }) => {
     });
 
     try {
-      const token = localStorage.getItem("token");
       const response = await fetch(`${API_URL}/posts/post`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials:"include",
         body: formData,
       });
 
@@ -104,9 +100,6 @@ const CreatePost = ({ fieldId,onPostSuccess }) => {
         setContent("");
         setImages([]);
         setShowPostForm(false);
-        // return setTimeout(() => {
-        //   location.reload();
-        // }, 1500);
       } else {
         const errorData = await response.json();
         setMessage(`Error: ${errorData.message}`);
@@ -152,8 +145,8 @@ const CreatePost = ({ fieldId,onPostSuccess }) => {
             <label>หัวข้อ</label>
             <input
               type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
               required
               maxLength={255}
             />
@@ -162,8 +155,8 @@ const CreatePost = ({ fieldId,onPostSuccess }) => {
           <div className="form-group">
             <label>เนื้อหา</label>
             <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
               required
               maxLength={255}
             ></textarea>

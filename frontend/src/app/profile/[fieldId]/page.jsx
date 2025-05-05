@@ -6,16 +6,19 @@ import Post from "@/app/components/Post";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/th";
+import { useSearchParams } from "next/navigation";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 dayjs.extend(relativeTime);
 dayjs.locale("th");
 
 export default function CheckFieldDetail() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const searchParams = useSearchParams();
+  const highlightId = searchParams.get("highlight");
   const { fieldId } = useParams();
   const [fieldData, setFieldData] = useState(null);
   const [postData, setPostData] = useState([]);
-  const [currentUser, setCurrentUser] = useState(null);
   const [canPost, setCanPost] = useState(false); // State for checking if the user can post
   const [facilities, setFacilities] = useState([]);
   const [imageIndexes, setImageIndexes] = useState({}); // เก็บ index ของแต่ละโพส
@@ -29,26 +32,29 @@ export default function CheckFieldDetail() {
   const [messageType, setMessageType] = useState(""); // State for message type (error, success)
   const [showModal, setShowModal] = useState(false);
   const [postToDelete, setPostToDelete] = useState(null);
-
+  const { user, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    const user = JSON.parse(storedUser);
-    setCurrentUser(user);
-  }, []);
+    if (isLoading) return;
+    if (!user) {
+      return;
+    }
 
+    if (user?.status !== "ตรวจสอบแล้ว") {
+      router.push("/verification");
+    }
+  }, [user, isLoading]);
   useEffect(() => {
     if (!fieldId) return;
-
-    const token = localStorage.getItem("token"); // ดึง token จาก localStorage
+    localStorage.setItem('field_id',fieldId)
     
     fetch(`${API_URL}/profile/${fieldId}`, {
       method: "GET", // ใช้ method GET ในการดึงข้อมูล
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`, // ส่ง token ใน Authorization header
       },
+      credentials: "include",
     })
       .then((res) => res.json())
       .then((data) => {
@@ -58,21 +64,24 @@ export default function CheckFieldDetail() {
           console.log(" ข้อมูลสนามกีฬา:", data); // ตรวจสอบข้อมูลที่ได้จาก Backend
           setFieldData(data);
 
-          // ตรวจสอบสิทธิ์การโพสต์
-          const fieldOwnerId = data.user_id; // ดึง field_user_id
-          const currentUserId = currentUser?.user_id;
-          const currentUserRole = currentUser?.role;
+          const fieldOwnerId = data.user_id;
+        
+          localStorage.setItem('account_holder',data.account_holder)
+          localStorage.setItem('name_bank',data.name_bank)
+          localStorage.setItem('number_bank',data.number_bank)
 
-          // เช็คว่า user_id ตรงกับ field_user_id หรือไม่ หรือเป็น admin
+          const currentUserId = user?.user_id;
+          const currentUserRole = user?.role;
+
           if (currentUserRole === "admin" || fieldOwnerId === currentUserId) {
-            setCanPost(true); // ถ้าเป็น admin หรือเจ้าของสนาม สามารถโพสต์ได้
+            setCanPost(true);
           } else {
-            setCanPost(false); // ถ้าไม่ใช่ ไม่สามารถโพสต์ได้
+            setCanPost(false);
           }
         }
         const status = data.status;
         if (status != "ผ่านการอนุมัติ") {
-          setMessage(` สนามคุณยัง ${data.status}`);
+          setMessage(` สนามคุณ ${data.status}`);
           setMessageType("error");
           setTimeout(() => {
             router.push("/myfield");
@@ -80,19 +89,17 @@ export default function CheckFieldDetail() {
         }
       })
       .catch((error) => console.error("Error fetching field data:", error));
-  }, [fieldId, currentUser, router]);
+  }, [fieldId, user, router]);
 
   useEffect(() => {
     if (!fieldId) return;
 
-    const token = localStorage.getItem("token"); // ดึง token จาก localStorage
-
     fetch(`${API_URL}/posts/${fieldId}`, {
-      method: "GET", // ใช้ method GET ในการดึงข้อมูล
+      method: "GET",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`, // ส่ง token ใน Authorization header
       },
+      credentials: "include",
     })
       .then((res) => res.json())
       .then((data) => {
@@ -145,7 +152,14 @@ export default function CheckFieldDetail() {
       ?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // login เลื่อนรูป
+  useEffect(() => {
+    if (highlightId) {
+      const element = document.getElementById(`post-${highlightId}`);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+  }, [postData]);
 
   const handlePrev = (postId, length) => {
     setImageIndexes((prev) => ({
@@ -226,11 +240,9 @@ export default function CheckFieldDetail() {
     formData.append("title", editTitle);
     formData.append("content", editContent);
     newImages.forEach((img) => formData.append("img_url", img));
-
-    const token = localStorage.getItem("token");
     const res = await fetch(`${API_URL}/posts/update/${postId}`, {
       method: "PATCH",
-      headers: { Authorization: `Bearer ${token}` },
+      credentials: "include",
       body: formData,
     });
 
@@ -253,14 +265,10 @@ export default function CheckFieldDetail() {
   };
 
   const handleDelete = async () => {
-    const token = localStorage.getItem("token");
-
     try {
       const res = await fetch(`${API_URL}/posts/delete/${postToDelete}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: "include",
       });
 
       if (res.ok) {
@@ -313,90 +321,62 @@ export default function CheckFieldDetail() {
       )}
       {fieldData?.img_field ? (
         <div className="image-container">
-           <div className="head-title">
-              <strong> {fieldData?.field_name}</strong>
-            </div>
+          <div className="head-title">
+            <strong> {fieldData?.field_name}</strong>
+          </div>
           <img
             src={`${API_URL}/${fieldData.img_field}`} //  ใช้ Path ที่ Backend ส่งมาโดยตรง
             alt="รูปสนามกีฬา"
             className="field-image"
-          />     
-           <div className="btn">
+          />
+          <div className="btn">
             <button onClick={scrollToBookingSection}>เลือกสนาม</button>
-          </div> 
+          </div>
         </div>
       ) : (
         <p>ไม่มีรูปสนามกีฬา</p>
       )}
       <div className="field-detail-container">
-        <aside>
-          <div className="field-info">
-            <h1>รายละเอียดสนาม</h1>        
-            <p>
-              <strong>ที่อยู่:</strong> {fieldData?.address}
-            </p>
-            <p>
-              <strong>พิกัด GPS:</strong>{" "}
-              <a
-                href={fieldData?.gps_location}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {fieldData?.gps_location}
-              </a>
-            </p>
-            <p>
-              <strong>วันที่เปิดสนาม</strong>
-            </p>
-            {fieldData.open_days &&
-              fieldData.open_days.map((day, index) => (
-                <div className="opendays" key={index}>
-                  {daysInThai[day] || day} {/* Translate day to Thai */}
-                </div>
-              ))}
+        <div className="undercontainer">
+          <div className="sub-fields-container">
+            <h1>สนามย่อย</h1>
+            {fieldData?.sub_fields && fieldData.sub_fields.length > 0 ? (
+              fieldData.sub_fields.map((sub) => (
+                <div
+                  key={sub.sub_field_id}
+                  className="sub-field-card"
+                  onClick={() => router.push(`/calendar/${sub.sub_field_id}`)}
+                >
+                  <p>
+                    <strong>ชื่อสนาม:</strong> {sub.sub_field_name}
+                  </p>
+                  <p>
+                    <strong>ราคา:</strong> {sub.price} บาท
+                  </p>
+                  <p>
+                    <strong>กีฬา:</strong> {sub.sport_name}
+                  </p>
 
-            <p>
-              <strong>เวลาเปิด-ปิด:</strong> {fieldData?.open_hours} -{" "}
-              {fieldData?.close_hours}
-            </p>
-            <p>
-              <strong>รายละเอียดสนาม:</strong> {fieldData?.field_description}
-            </p>
-            <p>
-              <strong>ค่ามัดจำ:</strong> {fieldData?.price_deposit} บาท
-            </p>
-            <p>
-              <strong>ธนาคาร:</strong> {fieldData?.name_bank}
-            </p>
-            <p>
-              <strong>ชื่อเจ้าของบัญชี:</strong> {fieldData?.account_holder}
-            </p>
-            <p>
-              <strong>เลขบัญชีธนาคาร:</strong> {fieldData?.number_bank}
-            </p>
-
-            <div className="field-facilities">
-              <h1>สิ่งอำนวยความสะดวก</h1>
-              {facilities.length === 0 ? (
-                <p>ยังไม่มีสิ่งอำนวยความสะดวกสำหรับสนามนี้</p>
-              ) : (
-                <div className="facbox">
-                  {facilities.map((facility, index) => (
-                    <div
-                      className="facitem"
-                      key={`${facility.fac_id}-${index}`}
-                    >
-                      {" "}
-                      {/* Unique key using both fac_id and index */}
-                      <strong>{facility.fac_name}</strong>:{" "}
-                      <span>{facility.fac_price} บาท</span>
+                  {/*  แสดง Add-ons ถ้ามี */}
+                  {sub.add_ons && sub.add_ons.length > 0 ? (
+                    <div className="add-ons-container">
+                      <h3>ราคาสำหรับจัดกิจกรรมพิเศษ</h3>
+                      {sub.add_ons.map((addon) => (
+                        <p key={addon.add_on_id}>
+                          {addon.content} - {addon.price} บาท
+                        </p>
+                      ))}
                     </div>
-                  ))}
+                  ) : (
+                    <p>ไม่มีราคาสำหรับกิจกรรมพิเศษ</p>
+                  )}
                 </div>
-              )}
-            </div>
+              ))
+            ) : (
+              <p>ไม่มีสนามย่อย</p>
+            )}
           </div>
-        </aside>
+        </div>
         <div className="post">
           <h1>โพสต์</h1>
           {canPost && (
@@ -409,7 +389,11 @@ export default function CheckFieldDetail() {
           )}
 
           {postData.map((post) => (
-            <div key={post.post_id} className="post-card">
+            <div
+              key={post.post_id}
+              className="post-card"
+              id={`post-${post.post_id}`}
+            >
               {editingPostId === post.post_id ? (
                 <form
                   onSubmit={(e) => handleEditSubmit(e, post.post_id)}
@@ -443,7 +427,11 @@ export default function CheckFieldDetail() {
                     />
                   </div>
                   <button type="submit">บันทึก</button>
-                  <button className="canbtn" type="button" onClick={() => setEditingPostId(null)}>
+                  <button
+                    className="canbtn"
+                    type="button"
+                    onClick={() => setEditingPostId(null)}
+                  >
                     ยกเลิก
                   </button>
                 </form>
@@ -547,42 +535,74 @@ export default function CheckFieldDetail() {
         </div>
 
         {/* ข้อมูลสนามย่อย (sub_fields) */}
-        <div className="undercontainer">
-          <div className="sub-fields-container">
-            <h1>สนามย่อย</h1>
-            {fieldData?.sub_fields && fieldData.sub_fields.length > 0 ? (
-              fieldData.sub_fields.map((sub) => (
-                <div key={sub.sub_field_id} className="sub-field-card" onClick={()=> router.push(`/booking/${sub.sub_field_id}`)}>
-                  <p>
-                    <strong>ชื่อสนาม:</strong> {sub.sub_field_name}
-                  </p>
-                  <p>
-                    <strong>ราคา:</strong> {sub.price} บาท
-                  </p>
-                  <p>
-                    <strong>กีฬา:</strong> {sub.sport_name}
-                  </p>
-
-                  {/*  แสดง Add-ons ถ้ามี */}
-                  {sub.add_ons && sub.add_ons.length > 0 ? (
-                    <div className="add-ons-container">
-                      <h3>ราคาสำหรับจัดกิจกรรมพิเศษ</h3>
-                      {sub.add_ons.map((addon) => (
-                        <p key={addon.add_on_id}>
-                          {addon.content} - {addon.price} บาท
-                        </p>
-                      ))}
-                    </div>
-                  ) : (
-                    <p>ไม่มีราคาสำหรับกิจกรรมพิเศษ</p>
-                  )}
+        <aside>
+          <div className="field-info">
+            <h1>รายละเอียดสนาม</h1>
+            <p>
+              <strong>ที่อยู่:</strong> {fieldData?.address}
+            </p>
+            <p>
+              <strong>พิกัด GPS:</strong>{" "}
+              <a
+                href={fieldData?.gps_location}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {fieldData?.gps_location}
+              </a>
+            </p>
+            <p>
+              <strong>วันที่เปิดสนาม</strong>
+            </p>
+            {fieldData.open_days &&
+              fieldData.open_days.map((day, index) => (
+                <div className="opendays" key={index}>
+                  {daysInThai[day] || day} {/* Translate day to Thai */}
                 </div>
-              ))
-            ) : (
-              <p>ไม่มีสนามย่อย</p>
-            )}
+              ))}
+
+            <p>
+              <strong>เวลาเปิด-ปิด:</strong> {fieldData?.open_hours} -{" "}
+              {fieldData?.close_hours}
+            </p>
+            <p>
+              <strong>รายละเอียดสนาม:</strong> {fieldData?.field_description}
+            </p>
+            <p>
+              <strong>ค่ามัดจำ:</strong> {fieldData?.price_deposit} บาท
+            </p>
+            <p>
+              <strong>ธนาคาร:</strong> {fieldData?.name_bank}
+            </p>
+            <p>
+              <strong>ชื่อเจ้าของบัญชี:</strong> {fieldData?.account_holder}
+            </p>
+            <p>
+              <strong>เลขบัญชีธนาคาร:</strong> {fieldData?.number_bank}
+            </p>
+
+            <div className="field-facilities">
+              <h1>สิ่งอำนวยความสะดวก</h1>
+              {facilities.length === 0 ? (
+                <p>ยังไม่มีสิ่งอำนวยความสะดวกสำหรับสนามนี้</p>
+              ) : (
+                <div className="facbox">
+                  {facilities.map((facility, index) => (
+                    <div
+                      className="facitem"
+                      key={`${facility.fac_id}-${index}`}
+                    >
+                      {" "}
+                      {/* Unique key using both fac_id and index */}
+                      <strong>{facility.fac_name}</strong>:{" "}
+                      <span>{facility.fac_price} บาท</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        </aside>
       </div>
       {showModal && (
         <div className="modal-overlay">

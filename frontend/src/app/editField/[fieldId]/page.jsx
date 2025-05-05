@@ -2,14 +2,12 @@
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import "@/app/css/editfield.css";
-// import Navbar from "@/app/components/Navbar";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 export default function CheckFieldDetail() {
   const { fieldId } = useParams();
   const router = useRouter();
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
-  const [currentUser, setCurrentUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
 
   const [userId, setUserId] = useState(null);
   const [newSportId, setNewSportId] = useState(""); // State for selected sport when adding new sub-field
@@ -40,51 +38,43 @@ export default function CheckFieldDetail() {
   const [message, setMessage] = useState(""); // State สำหรับข้อความ
   const [messageType, setMessageType] = useState(""); // State สำหรับประเภทของข้อความ (error, success)
 
-  // โมดอล
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedSubField, setSelectedSubField] = useState(null);
   const [showDeleteAddOnModal, setShowDeleteAddOnModal] = useState(false);
   const [selectedAddOn, setSelectedAddOn] = useState(null);
+  const { user, isLoading } = useAuth();
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    const token = localStorage.getItem("token");
-    const expiresAt = localStorage.getItem("expiresAt");
+    if (isLoading) return;
 
-    if (
-      !token ||
-      !storedUser ||
-      !expiresAt ||
-      Date.now() > parseInt(expiresAt)
-    ) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      localStorage.removeItem("expiresAt");
+    if (!user) {
       router.push("/login");
       return;
     }
 
-    const user = JSON.parse(storedUser);
-    setCurrentUser(user);
-    setUserId(user.user_id);
-    if (user.role !== "admin" && user.role !== "field_owner") {
+    if (user?.status !== "ตรวจสอบแล้ว") {
+      router.push("/verification");
+    }
+    if (user?.role !== "admin" && user?.role !== "field_owner") {
       router.push("/");
     }
-    console.log(user);
-    setIsLoading(false);
-  }, []);
+  }, [user, isLoading, router, userId]);
+
+  useEffect(() => {
+    if (user) {
+      if (isLoading) return;
+      setUserId(user?.user_id);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!fieldId) return;
-
-    const token = localStorage.getItem("token"); // ดึง token จาก localStorage
-
     fetch(`${API_URL}/field/${fieldId}`, {
       method: "GET", // ใช้ method GET ในการดึงข้อมูล
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`, // ส่ง token ใน Authorization header
       },
+      credentials: "include",
     })
       .then((res) => res.json())
       .then((data) => {
@@ -104,13 +94,12 @@ export default function CheckFieldDetail() {
   useEffect(() => {
     const fetchSportsCategories = async () => {
       try {
-        const token = localStorage.getItem("token");
         const response = await fetch(`${API_URL}/sports_types/preview/type`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
           },
+          credentials: "include",
         });
 
         const data = await response.json();
@@ -138,7 +127,6 @@ export default function CheckFieldDetail() {
       setMessageType("error");
       return;
     }
-    const token = localStorage.getItem("token");
     try {
       const response = await fetch(
         `${API_URL}/field/supfiled/${sub_field_id}`,
@@ -146,8 +134,8 @@ export default function CheckFieldDetail() {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
           },
+          credentials: "include",
           body: JSON.stringify({
             sub_field_name: updatedSubFieldName,
             price: updatedPrice,
@@ -226,11 +214,17 @@ export default function CheckFieldDetail() {
       setMessageType("error");
     }
   };
-
+  const MAX_FILES = 10; // Limit to 10 files
   const handleFileChange = (e) => {
     const files = e.target.files;
     let isValid = true;
 
+    if (files.length > MAX_FILES) {
+      setMessage(`คุณสามารถอัพโหลดได้สูงสุด ${MAX_FILES} ไฟล์`);
+      setMessageType("error");
+      e.target.value = null; // Reset the input value
+      return;
+    }
     // ตรวจสอบไฟล์ทั้งหมดที่เลือก
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -271,12 +265,11 @@ export default function CheckFieldDetail() {
       }
 
       const formData = new FormData();
-      const token = localStorage.getItem("token");
       formData.append("img_field", selectedFile); // ส่งไฟล์รูปภาพเดียว
 
       const response = await fetch(`${API_URL}/field/${fieldId}/upload-image`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include",
         body: formData,
       });
 
@@ -306,10 +299,7 @@ export default function CheckFieldDetail() {
         setMessageType("error");
         return;
       }
-
       const formData = new FormData();
-      const token = localStorage.getItem("token");
-
       for (let i = 0; i < selectedFile.length; i++) {
         formData.append("documents", selectedFile[i]); // ส่งไฟล์เอกสารหลายไฟล์
       }
@@ -318,7 +308,7 @@ export default function CheckFieldDetail() {
         `${API_URL}/field/${fieldId}/upload-document`,
         {
           method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
+          credentials: "include",
           body: formData,
         }
       );
@@ -348,13 +338,12 @@ export default function CheckFieldDetail() {
 
   const saveField = async (fieldName) => {
     try {
-      const token = localStorage.getItem("token");
       const response = await fetch(`${API_URL}/field/edit/${fieldId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
+        credentials: "include",
         body: JSON.stringify({ [fieldName]: updatedValue }),
       });
 
@@ -382,56 +371,114 @@ export default function CheckFieldDetail() {
   };
 
   const addSubField = async (userId) => {
+    // ตรวจสอบว่ามีการเลือกประเภทกีฬาก่อน
     if (!newSportId) {
       setMessage("กรุณาเลือกประเภทกีฬาก่อนเพิ่มสนาม");
       setMessageType("error");
-      return; // Prevent adding if no sport is selected or sport_id is invalid
+      return; 
     }
-    const token = localStorage.getItem("token");
-    const response = await fetch(`${API_URL}/field/subfield/${fieldId}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        sub_field_name: newSubField.sub_field_name,
-        price: newSubField.price,
-        sport_id: newSportId, // Use newSportId instead of newSubField.sport_id
-        user_id: userId, // Pass the userId parameter
-      }),
-    });
 
-    const newField = await response.json();
-    if (response.ok) {
+    try {
+      const response = await fetch(`${API_URL}/field/subfield/${fieldId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          sub_field_name: newSubField.sub_field_name,
+          price: newSubField.price,
+          user_id: userId,
+          sport_id: newSportId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("API Error: ", errorData);
+        setMessage(errorData.message || "ไม่สามารถเพิ่มสนามย่อยได้");
+        setMessageType("error");
+        return;
+      }
+      const newField = await response.json();
+
       setSubFields([...subFields, newField]);
       setMessage("เพิ่มสนามย่อยสำเร็จ");
       setMessageType("success");
 
-      return setTimeout(() => {
-        router.refresh();
-      }, 1500);
-      // Update the subFields state with the new sub-field
-    } else {
+      setTimeout(() => {
+        location.reload();
+      }, 1000);
+    } catch (error) {
+      console.error("Error: ", error);
       setMessage("ไม่สามารถเพิ่มสนามย่อยได้");
       setMessageType("error");
     }
   };
 
+  const handleDeleteClick = (subField) => {
+    setSelectedSubField(subField);
+    setShowDeleteModal(true);
+  };
 
+  const confirmDeleteSubField = async () => {
+    if (selectedSubField) {
+      if (selectedSubField.add_ons && selectedSubField.add_ons.length > 0) {
+        for (const addon of selectedSubField.add_ons) {
+          await deleteAddOn(addon.add_on_id);
+        }
+      }
+      await deleteSubField(selectedSubField.sub_field_id);
+      setShowDeleteModal(false);
+      setSelectedSubField(null);
+    }
+  };
 
+  const deleteSubField = async (sub_field_id) => {
+    console.log("Sub-field ID:", sub_field_id);
+    if (!sub_field_id || isNaN(sub_field_id)) {
+      setMessage("Invalid sub-field ID");
+      setMessageType("error");
+      return;
+    }
+    try {
+      const response = await fetch(
+        `${API_URL}/field/delete/subfield/${sub_field_id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        }
+      );
 
+      if (response.ok) {
+        setMessage("ลบสนามย่อยสำเร็จ");
+        setMessageType("success");
+        setSubFields((prevSubFields) =>
+          prevSubFields.filter((sub) => sub.sub_field_id !== sub_field_id)
+        );
+      } else {
+        const errorData = await response.json();
+        setMessage(`${errorData.error || "เกิดข้อผิดพลาดในการลบสนาม"}`);
+        setMessageType("error");
+      }
+    } catch (error) {
+      console.error("Error deleting sub-field:", error);
+      setMessage("Error deleting sub-field");
+      setMessageType("error");
+    }
+  };
 
   const addAddOn = async (subFieldId, content, price) => {
     try {
-      const token = localStorage.getItem("token");
-
       const res = await fetch(`${API_URL}/field/addon`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
+        credentials: "include",
         body: JSON.stringify({
           sub_field_id: subFieldId,
           content,
@@ -443,28 +490,62 @@ export default function CheckFieldDetail() {
       setMessage("เพิ่มสำเร็จ");
       setMessageType("success");
       return setTimeout(() => {
-        router.refresh();
-      }, 1500);
+        location.reload();
+      }, 1000);
     } catch (err) {
       console.error("ผิดพลาดขณะเพิ่ม Add-on:", err);
       setMessage("err", err);
       setMessageType("error");
     }
   };
+  const confirmDeleteAddOn = async () => {
+    if (!selectedAddOn) return;
 
+    await deleteAddOn(selectedAddOn.add_on_id);
 
+    setShowDeleteAddOnModal(false);
+    setSelectedAddOn(null);
+  };
+
+  const deleteAddOn = async (add_on_id) => {
+    try {
+      const response = await fetch(
+        `${API_URL}/field/delete/addon/${add_on_id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        }
+      );
+
+      if (response.ok) {
+        setMessage("ลบสำเร็จ");
+        setMessageType("success");
+        location.reload();
+        setAddons((prevAddons) =>
+          prevAddons.filter((addon) => addon.add_on_id !== add_on_id)
+        );
+      } else {
+        setMessage("เกิดข้อผิดพลาดในการลบ Add-On");
+        setMessageType("error");
+      }
+    } catch (error) {
+      console.error("Error deleting add-on:", error);
+    }
+  };
 
   const saveAddon = async () => {
     try {
-      const token = localStorage.getItem("token");
       const response = await fetch(
         `${API_URL}/field/add_on/${editingAddon.addOnId}`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
           },
+          credentials: "include",
           body: JSON.stringify({
             content: editingAddon.content,
             price: editingAddon.price,
@@ -500,7 +581,6 @@ export default function CheckFieldDetail() {
     }
   };
 
-  // เก็บค่า input ของ Add-on แยกตาม sub_field_id
   const handleAddOnInputChange = (subFieldId, key, value) => {
     setAddOnInputs((prev) => ({
       ...prev,
@@ -510,6 +590,42 @@ export default function CheckFieldDetail() {
       },
     }));
   };
+
+  const upDateStatus = async () => {
+    try {
+      const res = await fetch(
+        `${API_URL}/field/update-status/${field.field_id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            status: "รอตรวจสอบ",
+          }),
+        }
+      );
+
+      if (res.ok) {
+        setMessage("ส่งคำขอสำเร็จ");
+        setMessageType("success");
+        const updatedField = await res.json();
+        setTimeout(() => {
+          router.push("/myfield");
+        }, 2000);
+      } else {
+        setMessage("เกิดข้อผิดพลาดในการอัปเดต");
+        setMessageType("error");
+        throw new Error("ไม่สามารถอัปเดตสถานะได้");
+      }
+    } catch (err) {
+      console.error("Error:", err);
+      setMessage(err.message);
+      setMessageType("error");
+    }
+  };
+
   useEffect(() => {
     if (message) {
       const timer = setTimeout(() => {
@@ -521,113 +637,8 @@ export default function CheckFieldDetail() {
     }
   }, [message]);
 
-
-  const deleteSubField = async (sub_field_id) => {
-    console.log("Sub-field ID:", sub_field_id); // Check the ID passed
-    if (!sub_field_id || isNaN(sub_field_id)) {
-      setMessage("Invalid sub-field ID");
-      setMessageType("error");
-      return;
-    }
-
-    const token = localStorage.getItem("token");
-
-    try {
-      const response = await fetch(
-        `${API_URL}/field/delete/subfield/${sub_field_id}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        setMessage("ลบสนามย่อยสำเร็จ");
-        setMessageType("success");
-        setSubFields((prevSubFields) =>
-          prevSubFields.filter((sub) => sub.sub_field_id !== sub_field_id)
-        );
-      } else {
-        const errorData = await response.json();
-        setMessage(`${errorData.error || "เกิดข้อผิดพลาดในการลบสนาม"}`);
-        setMessageType("error");
-      }
-    } catch (error) {
-      console.error("Error deleting sub-field:", error);
-      setMessage("Error deleting sub-field");
-      setMessageType("error");
-    }
-  };
-
-  const confirmDeleteSubField = async () => {
-    if (selectedSubField) {
-      // ลบ add-ons ก่อน
-      if (selectedSubField.add_ons && selectedSubField.add_ons.length > 0) {
-        for (const addon of selectedSubField.add_ons) {
-          await deleteAddOn(addon.add_on_id);
-        }
-      }
-
-      // ลบ subfield
-      await deleteSubField(selectedSubField.sub_field_id);
-
-      // ปิด modal
-      setShowDeleteModal(false);
-      setSelectedSubField(null);
-    }
-  };
-  
-  const deleteAddOn = async (add_on_id) => {
-    const token = localStorage.getItem("token");
-
-    try {
-      const response = await fetch(
-        `${API_URL}/field/delete/addon/${add_on_id}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        setMessage("ลบสำเร็จ");
-        setMessageType("success");
-        setAddons((prevAddons) =>
-          prevAddons.filter((addon) => addon.add_on_id !== add_on_id)
-        );
-      } else {
-        setMessage("เกิดข้อผิดพลาดในการลบ Add-On");
-        setMessageType("error");
-      }
-    } catch (error) {
-      console.error("Error deleting add-on:", error);
-    }
-  };
-
-  const confirmDeleteAddOn = async () => {
-    if (!selectedAddOn) return;
-
-    await deleteAddOn(selectedAddOn.add_on_id);
-
-    // ล้าง state modal
-    setShowDeleteAddOnModal(false);
-    setSelectedAddOn(null);
-  };
-  const handleDeleteClick = (subField) => {
-    setSelectedSubField(subField);
-    setShowDeleteModal(true);
-  };
   return (
     <>
-      {/* <div className="navbar">
-        <Navbar></Navbar>
-      </div> */}
       {message && (
         <div className={`message-box ${messageType}`}>
           <p>{message}</p>
@@ -1034,7 +1045,7 @@ export default function CheckFieldDetail() {
           )}
 
           <div className="input-group">
-            <label>เอกสาร</label>
+            <label>เอกสาร (ถ้าแก้ไขเอกสารเดิมจะหาย)</label>
             {editingField === "documents" ? (
               <>
                 <input
@@ -1054,17 +1065,22 @@ export default function CheckFieldDetail() {
               <>
                 <div>
                   {field?.documents ? (
-                    <div className="document-container">
-                      <a
-                        href={`${API_URL}/${field.documents}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="document-link"
-                      >
-                        <p>เอกสารที่ส่งไป</p>
-                        <div className="doc"></div>
-                      </a>
-                    </div>
+                    (Array.isArray(field.documents)
+                      ? field.documents
+                      : field.documents.split(",")
+                    ) // แปลงจาก string เป็น array
+                      .map((doc, i) => (
+                        <div className="document-container" key={i}>
+                          <a
+                            href={`${API_URL}/${doc.trim()}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="document-link"
+                          >
+                            <p>เอกสารที่แนบไว้ {i + 1}</p>
+                          </a>
+                        </div>
+                      ))
                   ) : (
                     <p>ไม่มีเอกสารแนบ</p>
                   )}
@@ -1231,7 +1247,7 @@ export default function CheckFieldDetail() {
                 </div>
               )}
 
-              {/* ✅ ปุ่ม toggle แสดง/ซ่อนฟอร์ม Add-on */}
+              {/* ปุ่ม toggle แสดง/ซ่อนฟอร์ม Add-on */}
               <div className="input-group">
                 <button
                   className="savebtn"
@@ -1247,7 +1263,7 @@ export default function CheckFieldDetail() {
                     : "เพิ่มกิจกรรมพิเศษ"}
                 </button>
               </div>
-              {/* ✅ เงื่อนไขแสดงฟอร์มเพิ่ม Add-on */}
+              {/* เงื่อนไขแสดงฟอร์มเพิ่ม Add-on */}
               {showAddOnForm[sub.sub_field_id] && (
                 <div className="add-addon-form">
                   <input
@@ -1352,7 +1368,7 @@ export default function CheckFieldDetail() {
                   className="savebtn"
                   onClick={async () => {
                     if (!userId) {
-                      setMessage("ยังไม่ได้โหลด user_id จาก localStorage");
+                      setMessage("ยังไม่ได้โหลด user_id จาก Auth");
                       setMessageType("error");
                       return;
                     }
@@ -1378,10 +1394,11 @@ export default function CheckFieldDetail() {
             )}
           </div>
         </div>
-
-        <button onClick={() => router.push("/")} className="savebtn">
-          กลับไปหน้าหลัก
-        </button>
+        {field?.status == "ไม่ผ่านการอนุมัติ" && (
+          <button onClick={upDateStatus} className="editbtn">
+            ส่งคำขอลงทะเบียนอีกครั้ง
+          </button>
+        )}
       </div>
       {/* โมดอล */}
       {showDeleteModal && (

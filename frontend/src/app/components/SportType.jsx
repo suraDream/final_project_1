@@ -11,15 +11,12 @@ export default function HomePage() {
   const [selectedSportName, setSelectedSportName] = useState("");
   const [sportsCategories, setSportsCategories] = useState([]);
 
-  // ดึงข้อมูลประเภทกีฬา
   useEffect(() => {
-    const token = localStorage.getItem("token");
 
     fetch(`${API_URL}/sports_types/preview/type`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
       },
     })
       .then((res) => res.json())
@@ -27,7 +24,7 @@ export default function HomePage() {
         if (data.error) {
           console.log("ไม่พบข้อมูลประเภทกีฬา");
         } else {
-          setSportsCategories(data); // เซตข้อมูลประเภทกีฬา
+          setSportsCategories(data); 
         }
       })
       .catch((error) => {
@@ -35,16 +32,13 @@ export default function HomePage() {
       });
   }, []);
 
-  // ดึงข้อมูลสนามที่ผ่านการอนุมัติ
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const queryParams = selectedSport ? `?sport_id=${selectedSport}` : ""; // เพิ่ม sport_id ใน query หากเลือกแล้ว
+    const queryParams = selectedSport ? `?sport_id=${selectedSport}` : ""; 
 
     fetch(`${API_URL}/sports_types/preview${queryParams}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
       },
     })
       .then((res) => res.json())
@@ -58,10 +52,10 @@ export default function HomePage() {
       .catch((error) => {
         console.error("Error fetching approved fields:", error);
       });
-  }, [selectedSport]); // เรียกใช้ใหม่เมื่อ selectedSport เปลี่ยน
+  }, [selectedSport]); 
 
   const convertToThaiDays = (days) => {
-    if (!days) return ""; // ถ้า days เป็น undefined หรือ null ให้คืนค่าเป็นสตริงว่าง
+    if (!days) return "";
 
     const dayMapping = {
       Mon: "จันทร์",
@@ -96,7 +90,6 @@ export default function HomePage() {
       <div className="container">
         <div className="section-title-container">
           <h2 className="section-title">สนามที่แนะนำ</h2>
-          {/* Dropdown เพื่อเลือกประเภทกีฬา */}
           <select
             value={selectedSport}
             onChange={handleSportChange}

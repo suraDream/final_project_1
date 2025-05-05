@@ -8,8 +8,6 @@ require("dotenv").config();
 const router = express.Router();
 router.use(cookieParser());
 
-
-
 router.post("/", async (req, res) => {
   const { identifier, password } = req.body;
 
@@ -30,9 +28,9 @@ router.post("/", async (req, res) => {
         .status(400)
         .json({ message: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง" });
     }
-    
+
     //session หมดอายุใน 5 ชั้วโมง ต้อง login ใหม่
-    const expiresIn = 60*60*5000; 
+    const expiresIn = 60 * 60 * 5000;
 
     // **สร้าง JWT Token**
     const token = jwt.sign(
@@ -44,7 +42,7 @@ router.post("/", async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "5h" }
     );
-    
+
     // **ส่ง JWT ไปยัง Client ผ่าน Cookie**
     res.cookie("token", token, {
       httpOnly: true,
@@ -55,19 +53,7 @@ router.post("/", async (req, res) => {
 
     res.status(200).json({
       message: "เข้าสู่ระบบสำเร็จ",
-      token,
-      expiresAt: Date.now() + expiresIn,
-      user: {
-        user_id: user.user_id,
-        user_name: user.user_name,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        email: user.email,
-        role: user.role,
-        status: user.status,
-      },
     });
-
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ message: "เกิดข้อผิดพลาด", error: error.message });

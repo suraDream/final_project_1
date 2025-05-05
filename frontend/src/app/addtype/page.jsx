@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import "@/app/css/add.css";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 export default function RegisterFieldForm() {
   const router = useRouter("");
@@ -10,7 +11,6 @@ export default function RegisterFieldForm() {
   const [showEditModal, setShowEditModal] = useState(false); // โมดอลแก้ไข
   const [sports, setSports] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState(""); // State สำหรับข้อความ
   const [messageType, setMessageType] = useState(""); // State สำหรับประเภทของข้อความ (error, success)
   const [editSport, setEditSport] = useState(null); // สำหรับเก็บข้อมูลประเภทกีฬาที่กำลังแก้ไข
@@ -18,44 +18,24 @@ export default function RegisterFieldForm() {
   const [SportTypeToDelete, setSportTypeToDelete] = useState(null); // เก็บข้อมูลประเภทกีฬาที่จะลบ
   const [showNewSportInput, setShowNewSportInput] = useState(false); // ฟอร์มสำหรับเพิ่มประเภทกีฬาใหม่
   const [newSport, setNewSport] = useState(""); // ชื่อประเภทกีฬาที่จะเพิ่ม
+  const { user, isLoading } = useAuth();
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    const token = localStorage.getItem("token");
-    const expiresAt = localStorage.getItem("expiresAt");
+    if (isLoading) return;
 
-    if (
-      !token ||
-      !storedUser ||
-      !expiresAt ||
-      Date.now() > parseInt(expiresAt)
-    ) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      localStorage.removeItem("expiresAt");
-      router.push("/login");
-      return;
+    if (user?.status !== "ตรวจสอบแล้ว") {
+      router.push("/verification");
     }
 
-    const user = JSON.parse(storedUser);
-    setCurrentUser(user);
-
-    if(user.status !== "ตรวจสอบแล้ว"){
-      router.push("/verification")
-    }
-
-    if (user.role !== "admin") {
+    if (user?.role !== "admin") {
       router.push("/");
     }
-
-    setIsLoading(false);
-  }, []);
+  }, [user, isLoading, router]);
 
   // โหลดประเภทกีฬา
   useEffect(() => {
-    const token = localStorage.getItem("token");
     fetch(`${API_URL}/sports_types`, {
-      headers: { Authorization: `Bearer ${token}` },
+      credentials: "include",
     })
       .then((res) => res.json())
       .then((data) => setSports(data))
@@ -66,13 +46,12 @@ export default function RegisterFieldForm() {
   const addType = async () => {
     if (!newSport.trim()) return;
 
-    const token = localStorage.getItem("token");
     const res = await fetch(`${API_URL}/sports_types/add`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
       },
+      credentials: "include",
       body: JSON.stringify({ sport_name: newSport }),
     });
 
@@ -92,15 +71,14 @@ export default function RegisterFieldForm() {
   // ฟังก์ชันลบประเภทกีฬา
   const deleteSportType = async () => {
     if (!SportTypeToDelete) return;
-    const token = localStorage.getItem("token");
     const res = await fetch(
       `${API_URL}/sports_types/delete/${SportTypeToDelete}`,
       {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
+        credentials: "include",
       }
     );
 
@@ -118,15 +96,14 @@ export default function RegisterFieldForm() {
   // ฟังก์ชันแก้ไขชื่อประเภทกีฬา
   const editSportType = async () => {
     if (!newSportName.trim()) return;
-    const token = localStorage.getItem("token");
     const res = await fetch(
       `${API_URL}/sports_types/update/${editSport.sport_id}`,
       {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
+        credentials: "include",
         body: JSON.stringify({ sport_name: newSportName }),
       }
     );

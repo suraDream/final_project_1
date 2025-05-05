@@ -1,7 +1,8 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import "@/app/css/Verification.css";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 export default function Verification() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -10,22 +11,25 @@ export default function Verification() {
   const [messageType, setMessageType] = useState("");
   const [timer, setTimer] = useState(60); // เริ่มต้นจาก 60 วินาที
   const [canRequestOTP, setCanRequestOTP] = useState(true); // ใช้สำหรับการอนุญาตให้ผู้ใช้ขอ OTP ใหม่
-  const router = useRouter("")
+  const router = useRouter("");
+  const { user, isLoading } = useAuth();
 
   useEffect(() => {
-    const user = localStorage.getItem("user");
-    const userData = JSON.parse(user);
-    if(userData?.status === "ตรวจสอบแล้ว"){
-      router.push("/")
+    if (isLoading) return; // ถ้า loading อยู่ ห้ามทำอะไร
+
+    if (!user) {
+      router.push("/login");
+      return;
     }
-  },[router]);
 
-  const storedUser = localStorage.getItem("user");
-  const token = localStorage.getItem("token");
+    if (user?.status === "ตรวจสอบแล้ว") {
+      router.push("/");
+    }
 
-  const data = JSON.parse(storedUser);
-  const userId = data?.user_id;
-  const userEmail = data?.email;
+  }, [user, isLoading, router]);
+
+  const userId = user?.user_id;
+  const userEmail = user?.email;
 
   useEffect(() => {
     if (timer === 0) {
@@ -35,7 +39,7 @@ export default function Verification() {
         setTimer((prevTimer) => prevTimer - 1);
       }, 1000);
 
-      return () => clearInterval(interval); 
+      return () => clearInterval(interval);
     }
   }, [timer, canRequestOTP]);
 
@@ -46,22 +50,19 @@ export default function Verification() {
       const res = await fetch(`${API_URL}/register/verify/${userId}`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({ otp }),
       });
 
       const result = await res.json();
       if (res.ok) {
         console.log(result);
-        setMessage("ยืนยัน E-mail สำเร็จ กรุณา Login อีกครั้ง");
+        setMessage("ยืนยัน E-mail สำเร็จ");
         setMessageType("success");
         setTimeout(() => {
-          localStorage.removeItem("token");
-          localStorage.removeItem("user");
-          sessionStorage.removeItem("token");
-          window.location.href = "/login";
+          router.push("/");
         }, 1500);
       } else {
         setMessage(result.message);
@@ -88,22 +89,23 @@ export default function Verification() {
       const res = await fetch(`${API_URL}/register/new-otp/${userId}`, {
         method: "PUT",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({ email: userEmail }),
       });
 
       const result = await res.json();
+
       if (res.ok) {
-        setMessage("OTP ใหม่ถูกส่งไปยัง " + userEmail);
+        console.log(result);
+        setMessage(`OTP ใหม่ถูกส่งไปยัง ${userEmail}`);
         setMessageType("success");
       } else {
-        const errorMessage = result.message || "เกิดข้อผิดพลาดระหว่างการส่ง OTP";
-        setMessage(errorMessage);
+        console.error(result.message);
+        setMessage(result.message || "เกิดข้อผิดพลาดระหว่างการส่งข้อมูล");
         setMessageType("error");
       }
-      
     } catch (error) {
       console.error(error);
       setMessage("เกิดข้อผิดพลาดในการขอ OTP");
@@ -137,6 +139,7 @@ export default function Verification() {
           <div className="input">
             <input
               required
+              maxLength={6}
               type="text"
               placeholder="Enter OTP"
               value={otp}

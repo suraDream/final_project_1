@@ -1,9 +1,19 @@
 "use client";
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "@/app/css/register.css";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 export default function Register() {
+  const { user, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (user) {
+      router.push("/");
+    }
+  }, [user, isLoading]);
+
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
   const router = useRouter();
   const [formData, setFormData] = useState({
@@ -23,6 +33,7 @@ export default function Register() {
     email: "",
     passwordMatch: "",
     passwordLength: "",
+    password: "",
     serverError: "",
   });
   const [successMessage, setSuccessMessage] = useState("");
@@ -66,7 +77,37 @@ export default function Register() {
         }));
       }
     }
+    const allowDomain = ["@gmail.com", "@hotmail.com"];
+    if (name === "email" && value.length > 0) {
+      if (!allowDomain.some((domain) => value.endsWith(domain))) {
+        setErrors((prevErrors) => ({
+          ...prevErrors,
+          email: "โดเมนที่ใช้ได้ ได้แก่ @gmail.com, @hotmail.com",
+        }));
+      } else {
+        setErrors((prevErrors) => ({
+          ...prevErrors,
+          email: "",
+        }));
+      }
+    }
 
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/;
+    if (name === "password" && value.length > 0) {
+      if (!passwordRegex.test(formData.password)) {
+        setErrors((prevErrors) => ({
+          ...prevErrors,
+          password:
+            "รหัสผ่านต้องประกอบด้วยตัวอักษรพิมพ์ใหญ่[A-Z], พิมพ์เล็ก[a-z], ตัวเลข[0-9] และอักขระพิเศษ[!@#$%^&*]",
+        }));
+      } else {
+        setErrors((prevErrors) => ({
+          ...prevErrors,
+          password: "",
+        }));
+      }
+    }
     // ตรวจสอบ Username และ Email แบบ Real-Time
     if (name === "user_name" || name === "email") {
       clearTimeout(window.checkDuplicateTimeout);
@@ -109,6 +150,20 @@ export default function Register() {
 
     if (formData.password !== formData.confirmPassword) {
       newErrors.passwordMatch = "รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน";
+    }
+
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/;
+
+    if (!passwordRegex.test(formData.password)) {
+      newErrors.password =
+        "รหัสผ่านต้องประกอบด้วยตัวอักษรพิมพ์ใหญ่[A-Z], พิมพ์เล็ก[a-z], ตัวเลข[0-9] และอักขระพิเศษ[!@#$%^&*]";
+    }
+
+    // ตรวจสอบอีเมลและชื่อผู้ใช้
+    const allowDomain = ["@gmail.com", "@hotmail.com"];
+    if (!allowDomain.some((domain) => formData.email.endsWith(domain))) {
+      newErrors.email = "โดเมนที่ใช้ได้ ได้แก่ @gmail.com, @hotmail.com";
     }
 
     if (!newErrors.user_name && !newErrors.email) {
@@ -159,11 +214,11 @@ export default function Register() {
         setErrors({ serverError: errorData.message || "การลงทะเบียนล้มเหลว" });
         return;
       }
-      
+
       setSuccessMessage("ลงทะเบียนสำเร็จ");
-      setTimeout(() => {        
+      setTimeout(() => {
         router.push("/login");
-      }, 1500); 
+      }, 1500);
 
       setFormData({
         user_name: "",
@@ -270,6 +325,9 @@ export default function Register() {
               {errors.passwordLength}
             </p>
           )}
+          {errors.password && (
+            <p className="error-message">{errors.password}</p>
+          )}
         </div>
 
         <div className="input-group">
@@ -287,9 +345,15 @@ export default function Register() {
               {errors.passwordMatch}
             </p>
           )}
+          {errors.password && (
+            <p className="error-message">{errors.password}</p>
+          )}
         </div>
 
         <button type="submit">ลงทะเบียน</button>
+        <div className="login-title">
+          <a href="/login"className="login-link">หรือคุณมีบัญชีอยู่แล้ว Login เลย</a>
+        </div>
 
         {successMessage && (
           <div className="success-message">

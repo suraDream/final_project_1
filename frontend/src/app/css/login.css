@@ -96,3 +96,43 @@ button:hover {
 .message i {
   margin-right: 5px;
 }
+
+.reset-password {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  padding: 10px 0px 0px 0px;
+  margin: 10px auto 0 auto;
+  a{
+    text-decoration: none;
+  }
+}
+.reset-link, .register-link {
+  font-size: 14px;
+  color: #007BFF;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.reset-link:hover, .register-link:hover {
+  color: #0056b3;
+}
+
+.reset-password a {
+  padding: 10px 20px;
+  border-radius: 5px;
+  display: inline-block;
+  font-size: 16px;
+  text-align: center;
+  background-color: #dddddd;
+  border: 1px solid #ddd;
+  color: #333;
+  transition: all 0.3s ease;
+}
+
+.reset-password a:hover {
+  background-color: var(--text-color);
+  color: white;
+  cursor: pointer;
+}

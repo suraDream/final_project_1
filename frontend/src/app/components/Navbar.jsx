@@ -2,56 +2,19 @@
 import React, { useState, useEffect, useRef } from "react";
 import LogoutButton from "@/app/components/LogoutButton";
 import "@/app/css/Nav.css";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 export default function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [token, setToken] = useState(null);
-  const [user, setUser] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchRef = useRef(null); 
   const dropdownRef = useRef(null);
   const userProfileRef = useRef(null); 
+  const router = useRouter("");
+  const { user, isLoading } = useAuth();
 
-  useEffect(() => {
-    const storedToken = localStorage.getItem("token");
-    setToken(storedToken);
-
-    const storedUser = localStorage.getItem("user");
-    
-    try {
-      // ตรวจสอบว่า storedUser มีค่าหรือไม่ก่อนการแปลง
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
-      }
-    } catch (error) {
-      console.error("Error parsing user data:", error);
-      setUser(null); // กรณีที่ JSON.parse() ล้มเหลว
-    }
-
-    const expiresAt = localStorage.getItem("expiresAt");
-
-    // ตรวจสอบว่า token, user, expiresAt ถูกเก็บไว้และไม่หมดอายุ
-    if (!storedToken || !storedUser || !expiresAt || Date.now() > parseInt(expiresAt)) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      localStorage.removeItem("expiresAt");
-      setToken(null);
-      setUser(null);
-      return;
-    }
-
-    // หากไม่มีข้อผิดพลาดในการแปลงข้อมูล, เราตั้งค่าตามปกติ
-    setToken(storedToken);
-    try {
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
-      }
-    } catch (error) {
-      console.error("Error parsing user data on initial load:", error);
-      setUser(null);
-    }
-  }, []);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -90,7 +53,6 @@ export default function Navbar() {
   return (
     <nav>
       <a href="/" className="logo">⚽</a>
-
       {/* เมนูหลัก */}
       <div className="ullist">
         <ul className={isMenuOpen ? "active" : ""}>
@@ -119,7 +81,9 @@ export default function Navbar() {
           />
         </div>
 
-        {token && user ? (
+      {isLoading ? (
+        <div className="user-profile"></div>
+      ) : user ? (
           <div
             className={`user-profile ${isDropdownOpen ? "active" : ""}`}
             onClick={toggleDropdown} 
@@ -130,11 +94,13 @@ export default function Navbar() {
             {/* Dropdown เมนู */}
             <div className="dropdown" ref={dropdownRef}>
               <ul>
-                <li><a href="/editprofile">แก้ไขโปรไฟล์</a></li>
+                {user.role === "customer" &&  <li><a href="/editprofile">แก้ไขโปรไฟล์</a></li>}
                 {user.role === "customer" && <li><a href="/reservations">ดูรายละเอียดการจอง</a></li>}
                 {user.role === "customer" && <li><a href="/registerField">ลงทะเบียนสนาม</a></li>}
+                {user.role === "field_owner" && <li><a href="/editprofile">แก้ไขโปรไฟล์</a></li>}
                 {user.role === "field_owner" && <li><a href="/registerField">ลงทะเบียนสนาม</a></li>}
                 {user.role === "field_owner" && <li><a href="/myfield">สนามของฉัน</a></li>}
+                {user.role === "admin" && <li><a href="/editprofile">แก้ไขโปรไฟล์</a></li>}
                 {user.role === "admin" && <li><a href="/manager">จัดการผู้ใช้</a></li>}
                 {user.role === "admin" && <li><a href="/myfield">จัดการสนามกีฬา</a></li>}
                 {user.role === "admin" && <li><a href="/addfac">จัดการสิ่งอำนวยความสะดวก</a></li>}

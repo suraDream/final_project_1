@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import "@/app/css/myfield.css";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 export default function MyFieldPage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -13,51 +14,34 @@ export default function MyFieldPage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [fieldIdToDelete, setFieldIdToDelete] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, isLoading } = useAuth();
+
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    const token = localStorage.getItem("token");
-    const expiresAt = localStorage.getItem("expiresAt");
+    if (isLoading) return;
 
-    if (
-      !token ||
-      !storedUser ||
-      !expiresAt ||
-      Date.now() > parseInt(expiresAt)
-    ) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      localStorage.removeItem("expiresAt");
+    if (!user) {
       router.push("/login");
-      return;
     }
 
-    const user = JSON.parse(storedUser);
-    setCurrentUser(user);
-
-    if (user.status !== "ตรวจสอบแล้ว") {
+    if (user?.status !== "ตรวจสอบแล้ว") {
       router.push("/verification");
     }
 
-    if (user.role !== "admin" && user.role !== "field_owner") {
+    if (user?.role !== "admin" && user?.role !== "field_owner") {
       router.push("/");
     }
-    
-    setIsLoading(false);
-  }, []);
+  }, [user, isLoading, , router]);
 
   useEffect(() => {
     const fetchMyFields = async () => {
       try {
-        const token = localStorage.getItem("token");
-
         const res = await fetch(`${API_URL}/myfield/myfields`, {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
+          credentials: "include",
         });
 
         const data = await res.json();
@@ -96,16 +80,15 @@ export default function MyFieldPage() {
   };
 
   const confirmDeleteSubField = async () => {
-    const token = localStorage.getItem("token");
     try {
       const res = await fetch(
         `${API_URL}/field/delete/field/${fieldIdToDelete}`,
         {
           method: "DELETE",
           headers: {
-            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
+          credentials: "include",
         }
       );
 

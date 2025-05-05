@@ -1,9 +1,7 @@
 const jwt = require("jsonwebtoken");
 
 const authMiddleware = (req, res, next) => {
-  const token =
-    (req.cookies?.token) ||
-    (req.headers.authorization?.startsWith("Bearer ") && req.headers.authorization.split(" ")[1]);
+  const token = req.cookies?.token; // อ่านจาก cookie เท่านั้น
 
   console.log("Token ที่ได้รับ:", token);
 
@@ -19,7 +17,9 @@ const authMiddleware = (req, res, next) => {
 
     // เช็คว่า Token หมดอายุหรือยัง (เวลาปัจจุบันต้องน้อยกว่า `decoded.exp * 1000`)
     if (Date.now() >= decoded.exp * 1000) {
-      return res.status(401).json({ message: "Token หมดอายุ กรุณาเข้าสู่ระบบใหม่" });
+      return res
+        .status(401)
+        .json({ message: "Token หมดอายุ กรุณาเข้าสู่ระบบใหม่" });
     }
 
     next();

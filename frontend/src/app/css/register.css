@@ -1,5 +1,5 @@
 :root {
-  --text-color: #03045E;
+  --text-color: #03045e;
 }
 
 .register-container {
@@ -13,7 +13,7 @@
 }
 
 h2 {
-  color: var(--text-color); 
+  color: var(--text-color);
   margin-bottom: 20px;
 }
 
@@ -30,7 +30,7 @@ form {
 label {
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-color); 
+  color: var(--text-color);
   display: block;
   margin-bottom: 5px;
 }
@@ -45,7 +45,7 @@ input {
 }
 
 input:focus {
-  border-color:var(--text-color);
+  border-color: var(--text-color);
   box-shadow: 0 0 5px rgba(3, 4, 94, 0.5);
   outline: none;
 }
@@ -62,31 +62,31 @@ button {
 }
 
 button:hover {
-  background: #02226C;
+  background: #02226c;
 }
 
 .error-message {
   display: flex;
   align-items: center;
   gap: 5px;
-  color: #D90429;
+  color: #d90429;
   font-size: 14px;
   margin-top: 5px;
 }
 
 .error-message i {
-  color: #D90429;
+  color: #d90429;
 }
 
 input.error {
-  border-color: #D90429;
+  border-color: #d90429;
   background: rgba(217, 4, 41, 0.1);
 }
 
 .success-message {
   margin-top: 20px;
   background-color: #cce5ff;
-  color: var(--text-color); 
+  color: var(--text-color);
   padding: 10px;
   border-radius: 5px;
   font-size: 14px;
@@ -97,4 +97,37 @@ input.error {
 
 .success-message i {
   margin-right: 5px;
+}
+.login-title {
+  margin: 15px auto 5px auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  a {
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    display: inline-block;
+    font-size: 16px;
+    text-align: center;
+    background-color: #dddddd;
+    border: 1px solid #ddd;
+    color: #333;
+    transition: all 0.3s ease;
+  }
+}
+.login-link {
+  font-size: 14px;
+  color: #007bff;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+.login-link:hover {
+  color: #0056b3;
+}
+
+.login-title a:hover {
+  background-color: var(--text-color);
+  color: white;
+  cursor: pointer;
 }

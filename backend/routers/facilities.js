@@ -98,6 +98,30 @@ router.put("/update/:id",authMiddleware, async (req, res) => {
   }
 });
 
+router.get("/:field_id", async (req, res) => {
+  const { field_id } = req.params; // Get the field_id from the URL params
 
+  try {
+    // Fetch the facilities for the specified field_id
+    const result = await pool.query(
+      `SELECT f.fac_name, ff.fac_price
+       FROM field_facilities ff
+       INNER JOIN facilities f ON ff.facility_id = f.fac_id
+       WHERE ff.field_id = $1`, 
+      [field_id]  // Parameterized query to prevent SQL injection
+    );
+
+    // Check if any facilities were found for the given field_id
+    if (result.rows.length === 0) {
+      return res.status(200).json({ message: "No facilities found for this field." });
+    }
+
+    // Return the facilities data
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Database error:", error);
+    res.status(500).json({ error: "Database error fetching facilities" });
+  }
+});
 
 module.exports = router;

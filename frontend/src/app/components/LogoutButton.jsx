@@ -1,10 +1,14 @@
 "use client";
 import React, { useState } from "react";
 import "@/app/css/logoutbtn.css";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 export default function LogoutButton() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
   const [message, setMessage] = useState("");
+  const router = useRouter("");
+  const {setUser } = useAuth();
 
   const handleLogout = async () => {
     try {
@@ -16,11 +20,10 @@ export default function LogoutButton() {
       if (!response.ok) {
         throw new Error("เกิดข้อผิดพลาดระหว่างออกจากระบบ");
       }
-
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      sessionStorage.removeItem("token");  
-      window.location.href = "/login"; 
+      setUser(null);
+      localStorage.clear();
+      sessionStorage.clear();
+      router.push("/login");
     } catch (error) {
       console.error("Error:", error);
     }

@@ -1,8 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import "@/app/css/registerFieldForm.css";
-// import Navbar from "@/app/components/Navbar";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 export default function RegisterFieldForm() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -13,16 +13,16 @@ export default function RegisterFieldForm() {
   const [subFields, setSubFields] = useState([]);
   const [newFacility, setNewFacility] = useState("");
   const [showNewFacilityInput, setShowNewFacilityInput] = useState(false);
-  const [message, setMessage] = useState(""); 
-  const [messageType, setMessageType] = useState(""); 
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("");
+  const { user, isLoading } = useAuth();
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    const user = JSON.parse(storedUser);
-    if (user.status !== "ตรวจสอบแล้ว") {
+    if (isLoading) return;
+    if (user?.status !== "ตรวจสอบแล้ว") {
       router.push("/verification");
     }
-  },[router]);
+  }, [user, isLoading, router]);
 
   const [fieldData, setFieldData] = useState({
     field_name: "",
@@ -45,9 +45,8 @@ export default function RegisterFieldForm() {
 
   //  โหลดประเภทกีฬา
   useEffect(() => {
-    const token = localStorage.getItem("token");
     fetch(`${API_URL}/sports_types`, {
-      headers: { Authorization: `Bearer ${token}` },
+      credentials: "include",
     })
       .then((res) => res.json())
       .then((data) => setSports(data))
@@ -56,9 +55,8 @@ export default function RegisterFieldForm() {
 
   //  โหลดสิ่งอำนวยความสะดวก
   useEffect(() => {
-    const token = localStorage.getItem("token");
     fetch(`${API_URL}/facilities`, {
-      headers: { Authorization: `Bearer ${token}` },
+      credentials: "include",
     })
       .then((res) => res.json())
       .then((data) => setFacilities(data))
@@ -193,11 +191,10 @@ export default function RegisterFieldForm() {
   //  ฟังก์ชันเพิ่มสิ่งอำนวยความสะดวกใหม่
   const addNewFacility = async () => {
     if (!newFacility.trim()) return;
-    const token = localStorage.getItem("token");
     const res = await fetch(`${API_URL}/facilities/add`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      Authorization: `Bearer ${token}`,
+      credentials: "include",
       body: JSON.stringify({ fac_name: newFacility }),
     });
 
@@ -214,14 +211,10 @@ export default function RegisterFieldForm() {
 
   //  เพิ่มสนามย่อย (มี addOns ในตัวเอง)
   const addSubField = () => {
-    //  ดึง user_id จาก localStorage
-    const storedUser = localStorage.getItem("user");
-    const userData = storedUser ? JSON.parse(storedUser) : null;
-    const userId = userData ? userData.user_id : null; // ดึง user_id
-
+  
     setSubFields([
       ...subFields,
-      { name: "", price: "", sport_id: "", user_id: userId, addOns: [] },
+      { name: "", price: "", sport_id: "", user_id: user.user_id, addOns: [] },
     ]);
   };
 
@@ -269,16 +262,14 @@ export default function RegisterFieldForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const storedUser = localStorage.getItem("user");
-    if (!storedUser) {
+    
+    if (!user) {
       setMessage("กรุณาเข้าสู่ระบบก่อน!");
       setMessageType("error-message");
       return;
     }
 
-    const userData = JSON.parse(storedUser);
-    const userId = userData.user_id; // ดึง user_id ตอน Submit
+    const userId = user.user_id;
 
     // ตรวจสอบข้อมูลที่กรอกให้ครบถ้วน
     if (
@@ -361,10 +352,9 @@ export default function RegisterFieldForm() {
     );
 
     try {
-      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/field/register`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: "include",
         body: formData,
       });
 
@@ -420,9 +410,6 @@ export default function RegisterFieldForm() {
 
   return (
     <>
-      {/* <div className="navbar">
-        <Navbar></Navbar>
-      </div> */}
       {message && (
         <div className={`message-box ${messageType}`}>
           <p>{message}</p>

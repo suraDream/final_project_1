@@ -11,19 +11,16 @@ dayjs.extend(relativeTime);
 dayjs.locale("th");
 
 export default function HomePage() {
-  const API_URL = 'http://localhost:5000';
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
   const router = useRouter();
   const [postData, setPostData] = useState([]);
   const [imageIndexes, setImageIndexes] = useState({});
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-
     fetch(`${API_URL}/posts`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
       },
     })
       .then((res) => res.json())
@@ -75,7 +72,7 @@ export default function HomePage() {
         });
         return newIndexes;
       });
-    }, 3000); 
+    }, 5000); 
   
     return () => clearInterval(interval); 
   }, [postData]);
@@ -99,7 +96,7 @@ export default function HomePage() {
 
       <div className="homepage">
         <div className="news-section">
-          <div className="title-notice">ข่าวสาร !!!</div>
+          <div className="title-notice">ข่าวสาร</div>
           {postData.map((post) => (
             <div key={post.post_id} className="post-card">
               <h2 className="post-title">{post.content}</h2>
