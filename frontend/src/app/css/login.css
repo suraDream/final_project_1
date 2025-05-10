@@ -2,6 +2,27 @@
   --text-color: #03045e;
 }
 
+.password-wrapper-login {
+  position: relative;
+}
+
+.password-wrapper-login input {
+  width: 100%;
+  padding-right: 60px; 
+}
+
+.toggle-password-btn-login {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #333;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
 .login-container {
   max-width: 350px;
   margin: 100px auto;
@@ -12,30 +33,30 @@
   text-align: center;
 }
 
-h2 {
+.login-container h2 {
   color: var(--text-color);
   margin-bottom: 20px;
 }
 
-form {
+.login-container form {
   display: flex;
   flex-direction: column;
 }
 
-.input-group {
+.input-group-login {
   margin-bottom: 15px;
   text-align: left;
 }
 
-label {
-  font-size: 14px;
+.input-group-login label {
+  font-size: 16px;
   font-weight: 600;
   color: var(--text-color);
   display: block;
   margin-bottom: 5px;
 }
 
-input {
+.input-group-login input {
   width: 100%;
   padding: 10px;
   border: 1px solid #ccc;
@@ -44,13 +65,18 @@ input {
   transition: 0.3s;
 }
 
-input:focus {
+.input-group-login input:focus {
   border-color: var(--text-color);
   box-shadow: 0 0 5px rgba(3, 4, 94, 0.5);
   outline: none;
 }
 
-button {
+.login-button {
+  width: 100%;
+  margin: auto;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
   background: var(--text-color);
   color: white;
   border: none;
@@ -61,7 +87,7 @@ button {
   transition: 0.3s;
 }
 
-button:hover {
+.login-button:hover {
   background: #02226c;
 }
 
@@ -77,23 +103,24 @@ button:hover {
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.message {
+.login-container .message {
+  text-align: center;
   padding: 10px;
   border-radius: 5px;
   margin-top: 20px;
 }
 
-.message.error {
+.login-container .message.error {
   background-color: #f8d7da;
   color: #d90429;
 }
 
-.message.success {
+.login-container .message.success {
   background-color: #cce5ff;
   color: var(--text-color);
 }
 
-.message i {
+.login-container .message i {
   margin-right: 5px;
 }
 

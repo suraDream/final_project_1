@@ -6,8 +6,8 @@ import "@/app/css/confirmResetPassword.css";
 export default function ConfirmResetPassword() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [message, setMessage] = useState(""); // State สำหรับข้อความ
-  const [messageType, setMessageType] = useState(""); // State สำหรับประเภทของข้อความ (error, success)
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("");
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
   const router = useRouter("");
 
@@ -15,13 +15,10 @@ export default function ConfirmResetPassword() {
     const expiresAt = JSON.parse(sessionStorage.getItem("expiresAt"));
     if (Date.now() < expiresAt) {
       const user = JSON.parse(sessionStorage.getItem("user"));
-      if (user?.status !== "ตรวจสอบแล้ว") {
-        router.push("/verification");
-      }
     } else {
       sessionStorage.removeItem("expiresAt");
       sessionStorage.removeItem("user");
-      router.push("/resetPassword");
+      router.replace("/resetPassword");
     }
   }, []);
 
@@ -31,9 +28,9 @@ export default function ConfirmResetPassword() {
     if (!user_id) {
       setMessage("session หมดอายุกรุณาทำรายการใหม่");
       setMessageType("error");
-      setTimeout(()=>{
-        router.push("/resetPassword")
-      },2000)
+      setTimeout(() => {
+        router.replace("/resetPassword");
+      }, 2000);
       return;
     }
 
@@ -96,7 +93,7 @@ export default function ConfirmResetPassword() {
         sessionStorage.removeItem("user");
         sessionStorage.removeItem("expiresAt");
         setTimeout(() => {
-          router.push("/login");
+          router.replace("/login");
         }, 2000);
       } else {
         setMessage(result.message || "เกิดข้อผิดพลาดในการอัปเดตรหัสผ่าน");
@@ -121,36 +118,39 @@ export default function ConfirmResetPassword() {
 
   return (
     <div>
-      {message && (
-        <div className={`message-box ${messageType}`}>
-          <p>{message}</p>
-        </div>
-      )}
-      <div className="container">
-        <div className="head-titel">
+      <div className="confirm-reset-password-container">
+        {message && (
+          <div className={`message-box ${messageType}`}>
+            <p>{message}</p>
+          </div>
+        )}
+        <div className="confirm-reset-password-head-titel">
           <h1>เปลี่ยนรหัสผ่าน</h1>
         </div>
-        <form action={handlePasswordChange}>
-          <label>รหัสใหม่</label>
-          <div className="input">
+        <form
+          action={handlePasswordChange}
+          className="confirm-reset-password-form"
+        >
+          <label className="newpassword-title">รหัสใหม่</label>
+          <div className="input-comfirm-resert">
             <input
+              maxLength={50}
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
             />
           </div>
-          <label>ยืนยันรหัสใหม่</label>
-          <div className="input">
+          <label className="newpassword-title">ยืนยันรหัสใหม่</label>
+          <div className="input-comfirm-resert">
             <input
+              maxLength={50}
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
           </div>
-          <div className="btn">
-            <button type="submit" className="btn">
-              ยืนยัน
-            </button>
+          <div className="btn-confirm-reset-password">
+            <button type="submit">ยืนยัน</button>
           </div>
         </form>
       </div>

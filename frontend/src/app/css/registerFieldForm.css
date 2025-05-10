@@ -8,7 +8,7 @@
   justify-content: center;
   text-align: center;
 }
-.contianer {
+.field-register-contianer {
   width: 100%;
   max-width: 700px;
   margin: 100px auto;
@@ -19,7 +19,7 @@
   text-align: left;
 }
 
-form {
+.field-register-contianer form {
   display: flex;
   flex-direction: column;
 }
@@ -68,37 +68,39 @@ form {
   gap: 10px;
 }
 
-.input-group {
+.input-group-register-field {
   margin-top: 20px;
   margin-bottom: 20px;
   text-align: left;
 }
 
-.input-group-deposit {
+.input-group-deposit-regisfield {
   margin-top: 5px;
 }
 
-.depositcon {
+.depositcon-regisfield {
   border-radius: 5px;
   padding: 10px 10px 10px 10px;
   border: #b3b3b3 solid 1px;
   margin-bottom: 10px;
 }
-.factcon {
+.factcon-register-field {
+  max-height: 300px;
+  overflow-y: auto;
   border-radius: 5px;
   margin-bottom: 10px;
   padding: 10px 10px 0px 10px;
   border: #b3b3b3 solid 1px;
 }
 
-.input-group label {
+.input-group-register-field label {
   font-size: 20px;
   font-weight: 600;
   margin: 0px 0px 10px 0px;
   text-align: left;
 }
 
-.preview-container {
+.preview-container-regis-field {
   margin: 0px auto 25px auto;
   text-align: center;
   border: 2px solid #ddd;
@@ -110,49 +112,48 @@ form {
   border-radius: 8px;
 }
 
-.preview-container img {
+.preview-container-regis-field img {
   width: 100%;
   height: 100%;
 }
 
-.facility-item {
+.facility-item-register-field {
   display: flex;
   flex-direction: column;
   margin-bottom: 15px;
 }
 
-.input-group-checkbox {
+.input-group-checkbox-register-field {
+  flex-wrap: wrap;
   display: flex;
-  align-items: center;
   margin-bottom: 0px;
 }
 
-.input-group-checkbox input[type="checkbox"] {
-  margin-right: 10px;
+.input-group-checkbox-register-field input[type="checkbox"] {
+  margin-right: 20px;
   width: 20px;
   height: 20px;
   accent-color: #333;
   cursor: pointer;
 }
 
-.input-group-checkbox input[type="checkbox"]:checked + label {
+.input-group-checkbox-register-field input[type="checkbox"]:checked + label {
   color: var(--text-color); /* เปลี่ยนสีข้อความเมื่อเลือก checkbox */
 }
 
-.input-group-checkbox label:hover {
+.input-group-checkbox-register-field label:hover {
   color: #3498db;
 }
 
-label {
-  font-size: 16px;
-  font-weight: 500;
+.input-group-register-field label {
+  font-size: 18px;
+  font-weight: 600;
   color: var(--text-color);
   display: block;
   margin-bottom: 5px;
 }
 
-input {
-  margin: 10px;
+.input-group-register-field input {
   width: 100%;
   padding: 10px;
   border: 1px solid #ccc;
@@ -161,23 +162,23 @@ input {
   transition: 0.3s;
 }
 
-input:focus {
+.input-group-register-field input:focus {
   border-color: var(--text-color);
   box-shadow: 0 0 5px rgba(3, 4, 94, 0.5);
   outline: none;
 }
-.addbtn {
+.addbtn-regisfield {
   background-color: #28a745;
   margin: 0px 0px 10px 0px;
 }
-.addbtn:hover {
+.addbtn-regisfield:hover {
   background: #21cd49;
 }
-.delbtn {
+.delbtn-regisfield {
   background-color: red;
   margin: 0px 0px 10px 10px;
 }
-.delbtn:hover {
+.delbtn-regisfield:hover {
   background-color: rgba(255, 0, 0, 0.774);
 }
 .delevn {
@@ -187,45 +188,44 @@ input:focus {
 .delevn:hover {
   background-color: rgba(255, 0, 0, 0.774);
 }
-.addsubfield {
+.addsubfield-regisfield {
   background-color: #28a745;
   margin: 10px 0px 10px 250px;
 }
-.addsubfield:hover {
+.addsubfield-regisfield:hover {
   background: #21cd49;
 }
-.addfac {
+.addfac-regisfield {
   background-color: #28a745;
   margin: 10px 0px 10px 0px;
 }
-.addfac:hover {
+.addfac-regisfield:hover {
   background: #21cd49;
 }
-.savebtn {
+.savebtn-regisfield {
   background-color: #28a745;
   margin: 10px 0px 20px 0px;
 }
-.savebtn:hover {
+.savebtn-regisfield:hover {
   background: #21cd49;
 }
-.canbtn {
+.canbtn-regisfield {
   background-color: red;
   margin: 10px 0px 20px 10px;
 }
-.canbtn:hover {
+.canbtn-regisfield:hover {
   background-color: rgba(255, 0, 0, 0.774);
 }
-.submitbtn {
+.submitbtn-regisfield {
   border-radius: 0px;
   margin: 10px 0px 10px 0px;
   background-color: var(--text-color);
 }
-.submitbtn:hover {
+.submitbtn-regisfield:hover {
   background-color: #02226c;
 }
 
-button {
-  background: var(--text-color);
+.field-register-contianer button {
   color: white;
   border: none;
   padding: 12px;
@@ -235,8 +235,7 @@ button {
   transition: 0.3s;
 }
 
-/* Style for the message box */
-.message-box {
+.field-register-contianer .message-box {
   position: fixed;
   top: 50%;
   left: 50%;
@@ -249,36 +248,28 @@ button {
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
-.error-message {
+.field-register-contianer .error-message {
   display: flex;
   align-items: center;
-  color: #d90429;
   background-color: #ffd4cc;
+}
+.field-register-contianer .error-message p {
+  color: #d90429;
   font-size: 14px;
 }
 
-.success-message {
+.field-register-contianer .success-message {
   background-color: #d4edda;
-  color: #155724;
   border: 1px solid #c3e6cb;
-  font-size: 14px;
   display: flex;
+  align-items: center;
+}
+.field-register-contianer .success-message p{
+  color: #155724;
+  font-size: 14px;
 }
 
-.success-message i {
-  margin-right: 5px;
-}
-/* Optional: Add animations or transitions */
-.message-box {
-  transition: opacity 0.5s ease-in-out;
-}
-
-/* Optional: Fade out the message after 3 seconds */
-.message-box.fade-out {
-  opacity: 0;
-}
-
-select {
+.field-register-contianer select {
   appearance: none; /* ลบสไตล์ดีฟอลต์ของเบราว์เซอร์ */
   background-color: white;
   border-color: var(--text-color);
@@ -291,8 +282,7 @@ select {
   outline: none;
 }
 
-/* เพิ่มไอคอนลูกศร */
-select {
+.field-register-contianer select {
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='24' height='24' fill='gray'><path d='M7 10l5 5 5-5z'/></svg>");
   background-repeat: no-repeat;
   background-position: right 10px center;
@@ -300,26 +290,26 @@ select {
   padding-right: 35px;
 }
 
-select:hover {
+.field-register-contianer select:hover {
   border-color: var(--text-color);
 }
 
-select:focus {
+.field-register-contianer select:focus {
   border-color: var(--text-color);
 }
 
-option {
+.field-register-contianer option {
   background-color: white;
   color: #333;
   padding: 10px;
 }
 
-option:checked {
+.field-register-contianer option:checked {
   background-color: var(--text-color);
   color: white;
 }
 
-input[type="time"] {
+.field-register-contianer input[type="time"] {
   width: 200px;
   padding: 8px;
   font-size: 16px;
@@ -330,7 +320,7 @@ input[type="time"] {
   transition: all 0.3s ease;
 }
 
-input[type="time"]:focus {
+.field-register-contianer input[type="time"]:focus {
   border-color: var(--text-color);
   background-color: #fff;
   outline: none;
@@ -342,7 +332,7 @@ input[type="time"]:focus {
   box-sizing: border-box; /* รวม padding และ border ในการคำนวณความกว้าง */
 }
 
-textarea {
+.field-register-contianer textarea {
   width: 100%;
   height: 150px;
   padding: 10px;
@@ -353,7 +343,7 @@ textarea {
 }
 
 @media screen and (max-width: 880px) {
-  .contianer {
+  .field-register-contianer {
     width: 100%;
     max-width: 500px;
     margin: 100px auto;
@@ -364,7 +354,7 @@ textarea {
     flex-direction: column;
     gap: 0px;
   }
-  input[type="time"] {
+  .field-register-contianer input[type="time"] {
     width: 100%;
     font-size: 10px;
     transition: all 0.3s ease;
@@ -372,19 +362,18 @@ textarea {
   .open-days-container {
     margin-top: 0px;
   }
-  .addsubfield {
+  .addsubfield-regisfield {
     margin: 0px 0px 0px 0px;
   }
 }
 @media screen and (max-width: 550px) {
-  .contianer {
+  .field-register-contianer {
     width: 100%;
     max-width: 400px;
     margin: 100px auto;
     padding: 20px;
   }
-  button {
-    background: var(--text-color);
+  .field-register-contianer button {
     color: white;
     border: none;
     padding: 8px;
@@ -393,17 +382,17 @@ textarea {
     border-radius: 20px;
     transition: 0.3s;
   }
-  .delbtn {
+  .delbtn-regisfield {
     margin: 0px 0px 0px 0px;
   }
   .delevn {
     margin: 0px 0px 0px 0px;
   }
-  .input-group {
+  .input-group-register-field {
     margin-top: 10px;
     margin-bottom: 10px;
   }
-  .input-group label {
+  .input-group-register-field label {
     font-size: 16px;
     font-weight: 600;
     margin-bottom: 5px;
@@ -428,7 +417,7 @@ textarea {
     gap: 15px;
   }
 
-  .input-group-checkbox {
+  .input-group-checkbox-register-field {
     display: flex;
     flex-wrap: wrap;
     width: 100%;
@@ -442,7 +431,7 @@ textarea {
     justify-content: center;
     text-align: center;
   }
-  .contianer {
+  .field-register-contianer {
     width: 100%;
     max-width: 280px;
     margin: 100px auto;
@@ -462,7 +451,7 @@ textarea {
     gap: 15px;
   }
 
-  .input-group-checkbox {
+  .input-group-checkbox-register-field {
     display: flex;
     flex-wrap: wrap;
     width: 100%;
@@ -476,17 +465,17 @@ textarea {
     margin: 10px 0px 0px 5px;
   }
 
-  .input-group {
+  .input-group-register-field {
     margin-top: 10px;
     margin-bottom: 10px;
   }
-  .input-group label {
+  .input-group-register-field label {
     font-size: 14px;
     font-weight: 600;
     margin-bottom: 5px;
   }
-  .input-group input::placeholder,
-  .input-group select::placeholder {
-    font-size: 12px; /* ลดฟอนต์มากขึ้น */
+  .input-group-register-field input::placeholder,
+  .input-group-register-field select::placeholder {
+    font-size: 12px;
   }
 }

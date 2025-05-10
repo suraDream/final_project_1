@@ -23,7 +23,7 @@ export default function LogoutButton() {
       setUser(null);
       localStorage.clear();
       sessionStorage.clear();
-      router.push("/login");
+      router.replace("/login");
     } catch (error) {
       console.error("Error:", error);
     }

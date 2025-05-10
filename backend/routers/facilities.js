@@ -4,7 +4,7 @@ const pool = require("../db");
 const authMiddleware = require("../middlewares/auth");
 
 // ดึงรายการสิ่งอำนวยความสะดวกทั้งหมด
-router.get("/",authMiddleware, async (req, res) => {
+router.get("/", authMiddleware, async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM facilities");
     res.json(result.rows);
@@ -14,14 +14,16 @@ router.get("/",authMiddleware, async (req, res) => {
 });
 
 // เพิ่มสิ่งอำนวยความสะดวกใหม่
-router.post("/add",authMiddleware, async (req, res) => {
-  const { fac_name } = req.body;
+router.post("/add", authMiddleware, async (req, res) => {
+  let { fac_name } = req.body;
 
-  if (!fac_name) {
+  if (!fac_name || fac_name.trim() === "") {
     return res.status(400).json({ error: "Facility name is required" });
   }
 
-  // ตรวจสอบชื่อสิ่งอำนวยความสะดวกซ้ำ
+  fac_name = fac_name.trim(); // ตัดช่องว่างหน้าหลังออกก่อน
+
+  // ตรวจสอบชื่อสิ่งอำนวยความสะดวกซ้ำ (หลัง trim)
   const existingFacility = await pool.query(
     "SELECT * FROM facilities WHERE fac_name = $1",
     [fac_name]
@@ -42,9 +44,8 @@ router.post("/add",authMiddleware, async (req, res) => {
   }
 });
 
-
 // ลบสิ่งอำนวยความสะดวก
-router.delete("/delete/:id",authMiddleware, async (req, res) => {
+router.delete("/delete/:id", authMiddleware, async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -64,9 +65,10 @@ router.delete("/delete/:id",authMiddleware, async (req, res) => {
 });
 
 // แก้ไขชื่อสิ่งอำนวยความสะดวก
-router.put("/update/:id",authMiddleware, async (req, res) => {
+router.put("/update/:id", authMiddleware, async (req, res) => {
   const { id } = req.params;
-  const { fac_name } = req.body;
+  let { fac_name } = req.body;
+  fac_name = fac_name?.trim();
 
   if (!fac_name) {
     return res.status(400).json({ error: "Facility name is required" });
@@ -99,24 +101,24 @@ router.put("/update/:id",authMiddleware, async (req, res) => {
 });
 
 router.get("/:field_id", async (req, res) => {
-  const { field_id } = req.params; // Get the field_id from the URL params
+  const { field_id } = req.params; 
 
   try {
-    // Fetch the facilities for the specified field_id
+    
     const result = await pool.query(
-      `SELECT f.fac_name, ff.fac_price
+      `SELECT  ff.field_fac_id,f.fac_id, f.fac_name, ff.fac_price
        FROM field_facilities ff
        INNER JOIN facilities f ON ff.facility_id = f.fac_id
-       WHERE ff.field_id = $1`, 
-      [field_id]  // Parameterized query to prevent SQL injection
+       WHERE ff.field_id = $1`,
+      [field_id] 
     );
 
-    // Check if any facilities were found for the given field_id
     if (result.rows.length === 0) {
-      return res.status(200).json({ message: "No facilities found for this field." });
+      return res
+        .status(200)
+        .json({ message: "No facilities found for this field." });
     }
 
-    // Return the facilities data
     res.json(result.rows);
   } catch (error) {
     console.error("Database error:", error);

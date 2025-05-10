@@ -22,6 +22,7 @@ app.use('/uploads/images', express.static(path.join(__dirname, 'uploads/images')
 app.use('/uploads/images/posts', express.static(path.join(__dirname, 'uploads/images/posts')));
 app.use('/uploads/documents', express.static(path.join(__dirname, 'uploads/documents')));
 app.use(cookieParser());
+app.use('/uploads/images/slip', express.static(path.join(__dirname, 'uploads/images/slip')));
 
 const registerRoute = require("./routers/register");
 const loginRoute = require("./routers/login");

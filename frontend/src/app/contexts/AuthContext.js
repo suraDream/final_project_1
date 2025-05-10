@@ -20,7 +20,7 @@ export function AuthProvider({ children }) {
         if (res.ok) {
           const data = await res.json();
           setUser(data);
-          console.log(data);
+          // console.log(data);
         } else {
           setUser(null);
         }

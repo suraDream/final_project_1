@@ -15,15 +15,15 @@ export default function Verification() {
   const { user, isLoading } = useAuth();
 
   useEffect(() => {
-    if (isLoading) return; // ถ้า loading อยู่ ห้ามทำอะไร
+    if (isLoading) return; 
 
     if (!user) {
-      router.push("/login");
+      router.replace("/login");
       return;
     }
 
     if (user?.status === "ตรวจสอบแล้ว") {
-      router.push("/");
+      router.replace("/");
     }
 
   }, [user, isLoading, router]);
@@ -33,7 +33,7 @@ export default function Verification() {
 
   useEffect(() => {
     if (timer === 0) {
-      setCanRequestOTP(true); // เมื่อเวลา 0, ให้ผู้ใช้ขอ OTP ใหม่ได้
+      setCanRequestOTP(true);
     } else if (!canRequestOTP) {
       const interval = setInterval(() => {
         setTimer((prevTimer) => prevTimer - 1);
@@ -58,11 +58,10 @@ export default function Verification() {
 
       const result = await res.json();
       if (res.ok) {
-        console.log(result);
         setMessage("ยืนยัน E-mail สำเร็จ");
         setMessageType("success");
         setTimeout(() => {
-          router.push("/");
+          router.replace("/");
         }, 1500);
       } else {
         setMessage(result.message);
@@ -98,7 +97,6 @@ export default function Verification() {
       const result = await res.json();
 
       if (res.ok) {
-        console.log(result);
         setMessage(`OTP ใหม่ถูกส่งไปยัง ${userEmail}`);
         setMessageType("success");
       } else {
@@ -126,17 +124,17 @@ export default function Verification() {
 
   return (
     <>
+      <div className="verification-container">
       {message && (
         <div className={`message-box ${messageType}`}>
           <p>{message}</p>
         </div>
       )}
-      <div className="verification-container">
         <div className="head-titel">
           <h1>ยืนยันบัญชี</h1>
         </div>
         <form onSubmit={noSave}>
-          <div className="input">
+          <div className="input-verify">
             <input
               required
               maxLength={6}
@@ -146,7 +144,7 @@ export default function Verification() {
               onChange={(e) => setOtp(e.target.value)}
             />
           </div>
-          <div className="btn-resend">
+          <div className="btn-resend-otp">
             <button
               disabled={!canRequestOTP}
               type="button"
@@ -157,8 +155,8 @@ export default function Verification() {
             {!canRequestOTP && <p>กรุณารอ {timer} วินาทีก่อนขอ OTP ใหม่</p>}
             <p> (OTP มีเวลา 5 นาที ถ้าหมดต้องกดขอใหม่) </p>
           </div>
-          <div className="btn">
-            <button className="btn" type="submit">
+          <div className="btn-submit-verify">
+            <button type="submit">
               ยืนยัน
             </button>
           </div>

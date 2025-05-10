@@ -3,17 +3,17 @@
 import { useState, useEffect } from "react";
 import "@/app/css/postField.css";
 
-const CreatePost = ({ fieldId,onPostSuccess }) => {
+const CreatePost = ({ fieldId, onPostSuccess }) => {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [images, setImages] = useState([]);
   const [showPostForm, setShowPostForm] = useState(false);
-  const [message, setMessage] = useState(""); // State for messages
-  const [messageType, setMessageType] = useState(""); // State for message type (error, success)
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("");
 
-  const MAX_FILE_SIZE = 8 * 1024 * 1024; // 8 MB
-  const MAX_FILES = 10; // Limit to 10 files
+  const MAX_FILE_SIZE = 8 * 1024 * 1024;
+  const MAX_FILES = 10;
 
   const handleFileChange = (e) => {
     const files = e.target.files;
@@ -23,22 +23,19 @@ const CreatePost = ({ fieldId,onPostSuccess }) => {
     if (files.length + images.length > MAX_FILES) {
       setMessage(`คุณสามารถอัพโหลดได้สูงสุด ${MAX_FILES} รูป`);
       setMessageType("error");
-      e.target.value = null; // Reset the input value
+      e.target.value = null;
       return;
     }
 
     for (let file of files) {
-      // Check file size
       if (file.size > MAX_FILE_SIZE) {
         setMessage("ไฟล์รูปภาพมีขนาดใหญ่เกินไป (สูงสุด 8MB)");
         setMessageType("error");
         isValid = false;
-        break; // Stop checking further files
+        break;
       }
 
-      // Check file type (must be an image)
       if (file.type.startsWith("image/")) {
-        // Check if the file is already in the images state (prevent duplicates)
         const isDuplicate = images.some(
           (existingFile) => existingFile.name === file.name
         );
@@ -49,19 +46,17 @@ const CreatePost = ({ fieldId,onPostSuccess }) => {
         setMessage("โปรดเลือกเฉพาะไฟล์รูปภาพเท่านั้น");
         setMessageType("error");
         isValid = false;
-        break; // Stop checking further files
+        break;
       }
     }
 
     if (isValid) {
-      // Add the valid files to the images state
       setImages((prevImages) => [...prevImages, ...validFiles]);
     } else {
-      e.target.value = null; // Clear the input value if invalid files are selected
+      e.target.value = null;
     }
   };
 
-  // Handle image removal
   const removeImage = (fileName) => {
     setImages(images.filter((image) => image.name !== fileName));
   };
@@ -78,7 +73,7 @@ const CreatePost = ({ fieldId,onPostSuccess }) => {
     const formData = new FormData();
     formData.append("title", title);
     formData.append("content", content);
-    formData.append("field_id", fieldId); // Ensure field_id is added to the form data
+    formData.append("field_id", fieldId);
 
     images.forEach((image) => {
       formData.append("img_url", image);
@@ -87,7 +82,7 @@ const CreatePost = ({ fieldId,onPostSuccess }) => {
     try {
       const response = await fetch(`${API_URL}/posts/post`, {
         method: "POST",
-        credentials:"include",
+        credentials: "include",
         body: formData,
       });
 
@@ -141,7 +136,7 @@ const CreatePost = ({ fieldId,onPostSuccess }) => {
 
       {showPostForm && (
         <form onSubmit={handleSubmit} className="post-form">
-          <div className="form-group">
+          <div className="form-group-post">
             <label>หัวข้อ</label>
             <input
               type="text"
@@ -152,7 +147,7 @@ const CreatePost = ({ fieldId,onPostSuccess }) => {
             />
           </div>
 
-          <div className="form-group">
+          <div className="form-group-post">
             <label>เนื้อหา</label>
             <textarea
               value={title}
@@ -161,18 +156,20 @@ const CreatePost = ({ fieldId,onPostSuccess }) => {
               maxLength={255}
             ></textarea>
           </div>
-
-          <div className="form-group">
-            <label>อัปโหลดรูปภาพ</label>
-            <input
-              type="file"
-              onChange={handleFileChange}
-              multiple
-              accept="image/*"
-            />
+          <div className="form-group-post">
+            <label className="file-label-post">
+              <input
+                multiple
+                type="file"
+                onChange={handleFileChange}
+                accept="image/*"
+                className="file-input-hidden-post"
+              />
+              เลือกรูปภาพ
+            </label>
           </div>
 
-          <div className="image-preview-container">
+          <div className="image-preview-container-post">
             {images.length > 0 && (
               <div>
                 <h3>รูปภาพที่เลือก</h3>
@@ -198,7 +195,7 @@ const CreatePost = ({ fieldId,onPostSuccess }) => {
             )}
           </div>
 
-          <button type="submit" className="submit-btn">
+          <button type="submit" className="submit-btn-post">
             สร้างโพส
           </button>
           <button

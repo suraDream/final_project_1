@@ -2,7 +2,7 @@
   --text-color: #03045e;
 }
 
-.message-box {
+.verification-container .message-box {
   position: fixed;
   top: 50%;
   left: 50%;
@@ -15,20 +15,24 @@
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
-.error {
+.verification-container .error {
   display: flex;
   align-items: center;
-  color: #d90429;
   background-color: #ffd4cc;
+}
+.verification-container .error p {
+  color: #d90429;
   font-size: 14px;
 }
 
-.success {
+.verification-container .success {
   background-color: #d4edda;
-  color: #155724;
   border: 1px solid #c3e6cb;
-  font-size: 14px;
   display: flex;
+}
+.verification-container .success p {
+  color: #155724;
+  font-size: 14px;
 }
 
 .verification-container {
@@ -44,18 +48,18 @@
   flex-direction: column;
 }
 
-.head-titel{
+.head-titel {
   margin: 10px;
 }
-p{
+.verification-container p {
   font-size: 14px;
 }
-h1 {
+.verification-container h1 {
   color: var(--text-color);
   text-align: center;
   font-size: 24px;
 }
-.input input {
+.input-verify input {
   margin: 20px auto 30px auto;
   padding: 8px;
   border: 1px solid #ccc;
@@ -63,14 +67,14 @@ h1 {
   font-size: 16px;
   width: 80%;
   max-width: 100%;
-  box-sizing: border-box; 
+  box-sizing: border-box;
 }
-.btn-resend {
+.btn-resend-otp {
   margin: 20px auto 0px auto;
 }
 
-.btn button {
-  width: 100%;
+.btn-submit-verify button {
+  width: 70%;
   margin-top: 10px;
   margin-bottom: 20px;
   padding: 10px 20px;
@@ -81,21 +85,21 @@ h1 {
   cursor: pointer;
   font-size: 16px;
 }
-.btn button:hover {
+.btn-submit-verify button:hover {
   background-color: #45a049;
 }
-.btn-resend button{
+.btn-resend-otp button {
   width: 50%;
   margin-top: 10px;
   margin-bottom: 20px;
   padding: 10px 20px;
-  background-color:var(--text-color);
+  background-color: var(--text-color);
   color: white;
   border: none;
   border-radius: 5px;
   cursor: pointer;
   font-size: 16px;
 }
-.btn-resend button:hover {
+.btn-resend-otp button:hover {
   background-color: #041f6b;
 }

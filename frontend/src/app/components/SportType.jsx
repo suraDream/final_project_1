@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation"; // ใช้ Next.js navigation
+import { useRouter } from "next/navigation";
 import "@/app/css/HomePage.css";
 
 export default function HomePage() {
@@ -22,7 +22,6 @@ export default function HomePage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.error) {
-          console.log("ไม่พบข้อมูลประเภทกีฬา");
         } else {
           setSportsCategories(data); 
         }
@@ -44,7 +43,6 @@ export default function HomePage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.error) {
-          console.log("ไม่พบข้อมูลสนามกีฬา");
         } else {
           setApprovedFields(data);
         }
@@ -87,13 +85,13 @@ export default function HomePage() {
 
   return (
     <>
-      <div className="container">
+      <div className="container-home">
         <div className="section-title-container">
-          <h2 className="section-title">สนามที่แนะนำ</h2>
+          <h2 className="section-title-home">สนามที่แนะนำ</h2>
           <select
             value={selectedSport}
             onChange={handleSportChange}
-            className="sport-select"
+            className="sport-select-main"
           >
             <option value="">ประเภทกีฬาทั้งหมด</option>
             {sportsCategories.map((category) => (
@@ -104,12 +102,12 @@ export default function HomePage() {
           </select>
         </div>
 
-        <div className="grid">
+        <div className="grid-home">
           {approvedFields.length > 0 ? (
             approvedFields.map((field, index) => (
               <div
-                key={`${field.field_id}-${index}`} // Combine field_id and index to ensure uniqueness
-                className="card"
+                key={`${field.field_id}-${index}`}
+                className="card-home"
                 onClick={() => router.push(`/profile/${field.field_id}`)}
               >
                 <img
@@ -119,25 +117,25 @@ export default function HomePage() {
                       : "https://via.placeholder.com/300x200"
                   }
                   alt={field.field_name}
-                  className="card-img"
+                  className="card-img-home"
                 />
-                <div className="card-body">
+                <div className="card-body-home">
                   <h3>{field.field_name}</h3>
-                  <div className="firstname">
+                  <div className="firsttime-home">
                     <p className="filedname">
                       <span className="first-label-time">เปิดเวลา: </span>
                       {field.open_hours} น. - {field.close_hours} น.
                     </p>
                   </div>
-                  <div className="firstopen">
+                  <div className="firstopen-home">
                     <p>
-                      <span className="first-label-date">เปิด: </span>
+                      <span className="first-label-time">วันทำการ: </span>
                       {convertToThaiDays(field.open_days)}
                     </p>
                   </div>
-                  <div className="firstopen">
+                  <div className="firstopen-home">
                     <p>
-                      <span className="first-label-date">ประเภทกีฬา: </span>
+                      <span className="first-label-time">กีฬา: </span>
                       {convertToThaiDays(field.sport_name)}
                     </p>
                   </div>
@@ -145,7 +143,7 @@ export default function HomePage() {
               </div>
             ))
           ) : (
-            <div className="load">กำลังโหลด...</div>
+            <div> </div>
           )}
 
           {approvedFields.length === 0 && (

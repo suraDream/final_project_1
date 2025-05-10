@@ -19,8 +19,12 @@ export default function RegisterFieldForm() {
 
   useEffect(() => {
     if (isLoading) return;
+    
+    if (!user) {
+      router.replace("/login");
+    }
     if (user?.status !== "ตรวจสอบแล้ว") {
-      router.push("/verification");
+      router.replace("/verification");
     }
   }, [user, isLoading, router]);
 
@@ -201,6 +205,8 @@ export default function RegisterFieldForm() {
     const data = await res.json();
     if (data.error) {
       console.error("Error:", data.error);
+      setMessage("สิ่งอำนวยความสะดวกนี้มีอยู่แล้ว");
+      setMessageType("error-message");
       return;
     }
 
@@ -211,7 +217,6 @@ export default function RegisterFieldForm() {
 
   //  เพิ่มสนามย่อย (มี addOns ในตัวเอง)
   const addSubField = () => {
-  
     setSubFields([
       ...subFields,
       { name: "", price: "", sport_id: "", user_id: user.user_id, addOns: [] },
@@ -262,7 +267,7 @@ export default function RegisterFieldForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!user) {
       setMessage("กรุณาเข้าสู่ระบบก่อน!");
       setMessageType("error-message");
@@ -389,7 +394,7 @@ export default function RegisterFieldForm() {
       setSelectedFacilities({}); // เคลียร์สิ่งอำนวยความสะดวก
       setTimeout(() => {
         setMessage("");
-        router.push("");
+        router.replace("");
       }, 3000);
     } catch (error) {
       console.error("Fetch Error:", error);
@@ -410,41 +415,44 @@ export default function RegisterFieldForm() {
 
   return (
     <>
-      {message && (
-        <div className={`message-box ${messageType}`}>
-          <p>{message}</p>
-        </div>
-      )}
-      <div className="contianer">
+      <div className="field-register-contianer">
+        {message && (
+          <div className={`message-box ${messageType}`}>
+            <p>{message}</p>
+          </div>
+        )}
         <div className="heder">
-          <h1>ลงทะเบียนสนามกีฬา</h1>
+          <h1 className="field-register">ลงทะเบียนสนามกีฬา</h1>
         </div>
         <form onSubmit={handleSubmit} encType="multipart/form-data">
-          <div className="input-group">
+          <div className="input-group-register-field">
             {" "}
             <label>ชื่อสนามกีฬา:</label>
             <input
               type="text"
+              maxLength={100}
               name="field_name"
               placeholder="ชื่อสนามของคุณ"
               value={fieldData.field_name}
               onChange={handleFieldChange}
             />
           </div>
-          <div className="input-group">
+          <div className="input-group-register-field">
             <label>ที่ตั้งสนาม:</label>
             <input
               type="text"
+              maxLength={100}
               name="address"
               placeholder="ที่อยู่สนามของคุณ"
               value={fieldData.address}
               onChange={handleFieldChange}
             />
           </div>
-          <div className="input-group">
+          <div className="input-group-register-field">
             <label>ตำแหน่งพิกัด GPS:</label>
             <input
               type="text"
+              maxLength={100}
               name="gps_location"
               placeholder="ที่อยู่ใน Map"
               value={fieldData.gps_location}
@@ -454,7 +462,7 @@ export default function RegisterFieldForm() {
 
           <div className="datetimecon">
             <div className="time">
-              <div className="input-group">
+              <div className="input-group-register-field">
                 <label>เวลาเปิด:</label>
                 <input
                   type="time"
@@ -464,7 +472,7 @@ export default function RegisterFieldForm() {
                 />
               </div>
 
-              <div className="input-group">
+              <div className="input-group-register-field">
                 <label>เวลาปิด:</label>
                 <input
                   type="time"
@@ -475,13 +483,13 @@ export default function RegisterFieldForm() {
               </div>
             </div>
             <div className="open-days-container">
-              <div className="input-group">
+              <div className="input-group-register-field">
                 <label style={{ textAlign: "center" }}>
                   เลือกวันเปิดบริการ:
                 </label>
               </div>
               <div className="time-selection">
-                <div className="input-group-checkbox">
+                <div className="input-group-checkbox-register-field">
                   {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(
                     (day, index) => (
                       <label key={index} className="checkbox-label">
@@ -516,10 +524,11 @@ export default function RegisterFieldForm() {
           <div className="subfieldcon">
             {subFields.map((sub, subIndex) => (
               <div key={subIndex}>
-                {/* ✅ Input กรอกชื่อสนามย่อย */}
-                <div className="input-group">
+                {/*Input กรอกชื่อสนามย่อย */}
+                <div className="input-group-register-field">
                   <input
                     type="text"
+                    maxLength={100}
                     placeholder="ชื่อสนามย่อย (เช่น สนาม 1,2)"
                     value={sub.name}
                     onChange={(e) =>
@@ -527,8 +536,8 @@ export default function RegisterFieldForm() {
                     }
                   />
                 </div>
-                {/* ✅ Input กรอกราคา */}
-                <div className="input-group">
+                {/*Input กรอกราคา */}
+                <div className="input-group-register-field">
                   <input
                     type="number"
                     placeholder="ราคา/ชั่วโมง"
@@ -540,8 +549,8 @@ export default function RegisterFieldForm() {
                   />
                 </div>
 
-                {/* ✅ Dropdown เลือกประเภทกีฬา */}
-                <div className="input-group">
+                {/*Dropdown เลือกประเภทกีฬา */}
+                <div className="input-group-register-field">
                   <select
                     value={sub.sport_id}
                     onChange={(e) =>
@@ -557,32 +566,33 @@ export default function RegisterFieldForm() {
                   </select>
                 </div>
 
-                {/* ✅ ปุ่มเพิ่มกิจกรรมเพิ่มเติม (เฉพาะสนามนี้) */}
+                {/*ปุ่มเพิ่มกิจกรรมเพิ่มเติม (เฉพาะสนามนี้) */}
                 <button
-                  className="addbtn"
+                  className="addbtn-regisfield"
                   type="button"
                   onClick={() => addAddOn(subIndex)}
                 >
                   เพิ่มกิจกรรมเพิ่มเติม
                 </button>
 
-                {/* ✅ ปุ่มลบสนามย่อย */}
+                {/*ปุ่มลบสนามย่อย */}
                 <button
-                  className="delbtn"
+                  className="delbtn-regisfield"
                   type="button"
                   onClick={() => removeSubField(subIndex)}
                 >
                   ลบสนามย่อย
                 </button>
 
-                {/* ✅ แสดงรายการกิจกรรมเพิ่มเติมที่อยู่ในสนามนี้ */}
+                {/* แสดงรายการกิจกรรมเพิ่มเติมที่อยู่ในสนามนี้ */}
                 <div className="addoncon">
                   {sub.addOns.map((addon, addOnIndex) => (
                     <div key={addOnIndex}>
-                      {/* ✅ Input กรอกชื่อกิจกรรม */}
-                      <div className="input-group">
+                      {/* Input กรอกชื่อกิจกรรม */}
+                      <div className="input-group-register-field">
                         <input
                           type="text"
+                          maxLength={100}
                           placeholder="ชื่อกิจกรรม เช่น (เช่าสนามเพื่อทำคอนเท้น)"
                           value={addon.content}
                           onChange={(e) =>
@@ -595,8 +605,8 @@ export default function RegisterFieldForm() {
                           }
                         />
                       </div>
-                      {/* ✅ Input กรอกราคา */}
-                      <div className="input-group">
+                      {/* Input กรอกราคา */}
+                      <div className="input-group-register-field">
                         <input
                           type="number"
                           placeholder="ราคา/ชั่วโมง"
@@ -608,7 +618,7 @@ export default function RegisterFieldForm() {
                         />
                       </div>
 
-                      {/* ✅ ปุ่มลบกิจกรรมเพิ่มเติม */}
+                      {/* ปุ่มลบกิจกรรมเพิ่มเติม */}
                       <button
                         className="delevn"
                         type="button"
@@ -622,26 +632,29 @@ export default function RegisterFieldForm() {
               </div>
             ))}
 
-            {/* ✅ ปุ่มเพิ่มสนามย่อย */}
-
-            <button className="addsubfield" type="button" onClick={addSubField}>
+            {/*ปุ่มเพิ่มสนามย่อย */}
+            <button
+              className="addsubfield-regisfield"
+              type="button"
+              onClick={addSubField}
+            >
               + เพิ่มสนามย่อย
             </button>
           </div>
-          <div className="input-group">
+          <div className="input-group-register-field">
             <label htmlFor="img_field">รูปโปรไฟล์สนาม</label>
 
             <input type="file" onChange={handleimgChange} accept="image/*" />
           </div>
-          {/* ✅ แสดงรูปตัวอย่างถ้ามีการอัปโหลด */}
+          {/*แสดงรูปตัวอย่างถ้ามีการอัปโหลด */}
           {fieldData.imgPreview && (
-            <div className="preview-container">
+            <div className="preview-container-regis-field">
               <p>ตัวอย่างรูป:</p>
               <img src={fieldData.imgPreview} alt="Preview" />
             </div>
           )}
 
-          <div className="input-group">
+          <div className="input-group-register-field">
             <label htmlFor="documents">เอกสาร (เพิ่มได้สูงสุด 10 ไฟล์)</label>
             <input
               type="file"
@@ -651,7 +664,7 @@ export default function RegisterFieldForm() {
             />
           </div>
 
-          <div className="input-group">
+          <div className="input-group-register-field">
             <label htmlFor="account-type">เลือกประเภทบัญชี</label>
             <select
               name="account_type" // เปลี่ยนชื่อ name เพื่อไม่ให้ชนกับ input
@@ -664,7 +677,7 @@ export default function RegisterFieldForm() {
             </select>
           </div>
 
-          <div className="input-group">
+          <div className="input-group-register-field">
             <label htmlFor="number_bank">เลขบัญชีธนาคาร / พร้อมเพย์</label>
             <input
               type="number"
@@ -675,9 +688,9 @@ export default function RegisterFieldForm() {
                 const value = e.target.value;
                 const isPromptPay = fieldData.account_type === "พร้อมเพย์"; // ตรวจสอบประเภทบัญชีที่เลือก
 
-                // ✅ อนุญาตเฉพาะตัวเลข
+                // อนุญาตเฉพาะตัวเลข
                 if (/^\d*$/.test(value)) {
-                  // ✅ ตรวจสอบจำนวนหลัก
+                  // ตรวจสอบจำนวนหลัก
                   if (
                     (isPromptPay && value.length <= 13) || // พร้อมเพย์ 10 หรือ 13 หลัก
                     (!isPromptPay && value.length <= 12) // ธนาคาร 12 หลัก
@@ -690,7 +703,7 @@ export default function RegisterFieldForm() {
                 const isPromptPay = fieldData.account_type === "พร้อมเพย์"; // ตรวจสอบประเภทบัญชีที่เลือก
                 const length = fieldData.number_bank.length;
 
-                // ✅ ตรวจสอบความถูกต้องของเลขที่กรอก
+                // ตรวจสอบความถูกต้องของเลขที่กรอก
                 if (
                   (!isPromptPay && length !== 12) || // ถ้าเป็นบัญชีธนาคารต้อง 12 หลัก
                   (isPromptPay && length !== 10 && length !== 13) // ถ้าเป็นพร้อมเพย์ต้อง 10 หรือ 13 หลัก
@@ -702,16 +715,17 @@ export default function RegisterFieldForm() {
                   setFieldData({ ...fieldData, number_bank: "" }); // เคลียร์ค่า
                 }
               }}
-              maxLength={13} // ✅ จำกัดสูงสุดที่ 13 หลัก
+              maxLength={13} //จำกัดสูงสุดที่ 13 หลัก
             />
           </div>
 
           {/* กรอกชื่อธนาคาร */}
           {fieldData.account_type === "ธนาคาร" && (
-            <div className="input-group">
+            <div className="input-group-register-field">
               <label htmlFor="bank">ชื่อธนาคาร</label>
               <input
                 type="text"
+                maxLength={50}
                 name="name_bank"
                 placeholder="ชื่อธนาคาร"
                 value={fieldData.name_bank}
@@ -722,21 +736,23 @@ export default function RegisterFieldForm() {
 
           {/* ไม่ให้กรอกชื่อธนาคารเมื่อเลือก "พร้อมเพย์" */}
           {fieldData.account_type === "พร้อมเพย์" && (
-            <div className="input-group">
+            <div className="input-group-register-field">
               <label htmlFor="bank">ชื่อธนาคาร</label>
               <input
                 type="text"
+                maxLength={50}
                 name="name_bank"
-                value="พร้อมเพย์" // ตั้งค่าเป็น "พร้อมเพย์" โดยอัตโนมัติ
-                disabled // ไม่สามารถกรอกได้
+                value="พร้อมเพย์"
+                disabled
               />
             </div>
           )}
 
-          <div className="input-group">
+          <div className="input-group-register-field">
             <label htmlFor="bank">ชื่อเจ้าของบัญชีธนาคาร</label>
             <input
               type="text"
+              maxLength={50}
               name="account_holder"
               placeholder="ชื่อเจ้าของบัญชี"
               value={fieldData.account_holder}
@@ -744,22 +760,22 @@ export default function RegisterFieldForm() {
             />
           </div>
           <div>
-            <div className="input-group">
+            <div className="input-group-register-field">
               <label>ค่ามัดจำ</label>
             </div>
-            <div className="depositcon">
-              <div className="input-group-checkbox">
+            <div className="depositcon-regisfield">
+              <div className="input-group-checkbox-register-field">
                 <input
                   type="checkbox"
                   checked={fieldData.depositChecked}
                   onChange={handleCheckboxChange}
                 />
-                <div className="input-group-deposit">
+                <div className="input-group-deposit-regisfield">
                   <label>เก็บค่ามัดจำ</label>
                 </div>
               </div>
               {fieldData.depositChecked && (
-                <div className="input-group">
+                <div className="input-group-register-field">
                   <input
                     type="number"
                     name="price_deposit"
@@ -776,14 +792,14 @@ export default function RegisterFieldForm() {
               )}
             </div>
           </div>
-          <div className="input-group">
+          <div className="input-group-register-field">
             <label>สิ่งอำนวยความสะดวก</label>
           </div>
-          <div className="factcon">
+          <div className="factcon-register-field">
             {facilities.map((fac) => (
-              <div key={fac.fac_id} className="facility-item">
+              <div key={fac.fac_id} className="facility-item-register-field">
                 {/* Checkbox เลือกสิ่งอำนวยความสะดวก */}
-                <div className="input-group-checkbox">
+                <div className="input-group-checkbox-register-field">
                   <input
                     type="checkbox"
                     checked={selectedFacilities[fac.fac_id] !== undefined}
@@ -794,8 +810,8 @@ export default function RegisterFieldForm() {
 
                 {/* ป้อนราคาเมื่อเลือกสิ่งอำนวยความสะดวก */}
                 {selectedFacilities[fac.fac_id] !== undefined && (
-                  <div className="input-group">
-                    <div className="input-group-checkbox">
+                  <div className="input-group-register-field">
+                    <div className="input-group-checkbox-register-field">
                       <input
                         type="number"
                         placeholder="กำหนดราคา ถ้าไม่มีใส่ '0'"
@@ -820,29 +836,30 @@ export default function RegisterFieldForm() {
           </div>
           {!showNewFacilityInput ? (
             <button
-              className="addfac"
+              className="addfac-regisfield"
               type="button"
               onClick={() => setShowNewFacilityInput(true)}
             >
-              + เพิ่มสิ่งอำนวยความสะดวกใหม่
+              + เพิ่มสิ่งอำนวยความสะดวก
             </button>
           ) : (
             <div>
               <input
                 type="text"
+                maxLength={100}
                 placeholder="ชื่อสิ่งอำนวยความสะดวก"
                 value={newFacility}
                 onChange={(e) => setNewFacility(e.target.value)}
               />
               <button
-                className="savebtn"
+                className="savebtn-regisfield"
                 type="button"
                 onClick={addNewFacility}
               >
                 บันทึก
               </button>
               <button
-                className="canbtn"
+                className="canbtn-regisfield"
                 type="button"
                 onClick={() => setShowNewFacilityInput(false)}
               >
@@ -850,10 +867,11 @@ export default function RegisterFieldForm() {
               </button>
             </div>
           )}
-          <div className="input-group">
+          <div className="input-group-register-field">
             <label>รายละเอียดสนาม</label>
             <div className="textarea">
               <textarea
+                maxLength={256}
                 name="field_description"
                 placeholder="ใส่รายละเอียดสนาม หมายเหตุต่างๆ เช่นสนามหญ้าเทียม 7 คน "
                 value={fieldData.field_description}
@@ -861,7 +879,7 @@ export default function RegisterFieldForm() {
               />
             </div>
           </div>
-          <button className="submitbtn" type="submit">
+          <button className="submitbtn-regisfield" type="submit">
             ยืนยัน
           </button>
         </form>

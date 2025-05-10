@@ -12,30 +12,30 @@
   text-align: center;
 }
 
-h2 {
+.register-head {
   color: var(--text-color);
   margin-bottom: 20px;
 }
 
-form {
+.register-container form {
   display: flex;
   flex-direction: column;
 }
 
-.input-group {
+.input-group-register {
   margin-bottom: 15px;
   text-align: left;
 }
 
-label {
-  font-size: 14px;
+.input-group-register label {
+  font-size: 16px;
   font-weight: 600;
   color: var(--text-color);
   display: block;
   margin-bottom: 5px;
 }
 
-input {
+.input-group-register input {
   width: 100%;
   padding: 10px;
   border: 1px solid #ccc;
@@ -44,13 +44,13 @@ input {
   transition: 0.3s;
 }
 
-input:focus {
+.input-group-register input:focus {
   border-color: var(--text-color);
   box-shadow: 0 0 5px rgba(3, 4, 94, 0.5);
   outline: none;
 }
 
-button {
+.register-button {
   background: var(--text-color);
   color: white;
   border: none;
@@ -61,11 +61,11 @@ button {
   transition: 0.3s;
 }
 
-button:hover {
+.register-button:hover {
   background: #02226c;
 }
 
-.error-message {
+.register-container .error-message {
   display: flex;
   align-items: center;
   gap: 5px;
@@ -74,16 +74,16 @@ button:hover {
   margin-top: 5px;
 }
 
-.error-message i {
+.register-container .error-message i {
   color: #d90429;
 }
 
-input.error {
+.input-group-register input.error {
   border-color: #d90429;
   background: rgba(217, 4, 41, 0.1);
 }
 
-.success-message {
+.register-container .success-message {
   margin-top: 20px;
   background-color: #cce5ff;
   color: var(--text-color);
@@ -95,9 +95,10 @@ input.error {
   align-items: center;
 }
 
-.success-message i {
+.register-container .success-message i {
   margin-right: 5px;
 }
+
 .login-title {
   margin: 15px auto 5px auto;
   display: flex;
@@ -115,15 +116,6 @@ input.error {
     color: #333;
     transition: all 0.3s ease;
   }
-}
-.login-link {
-  font-size: 14px;
-  color: #007bff;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-.login-link:hover {
-  color: #0056b3;
 }
 
 .login-title a:hover {

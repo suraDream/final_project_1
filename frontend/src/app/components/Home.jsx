@@ -15,6 +15,7 @@ export default function HomePage() {
   const router = useRouter();
   const [postData, setPostData] = useState([]);
   const [imageIndexes, setImageIndexes] = useState({});
+  const [expandedPosts, setExpandedPosts] = useState({});
 
   useEffect(() => {
     fetch(`${API_URL}/posts`, {
@@ -26,12 +27,10 @@ export default function HomePage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.message === "ไม่มีโพส") {
-          console.log("No posts available");
           setPostData([]);
         } else if (data.error) {
           console.error("Backend error:", data.error);
         } else {
-          console.log("Post data:", data);
           setPostData(data);
         }
       })
@@ -55,8 +54,15 @@ export default function HomePage() {
 
   const scrollToBookingSection = () => {
     document
-      .querySelector(".section-title")
+      .querySelector(".section-title-home")
       ?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const toggleExpanded = (postId) => {
+    setExpandedPosts((prev) => ({
+      ...prev,
+      [postId]: !prev[postId],
+    }));
   };
 
   useEffect(() => {
@@ -72,23 +78,24 @@ export default function HomePage() {
         });
         return newIndexes;
       });
-    }, 5000); 
-  
-    return () => clearInterval(interval); 
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, [postData]);
-  
 
   return (
     <>
       <div className="banner-container">
-        <video autoPlay loop muted playsInline className="banner-video">
-          <source src="/video/bannervideo.mp4" type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
+        <img
+          src="/images/baner-img.png"
+          alt="ศูนย์กีฬา"
+          className="banner-video"
+        />
+
         <div className="banner-text">
           <h1>Online Sports Venue Booking Platform</h1>
           <h2>แพลตฟอร์มจองสนามกีฬาออนไลน์</h2>
-          <div className="btn">
+          <div className="home-btn">
             <button onClick={scrollToBookingSection}>จองเลย</button>
           </div>
         </div>
@@ -96,25 +103,29 @@ export default function HomePage() {
 
       <div className="homepage">
         <div className="news-section">
-          <div className="title-notice">ข่าวสาร</div>
+          <div className="title-notice">
+            <h1>ข่าวสาร</h1>
+          </div>
           {postData.map((post) => (
-            <div key={post.post_id} className="post-card">
-              <h2 className="post-title">{post.content}</h2>
-              <div className="time">{dayjs(post.created_at).fromNow()}</div>
+            <div key={post.post_id} className="post-card-home">
+              <h2 className="post-title-home">{post.content}</h2>
+              <div className="time-home">
+                {dayjs(post.created_at).fromNow()}
+              </div>
               {post.images && post.images.length > 0 && (
-                <div className="ig-carousel-container">
-                  <div className="ig-carousel-track-wrapper">
-                    <div className="ig-carousel-track">
+                <div className="ig-carousel-container-home">
+                  <div className="ig-carousel-track-wrapper-home">
+                    <div className="ig-carousel-track-home">
                       <img
                         src={`${API_URL}/${
                           post.images[imageIndexes[post.post_id] || 0].image_url
                         }`}
                         alt="รูปโพสต์"
-                        className="ig-carousel-image"
+                        className="ig-carousel-image-home"
                       />
                     </div>
                     <button
-                      className="arrow-btn left"
+                      className="arrow-btn left-home"
                       onClick={() =>
                         handlePrev(post.post_id, post.images.length)
                       }
@@ -122,7 +133,7 @@ export default function HomePage() {
                       ❮
                     </button>
                     <button
-                      className="arrow-btn right"
+                      className="arrow-btn right-home"
                       onClick={() =>
                         handleNext(post.post_id, post.images.length)
                       }
@@ -130,13 +141,13 @@ export default function HomePage() {
                       ❯
                     </button>
                   </div>
-                  <div className="dot-indicators">
+                  <div className="dot-indicators-home">
                     {post.images.map((_, dotIdx) => (
                       <span
                         key={dotIdx}
                         className={`dot ${
                           (imageIndexes[post.post_id] || 0) === dotIdx
-                            ? "active"
+                            ? "active-home"
                             : ""
                         }`}
                         onClick={() =>
@@ -150,17 +161,33 @@ export default function HomePage() {
                   </div>
                 </div>
               )}
-              <p className="post-text">{post.title}</p>
+              
+              {post.title.length > 40 ? (
+                <p className="post-text-home">
+                  {expandedPosts[post.post_id]
+                    ? post.title
+                    : `${post.title.substring(0, 40).trim()}... `}
+                  <span
+                    onClick={() => toggleExpanded(post.post_id)}
+                    className="see-more-button-home"
+                  >
+                    {expandedPosts[post.post_id] ? "ย่อ" : "ดูเพิ่มเติม"}
+                  </span>
+                </p>
+              ) : (
+                <p className="post-text-home">{post.title}</p>
+              )}
+
               <button
                 type="button"
-                className="view-post-btn"
+                className="view-post-btn-home"
                 onClick={() =>
                   router.push(
                     `/profile/${post.field_id}?highlight=${post.post_id}`
                   )
                 }
               >
-                ไปที่โพส
+                ดูโพสต์
               </button>
             </div>
           ))}

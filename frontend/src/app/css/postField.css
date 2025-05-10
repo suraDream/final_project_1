@@ -1,52 +1,55 @@
 .post-container {
-  max-width: 600px; /* Limiting the width of the form */
+  max-width: 600px;
   margin: 5px auto;
   padding: 20px;
-  /* background: white;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-  border-radius: 10px; */
-  width: 100%; 
+  width: 100%;
 }
 
-/* Heading */
-h2 {
-  text-align: center;
-  margin-bottom: 20px;
-  font-size: 24px; /* Increased font size for better visibility */
-}
-
-/* Form styling */
-.form-group {
+.form-group-post {
   display: flex;
   flex-direction: column;
   margin-bottom: 15px;
 }
 
-.form-group label {
+.form-group-post label {
   font-weight: bold;
   margin-bottom: 5px;
-  font-size: 14px; /* Slightly smaller for clarity */
+  font-size: 14px;
 }
 
-.form-group input,
-.form-group textarea {
+.form-group-post input,
+.form-group-post textarea {
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 5px;
   font-size: 16px;
-  width: 100%; /* Ensures inputs take full width */
+  width: 100%;
   max-width: 100%;
-  box-sizing: border-box; /* Ensures padding does not break layout */
+  box-sizing: border-box;
 }
 
-.form-group textarea {
+.form-group-post textarea {
   height: 200px;
   resize: none;
 }
 
-/* Button styling */
-.submit-btn {
-  width: 100%; /* Makes the button take full width */
+.file-input-hidden-post {
+  display: none;
+}
+
+.file-label-post {
+  display: inline-block;
+  padding: 8px 16px;
+  color: #000;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  border: 1px solid #ccc;
+  transition: background 0.2s ease-in-out;
+}
+
+.submit-btn-post {
+  width: 100%;
   padding: 12px;
   background: #007bff;
   color: white;
@@ -57,11 +60,10 @@ h2 {
   transition: background 0.3s ease-in-out;
 }
 
-.submit-btn:hover {
-  background: #0056b3; /* Slightly darker color on hover */
+.submit-btn-psot:hover {
+  background: #0056b3;
 }
 
-/* Post button styling */
 .add-post-button {
   margin-bottom: 20px;
   padding: 10px 20px;
@@ -77,7 +79,6 @@ h2 {
   background-color: #45a049;
 }
 
-/* Cancel button styling */
 .cancel-btn {
   height: 40px;
   width: 100%;
@@ -94,10 +95,8 @@ h2 {
 .cancel-btn:hover {
   background-color: #8b8b8b;
 }
-.message-box p {
-  color: rgb(255, 255, 255);
-}
-.message-box {
+
+.post-container .message-box {
   position: fixed;
   top: 50%;
   left: 50%;
@@ -110,57 +109,62 @@ h2 {
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
-.error {
+.post-container .error {
   display: flex;
   align-items: center;
+  background-color: #ffd4cc;
+}
+.post-container .error p {
   color: #d90429;
-  background-color: #ff5f43;
   font-size: 14px;
 }
 
-.success {
-  background-color: #1b41ff;
+.post-container .success {
+  background-color: #d4edda;
   color: #155724;
   border: 1px solid #c3e6cb;
   font-size: 14px;
   display: flex;
 }
-/* Container for image upload section */
-.image-preview-container {
+.post-container .success p {
+  color: #155724;
+  font-size: 14px;
+}
+
+.image-preview-container-post {
   margin-top: 20px;
   text-align: center;
 }
 
-/* Style for the image preview list */
-.image-preview-container ul {
+.image-preview-container-post ul {
   list-style-type: none;
   padding: 0;
   display: flex;
   justify-content: center;
-  flex-wrap: wrap; /* Allows images to wrap to next line */
+  flex-wrap: wrap;
 }
 
-.image-preview-container li {
+.image-preview-container-post li {
   margin: 10px;
   text-align: center;
   position: relative;
-  width: 120px; /* Fixed width for images */
-  height: 120px; /* Fixed height for images */
+  width: 120px;
+  height: 120px;
   overflow: hidden;
   border-radius: 8px;
   border: 2px solid #ddd;
 }
 
-.image-preview-container img {
+.image-preview-container-post img {
   max-width: 100%;
   max-height: 100%;
-  object-fit: cover; /* Ensures the image covers the div without distortion */
+  object-fit: cover;
 }
-.delpre{
+.delpre {
   position: absolute;
   top: 5px;
   right: 5px;
-  background-color:#f44336;
+  background-color: #f44336;
   color: white;
   border: none;
   padding: 5px;
@@ -172,27 +176,25 @@ h2 {
   background-color: #e53935;
 }
 
-
-/* Responsive adjustments */
+/* Responsive  */
 @media (max-width: 600px) {
-  /* For smaller screens, adjust the margin and padding */
   .post-container {
     padding: 10px;
     margin: 5px;
   }
 
-  h2 {
-    font-size: 20px; /* Smaller heading on mobile */
+  .post-container h2 {
+    font-size: 20px;
   }
 
-  .form-group input,
-  .form-group textarea {
-    font-size: 14px; /* Adjust font size for smaller screens */
+  .form-group-post input,
+  .form-group-post textarea {
+    font-size: 14px;
   }
 
-  .submit-btn {
-    font-size: 14px; /* Adjust button font size for mobile */
-    padding: 10px; /* Adjust padding on mobile */
+  .submit-btn-post {
+    font-size: 14px;
+    padding: 10px;
   }
 }
 
@@ -206,8 +208,4 @@ h2 {
     padding: 5px 10px;
     font-size: 14px;
   }
-
 }
-
-
-

@@ -5,8 +5,7 @@ const fs = require("fs");
 const router = express.Router();
 const pool = require("../db");
 const authMiddleware = require("../middlewares/auth");
-const {Resend} = require("resend");
-const { error } = require("console");
+const {Resend} = require("resend")
 require("dotenv").config();
 const resend = new Resend(process.env.Resend_API);
 
@@ -18,7 +17,7 @@ const storage = multer.diskStorage({
     if (file.fieldname === "documents") {
       uploadDir = "uploads/documents/"; // โฟลเดอร์สำหรับเอกสาร
     } else if (file.fieldname === "img_field") {
-      uploadDir = "uploads/images/"; // โฟลเดอร์สำหรับรูปภาพ
+      uploadDir = "uploads/images/field-profile"; // โฟลเดอร์สำหรับรูปภาพ
     }
 
     if (!fs.existsSync(uploadDir)) {
@@ -62,7 +61,7 @@ router.post("/register", upload.fields([{ name: "documents" }, { name: "img_fiel
       field_description  // New field for description
     } = JSON.parse(req.body.data);
 
-         // ✅ ตรวจสอบว่ามีไฟล์เอกสารอัปโหลดหรือไม่
+         // ตรวจสอบว่ามีไฟล์เอกสารอัปโหลดหรือไม่
       const documents = req.files["documents"]
             ? req.files["documents"].map((file) => file.path.replace(/\\/g, "/")).join(", ") // คลีนพาธแล้วคั่นด้วย ", "
             : [];
@@ -100,7 +99,7 @@ router.post("/register", upload.fields([{ name: "documents" }, { name: "img_fiel
       }
     }
 
-    // ✅ INSERT ข้อมูลสิ่งอำนวยความสะดวก
+    // INSERT ข้อมูลสิ่งอำนวยความสะดวก
     for (const facId in selectedFacilities) {
       await pool.query(
         `INSERT INTO field_facilities (field_id, facility_id, fac_price) 
@@ -135,77 +134,6 @@ router.post("/register", upload.fields([{ name: "documents" }, { name: "img_fiel
     res.status(500).send({ error: "เกิดข้อผิดพลาดในการลงทะเบียนสนาม" });
   }
 });
-
-
-// admin api ////////////////////////////////////////////////////////////////////////////////////////
-// API สำหรับดึงข้อมูลสนามที่รอตรวจสอบ
-// router.get('/pending', authMiddleware, async (req, res) => {
-//   try {
-//     // ตรวจสอบว่า user เป็น admin หรือไม่
-//     if (req.user.role !== 'admin') {
-//       return res.status(403).json({ error: "คุณไม่มีสิทธิ์เข้าถึงข้อมูลนี้" });
-//     }
-
-//     const result = await pool.query(`
-//       SELECT users.user_id, users.first_name, users.last_name, users.email, 
-//              field.field_id, field.field_name, field.address, field.gps_location, 
-//              field.documents, field.open_hours, field.close_hours, field.img_field, 
-//              field.number_bank, field.account_holder, field.status, field.price_deposit 
-//       FROM field 
-//       INNER JOIN users ON field.user_id = users.user_id
-//       WHERE status = 'รอตรวจสอบ'`);
-      
-//     res.json(result.rows);
-//   } catch (error) {
-//     res.status(500).json({ error: 'Database error fetching pending fields' });
-//   }
-// });
-
-// // API สำหรับดึงข้อมูลสนามที่ผ่านการอนุมัติ
-// router.get('/allow', authMiddleware, async (req, res) => {
-//   try {
-//     // ตรวจสอบว่า user เป็น admin หรือไม่
-//     if (req.user.role !== 'admin') {
-//       return res.status(403).json({ error: "คุณไม่มีสิทธิ์เข้าถึงข้อมูลนี้" });
-//     }
-
-//     const result = await pool.query(`
-//       SELECT users.user_id, users.first_name, users.last_name, users.email, 
-//              field.field_id, field.field_name, field.address, field.gps_location, 
-//              field.documents, field.open_hours, field.close_hours, field.img_field, 
-//              field.number_bank, field.account_holder, field.status, field.price_deposit 
-//       FROM field 
-//       INNER JOIN users ON field.user_id = users.user_id
-//       WHERE status = 'ผ่านการอนุมัติ'`);
-      
-//     res.json(result.rows);
-//   } catch (error) {
-//     res.status(500).json({ error: 'Database error fetching allowed fields' });
-//   }
-// });
-
-// // API สำหรับดึงข้อมูลสนามที่ไม่ผ่านการอนุมัติ
-// router.get('/refuse', authMiddleware, async (req, res) => {
-//   try {
-//     // ตรวจสอบว่า user เป็น admin หรือไม่
-//     if (req.user.role !== 'admin') {
-//       return res.status(403).json({ error: "คุณไม่มีสิทธิ์เข้าถึงข้อมูลนี้" });
-//     }
-
-//     const result = await pool.query(`
-//       SELECT users.user_id, users.first_name, users.last_name, users.email, 
-//              field.field_id, field.field_name, field.address, field.gps_location, 
-//              field.documents, field.open_hours, field.close_hours, field.img_field, 
-//              field.number_bank, field.account_holder, field.status, field.price_deposit 
-//       FROM field 
-//       INNER JOIN users ON field.user_id = users.user_id
-//       WHERE status = 'ไม่ผ่านการอนุมัติ'`);
-      
-//     res.json(result.rows);
-//   } catch (error) {
-//     res.status(500).json({ error: 'Database error fetching refused fields' });
-//   }
-// });
 
 router.put("/update-status/:field_id", authMiddleware, async (req, res) => {
   try {
@@ -262,7 +190,7 @@ router.put("/update-status/:field_id", authMiddleware, async (req, res) => {
 });
 
 
-router.get("/:field_id", async (req, res) => {
+router.get("/:field_id", authMiddleware, async (req, res) => {
   try {
     const { field_id } = req.params;
     const { user_id, role } = req.user;  // ดึง user_id และ role จาก token
@@ -310,7 +238,7 @@ router.get("/:field_id", async (req, res) => {
     }
 
     // ตรวจสอบว่าเป็น field_owner และ field_id ตรงกับ user_id หรือไม่
-    else  {
+    if (role === "field_owner") {
       const result = await pool.query(
         `SELECT 
           f.field_id, f.field_name, f.address, f.gps_location, f.documents,
@@ -350,7 +278,8 @@ router.get("/:field_id", async (req, res) => {
       return res.json(result.rows[0]);
     }
 
-  
+    // หากไม่ใช่ admin หรือ field_owner
+    return res.status(403).json({ error: "คุณไม่มีสิทธิ์เข้าถึงข้อมูลนี้" });
   } catch (error) {
     console.error("Database Error:", error);
     res.status(500).json({ error: "เกิดข้อผิดพลาดในการดึงข้อมูลสนามกีฬา" });
@@ -538,8 +467,6 @@ router.delete("/delete/field/:id", authMiddleware, async (req, res) => {
       }
     }
     
-    
-    
     // ลบ field
     await client.query("DELETE FROM field WHERE field_id = $1", [fieldId]);
 
@@ -716,9 +643,8 @@ router.post("/subfield/:field_id",authMiddleware, async (req, res) => {
   const { field_id } = req.params;
   const { sub_field_name, price, sport_id, user_id } = req.body;
 
-  // Validate sport_id
   if (!sport_id || isNaN(sport_id)) {
-    return res.status(400).json({ error: "❌ กรุณาเลือกประเภทกีฬาก่อนเพิ่มสนาม" });
+    return res.status(400).json({ error: "กรุณาเลือกประเภทกีฬาก่อนเพิ่มสนาม" });
   }
 
   try {
@@ -727,10 +653,10 @@ router.post("/subfield/:field_id",authMiddleware, async (req, res) => {
       [field_id, sub_field_name, price, sport_id, user_id]
     );
 
-    res.json(result.rows[0]); // Return the new sub-field
+    res.json(result.rows[0]);
   } catch (error) {
-    console.error("❌ เพิ่ม sub_field ผิดพลาด:", error);
-    res.status(500).json({ error: "❌ เพิ่ม sub_field ล้มเหลว" });
+    console.error("เพิ่ม sub_field ผิดพลาด:", error);
+    res.status(500).json({ error: "เพิ่ม sub_field ล้มเหลว" });
   }
 });
 
@@ -748,21 +674,48 @@ router.post("/addon",authMiddleware, async (req, res) => {
       [sub_field_id, content, price]
     );
 
-    res.status(201).json(result.rows[0]); // ✅ ส่ง Add-on ใหม่กลับไป
+    res.status(201).json(result.rows[0]); //  ส่ง Add-on ใหม่กลับไป
   } catch (error) {
-    console.error("❌ เพิ่ม Add-on ผิดพลาด:", error);
-    res.status(500).json({ error: "❌ ไม่สามารถเพิ่ม Add-on ได้" });
+    console.error("เพิ่ม Add-on ผิดพลาด:", error);
+    res.status(500).json({ error: "ไม่สามารถเพิ่ม Add-on ได้" });
+  }
+});
+
+router.delete("/delete/addon/:id", authMiddleware, async (req, res) => {
+  const addOnId = req.params.id;
+
+  if (isNaN(addOnId)) {
+    return res.status(400).json({ error: "รหัส Add-on ไม่ถูกต้อง" });
+  }
+
+  try {
+    // ตรวจสอบก่อนว่ามี add-on นี้ไหม
+    const check = await pool.query(
+      "SELECT * FROM add_on WHERE add_on_id = $1",
+      [addOnId]
+    );
+
+    if (check.rowCount === 0) {
+      return res.status(404).json({ error: "ไม่พบ Add-on ที่ต้องการลบ" });
+    }
+
+    // ลบออกจากฐานข้อมูล
+    await pool.query("DELETE FROM add_on WHERE add_on_id = $1", [addOnId]);
+
+    res.status(200).json({ message: "ลบ Add-on สำเร็จ" });
+  } catch (error) {
+    console.error("ลบ Add-on ผิดพลาด:", error);
+    res.status(500).json({ error: "ลบ Add-on ไม่สำเร็จ" });
   }
 });
 
 
-// Update sub-field
 router.put("/supfiled/:sub_field_id",authMiddleware, async (req, res) => {
   const { sub_field_id } = req.params;
   const { sub_field_name, price, sport_id } = req.body;
 
   try {
-    if (!sub_field_id) return res.status(400).json({ error: "❌ sub_field_id" });
+    if (!sub_field_id) return res.status(400).json({ error: "sub_field_id" });
 
     await pool.query(
       `UPDATE sub_field SET sub_field_name = $1, price = $2, sport_id = $3 WHERE sub_field_id = $4`,
@@ -770,8 +723,8 @@ router.put("/supfiled/:sub_field_id",authMiddleware, async (req, res) => {
     );
     res.json({ message: "สำเร็จ" });
   } catch (error) {
-    console.error("❌ Error updating sub-field:", error);
-    res.status(500).json({ error: "❌ เกิดข้อผิดพลาดในการอัปเดตข้อมูลสนามย่อย" });
+    console.error("Error updating sub-field:", error);
+    res.status(500).json({ error: "เกิดข้อผิดพลาดในการอัปเดตข้อมูลสนามย่อย" });
   }
 });
 
@@ -781,7 +734,7 @@ router.put("/add_on/:add_on_id",authMiddleware, async (req, res) => {
   const { content, price } = req.body;
 
   try {
-    if (!add_on_id) return res.status(400).json({ error: "❌ add_on_id" });
+    if (!add_on_id) return res.status(400).json({ error: "add_on_id" });
 
     await pool.query(
       `UPDATE add_on SET content = $1, price = $2 WHERE add_on_id = $3`,
@@ -789,35 +742,11 @@ router.put("/add_on/:add_on_id",authMiddleware, async (req, res) => {
     );
     res.json({ message: "สำเร็จ" });
   } catch (error) {
-    console.error("❌ Error updating add-on:", error);
-    res.status(500).json({ error: "❌ เกิดข้อผิดพลาดในการอัปเดต Add-on" });
+    console.error("Error updating add-on:", error);
+    res.status(500).json({ error: "เกิดข้อผิดพลาดในการอัปเดต Add-on" });
   }
 });
 
-// Delete add-on handler
-router.delete("/delete/addon/:id",authMiddleware, async (req, res) => {
-  const addOnId = req.params.id;
-
-  try {
-    // Check if add-on exists before deleting
-    const addOnQuery = await pool.query(
-      "SELECT * FROM add_on WHERE add_on_id = $1",
-      [addOnId]
-    );
-
-    if (addOnQuery.rows.length === 0) {
-      return res.status(404).json({ error: "Add-On not found" });
-    }
-
-    // Proceed to delete the add-on
-    await pool.query("DELETE FROM add_on WHERE add_on_id = $1", [addOnId]);
-
-    return res.status(200).json({ message: "Add-On deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting add-on:", error);
-    return res.status(500).json({ error: "Server error" });
-  }
-});
 
 router.delete("/delete/subfield/:id",authMiddleware, async (req, res) => {
   const subFieldId = req.params.id;
@@ -846,154 +775,194 @@ if (isNaN(subFieldId) || !Number.isInteger(Number(subFieldId))) {
   }
 });
 
+router.post("/facilities/:field_id",authMiddleware, async (req, res) => {
+  const { field_id } = req.params;
+  const selectedFacilities = req.body.selectedFacilities;
 
+  try {
+    for (const facId in selectedFacilities) {
+      const facPrice = parseFloat(selectedFacilities[facId]) || 0;
+      await pool.query(
+        `INSERT INTO field_facilities (field_id, facility_id, fac_price) 
+         VALUES ($1, $2, $3)`,
+        [field_id, facId, facPrice]
+      );
+    }
+
+    res.status(200).json({ message: "บันทึกสำเร็จ" });
+  } catch (error) {
+    console.error("Error saving facilities:", error);
+    res.status(500).json({ message: "เกิดข้อผิดพลาดระหว่างบันทึก" });
+  }
+});
+
+router.delete("/facilities/:field_id/:field_fac_id", authMiddleware, async (req, res) => {
+  const { field_id, field_fac_id } = req.params;
+  console.log("Received field_id:", field_id);
+  console.log("Received field_fac_id:", field_fac_id);
+
+  try {
+    const result = await pool.query(
+      "DELETE FROM field_facilities WHERE field_id = $1 AND field_fac_id = $2",
+      [field_id, field_fac_id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "ไม่พบสิ่งอำนวยความสะดวกนี้ในสนาม" });
+    }
+
+    res.status(200).json({ message: "ลบสิ่งอำนวยความสะดวกสำเร็จ" });
+  } catch (error) {
+    console.error("Error deleting facility:", error);
+    res.status(500).json({ message: "เกิดข้อผิดพลาดในการลบข้อมูล" });
+  }
+});
+
+router.get("/open-days/:sub_field_id",authMiddleware, async (req, res) => {
+  const { sub_field_id } = req.params;
+  if (isNaN(sub_field_id)) {
+    return res.status(404).json({ error: "Invalid subfield ID" });
+  }
+  try {
+    
+    const field_id_result = await pool.query(
+      `SELECT field_id FROM sub_field WHERE sub_field_id = $1`,
+      [sub_field_id]
+    );
+
+   
+    if (field_id_result.rows.length === 0) {
+      return res.status(404).json({ error: "Subfield not found" });
+    }
+
+    const field_id = field_id_result.rows[0].field_id;
+
+    const result = await pool.query(`SELECT 
+          f.field_id, f.field_name, f.address, f.gps_location, f.documents,
+          f.open_hours, f.close_hours, f.img_field, f.name_bank, 
+          f.number_bank, f.account_holder, f.status, f.price_deposit, 
+          f.open_days, f.field_description,
+          u.user_id, u.first_name, u.last_name, u.email,
+          COALESCE(json_agg(
+            DISTINCT jsonb_build_object(
+              'sub_field_id', s.sub_field_id,
+              'sub_field_name', s.sub_field_name,
+              'price', s.price,
+              'sport_name', sp.sport_name,
+              'add_ons', (
+                SELECT COALESCE(json_agg(jsonb_build_object(
+                  'add_on_id', a.add_on_id,
+                  'content', a.content,
+                  'price', a.price
+                )), '[]'::json) 
+                FROM add_on a 
+                WHERE a.sub_field_id = s.sub_field_id
+              )
+            )
+          ) FILTER (WHERE s.sub_field_id IS NOT NULL), '[]'::json) AS sub_fields
+        FROM field f
+        INNER JOIN users u ON f.user_id = u.user_id
+        LEFT JOIN sub_field s ON f.field_id = s.field_id
+        LEFT JOIN sports_types sp ON s.sport_id = sp.sport_id
+        WHERE f.field_id = $1
+        GROUP BY f.field_id, u.user_id;`,
+    [field_id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "ไม่พบข้อมูล" });
+    }
+    return res.json(result.rows);
+  } catch (error) {
+    console.error("Error:", error);
+    return res.status(404).json({ error: "Error Fetch Data" });
+  }
+});
 
 router.get("/field-data/:sub_field_id", async (req, res) => {
-const { sub_field_id } = req.params;
-if (isNaN(sub_field_id)) {
-return res.status(404).json({ error: "Invalid subfield ID" });
-}
-try {
-
-const field_id_result = await pool.query(
-`SELECT field_id FROM sub_field WHERE sub_field_id = $1`,
-[sub_field_id]
-);
-
-
-if (field_id_result.rows.length === 0) {
-return res.status(404).json({ error: "Subfield not found" });
-}
-
-const field_id = field_id_result.rows[0].field_id;
-
-const result = await pool.query(`SELECT 
-    f.field_id, f.field_name, f.address, f.gps_location, f.documents,
-    f.open_hours, f.close_hours, f.img_field, f.name_bank, 
-    f.number_bank, f.account_holder, f.status, f.price_deposit, 
-    f.open_days, f.field_description,
-    u.user_id, u.first_name, u.last_name, u.email,
-    COALESCE(json_agg(
-      DISTINCT jsonb_build_object(
-        'sub_field_id', s.sub_field_id,
-        'sub_field_name', s.sub_field_name,
-        'price', s.price,
-        'sport_name', sp.sport_name,
-        'add_ons', (
-          SELECT COALESCE(json_agg(jsonb_build_object(
-            'add_on_id', a.add_on_id,
-            'content', a.content,
-            'price', a.price
-          )), '[]'::json) 
-          FROM add_on a 
-          WHERE a.sub_field_id = s.sub_field_id
-        )
-      )
-    ) FILTER (WHERE s.sub_field_id IS NOT NULL), '[]'::json) AS sub_fields
-  FROM field f
-  INNER JOIN users u ON f.user_id = u.user_id
-  LEFT JOIN sub_field s ON f.field_id = s.field_id
-  LEFT JOIN sports_types sp ON s.sport_id = sp.sport_id
-  WHERE f.field_id = $1
-  GROUP BY f.field_id, u.user_id;`,
-[field_id]
-);
-
-if (result.rows.length === 0) {
-return res.status(404).json({ message: "ไม่พบข้อมูล" });
-}
-
-return res.status(200).json({
-  message: "get data successfully",
-  data: result.rows,
-});
-} catch (error) {
-console.error("Error:", error);
-return res.status(404).json({ error: "Error Fetch Data" });
-}
-});
-router.get("/open-days/:sub_field_id", async (req, res) => {
-const { sub_field_id } = req.params;
-if (isNaN(sub_field_id)) {
-return res.status(404).json({ error: "Invalid subfield ID" });
-}
-try {
-
-const field_id_result = await pool.query(
-`SELECT field_id FROM sub_field WHERE sub_field_id = $1`,
-[sub_field_id]
-);
-
-
-if (field_id_result.rows.length === 0) {
-return res.status(404).json({ error: "Subfield not found" });
-}
-
-const field_id = field_id_result.rows[0].field_id;
-
-const result = await pool.query(`SELECT 
-    f.field_id, f.field_name, f.address, f.gps_location, f.documents,
-    f.open_hours, f.close_hours, f.img_field, f.name_bank, 
-    f.number_bank, f.account_holder, f.status, f.price_deposit, 
-    f.open_days, f.field_description,
-    u.user_id, u.first_name, u.last_name, u.email,
-    COALESCE(json_agg(
-      DISTINCT jsonb_build_object(
-        'sub_field_id', s.sub_field_id,
-        'sub_field_name', s.sub_field_name,
-        'price', s.price,
-        'sport_name', sp.sport_name,
-        'add_ons', (
-          SELECT COALESCE(json_agg(jsonb_build_object(
-            'add_on_id', a.add_on_id,
-            'content', a.content,
-            'price', a.price
-          )), '[]'::json) 
-          FROM add_on a 
-          WHERE a.sub_field_id = s.sub_field_id
-        )
-      )
-    ) FILTER (WHERE s.sub_field_id IS NOT NULL), '[]'::json) AS sub_fields
-  FROM field f
-  INNER JOIN users u ON f.user_id = u.user_id
-  LEFT JOIN sub_field s ON f.field_id = s.field_id
-  LEFT JOIN sports_types sp ON s.sport_id = sp.sport_id
-  WHERE f.field_id = $1
-  GROUP BY f.field_id, u.user_id;`,
-[field_id]
-);
-
-if (result.rows.length === 0) {
-return res.status(404).json({ message: "ไม่พบข้อมูล" });
-}
-
-return res.json(result.rows);
-} catch (error) {
-console.error("Error:", error);
-return res.status(404).json({ error: "Error Fetch Data" });
-}
-});
-
-router.get('/field-fac/:field_id',async (req,res)=>{
-  const { field_id} = req.params;
-  try{
-     const result = await pool.query(`SELECT fi.field_fac_id , fi.field_id , fi.facility_id , fi.fac_price ,fa.fac_name  
-      FROM field_facilities fi
-    INNER JOIN facilities fa ON fi.facility_id = fa.fac_id
-    WHERE fi.field_id = $1
-       `,[ field_id])
-       return res.status(200).json({
-        message: "get data successfully",
-        data: result.rows,
-      });
-
+  const { sub_field_id } = req.params;
+  if (isNaN(sub_field_id)) {
+  return res.status(404).json({ error: "Invalid subfield ID" });
   }
-catch(error){
-  return res.status(400).json({message:"error"})
-}
+  try {
+  
+  const field_id_result = await pool.query(
+  `SELECT field_id FROM sub_field WHERE sub_field_id = $1`,
+  [sub_field_id]
+  );
+  
+  
+  if (field_id_result.rows.length === 0) {
+  return res.status(404).json({ error: "Subfield not found" });
+  }
+  
+  const field_id = field_id_result.rows[0].field_id;
+  
+  const result = await pool.query(`SELECT 
+      f.field_id, f.field_name, f.address, f.gps_location, f.documents,
+      f.open_hours, f.close_hours, f.img_field, f.name_bank, 
+      f.number_bank, f.account_holder, f.status, f.price_deposit, 
+      f.open_days, f.field_description,
+      u.user_id, u.first_name, u.last_name, u.email,
+      COALESCE(json_agg(
+        DISTINCT jsonb_build_object(
+          'sub_field_id', s.sub_field_id,
+          'sub_field_name', s.sub_field_name,
+          'price', s.price,
+          'sport_name', sp.sport_name,
+          'add_ons', (
+            SELECT COALESCE(json_agg(jsonb_build_object(
+              'add_on_id', a.add_on_id,
+              'content', a.content,
+              'price', a.price
+            )), '[]'::json) 
+            FROM add_on a 
+            WHERE a.sub_field_id = s.sub_field_id
+          )
+        )
+      ) FILTER (WHERE s.sub_field_id IS NOT NULL), '[]'::json) AS sub_fields
+    FROM field f
+    INNER JOIN users u ON f.user_id = u.user_id
+    LEFT JOIN sub_field s ON f.field_id = s.field_id
+    LEFT JOIN sports_types sp ON s.sport_id = sp.sport_id
+    WHERE f.field_id = $1
+    GROUP BY f.field_id, u.user_id;`,
+  [field_id]
+  );
+  
+  if (result.rows.length === 0) {
+  return res.status(404).json({ message: "ไม่พบข้อมูล" });
+  }
+  
+  return res.status(200).json({
+    message: "get data successfully",
+    data: result.rows,
+  });
+  } catch (error) {
+  console.error("Error:", error);
+  return res.status(404).json({ error: "Error Fetch Data" });
+  }
+  });
 
-})
-
+  router.get('/field-fac/:field_id',async (req,res)=>{
+    const { field_id} = req.params;
+    try{
+       const result = await pool.query(`SELECT fi.field_fac_id , fi.field_id , fi.facility_id , fi.fac_price ,fa.fac_name  
+        FROM field_facilities fi
+      INNER JOIN facilities fa ON fi.facility_id = fa.fac_id
+      WHERE fi.field_id = $1
+         `,[ field_id])
+         return res.status(200).json({
+          message: "get data successfully",
+          data: result.rows,
+        });
+  
+    }
+  catch(error){
+    return res.status(400).json({message:"error"})
+  }
+  
+  })
 
 
 module.exports = router;

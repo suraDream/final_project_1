@@ -40,7 +40,7 @@
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-h2 {
+.head-edit-profile {
   text-align: center;
   background: white;
   color: var(--text-color);
@@ -50,26 +50,26 @@ h2 {
   font-weight: bold;
 }
 
-form {
+.editprofile-form {
   display: flex;
   flex-direction: column;
   gap: 15px;
 }
 
-label {
+.edit-profile-title {
   color: var(--text-color);
   font-weight: bold;
   margin: 12px 2px 0px;
 }
 
-input {
+.editprofile-form input {
   padding: 10px;
   border: 1px solid #ddd;
   border-radius: 5px;
   font-size: 14px;
 }
 
-button.save-btn {
+.save-btn {
   background-color: #28a745;
   color: white;
   border: none;
@@ -80,7 +80,7 @@ button.save-btn {
   transition: background-color 0.3s ease;
 }
 
-button.save-btn:hover {
+.save-btn:hover {
   background-color: #218838;
 }
 
@@ -105,7 +105,7 @@ button.save-btn:hover {
   background-color: #003f6a;
 }
 
-.message {
+.edit-profile-container .message {
   position: fixed;
   top: 50%;
   left: 50%;
@@ -118,17 +118,26 @@ button.save-btn:hover {
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
-.message.error {
+.edit-profile-container .message.error {
   display: flex;
   align-items: center;
   color: #d90429;
   background-color: #ffd4cc;
   font-size: 14px;
 }
+.edit-profile-container .message.error p{
+  color: #d90429;
+  font-size: 14px;
+}
 
-.message.success {
+.edit-profile-container .message.success {
   background-color: #d4edda;
   color: #155724;
   border: 1px solid #c3e6cb;
+  font-size: 14px;
+}
+
+.edit-profile-container .message.success p{
+  color: #155724;
   font-size: 14px;
 }

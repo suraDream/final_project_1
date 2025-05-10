@@ -24,15 +24,15 @@ export default function AdminManager() {
     if (isLoading) return;
 
     if (!user) {
-      router.push("/login");
+      router.replace("/login");
     }
 
     if (user?.status !== "ตรวจสอบแล้ว") {
-      router.push("/verification");
+      router.replace("/verification");
     }
 
     if (user?.role !== "admin") {
-      router.push("/");
+      router.replace("/");
     }
   }, [user, isLoading, router]);
 
@@ -88,7 +88,7 @@ export default function AdminManager() {
   const DeleteUserModal = ({ userId, onDelete, onClose }) => (
     <div className="confirm-modal-user">
       <div className="modal-content-user">
-        <p>คุณแน่ใจหรือไม่ว่าต้องการลบผู้ใช้นี้?</p>
+        <p className="comfirm-message">คุณแน่ใจหรือไม่ว่าต้องการลบผู้ใช้นี้?</p>
         <div className="modal-actions-user">
           <button className="confirmbtn-user" onClick={() => onDelete(userId)}>
             ยืนยัน
@@ -232,16 +232,15 @@ export default function AdminManager() {
 
   return (
     <>
-      {message && (
-        <div className={`message-box ${messageType}`}>
-          <p>{message}</p>
-        </div>
-      )}
       <div className="admin-manager-container">
-        <h2>รายชื่อผู้ใช้งาน</h2>
-        {/*ตารางสำหรับแอดมิน */}
-        <h3>ผู้ดูแลระบบ</h3>
-        <table>
+        {message && (
+          <div className={`message-box ${messageType}`}>
+            <p>{message}</p>
+          </div>
+        )}
+        <h2 className="Title">รายชื่อผู้ใช้งาน</h2>
+        <h3 className="Head">ผู้ดูแลระบบ</h3>
+        <table className="manager-table">
           <thead>
             <tr>
               <th>ชื่อ</th>
@@ -263,8 +262,8 @@ export default function AdminManager() {
         </table>
 
         {/* ตารางสำหรับลูกค้า */}
-        <h3>ผู้ใช้ทั้งหมด</h3>
-        <table>
+        <h3 className="Head">ผู้ใช้ทั้งหมด</h3>
+        <table className="manager-table-user">
           <thead>
             <tr>
               <th>ชื่อ-สกุล</th>
@@ -316,13 +315,14 @@ export default function AdminManager() {
           </tbody>
         </table>
         {selectedUser && (
-          <div className="modal">
-            <div className="modal-content">
-              <h3>แก้ไขข้อมูลลูกค้า</h3>
+          <div className="modal-manager">
+            <div className="modal-content-manager">
+              <h3 className="Head">แก้ไขข้อมูลลูกค้า</h3>
               <form onSubmit={handleUpdateUser}>
                 <label>ชื่อ:</label>
                 <input
                   type="text"
+                  maxLength={100}
                   value={selectedUser.first_name}
                   onChange={(e) =>
                     setSelectedUser({
@@ -334,6 +334,7 @@ export default function AdminManager() {
                 <label>นามสกุล:</label>
                 <input
                   type="text"
+                  maxLength={100}
                   value={selectedUser.last_name}
                   onChange={(e) =>
                     setSelectedUser({
@@ -353,12 +354,12 @@ export default function AdminManager() {
                 {emailError && <p style={{ color: "red" }}>{emailError}</p>}{" "}
                 {/* แสดงข้อความ error */}
                 <div className="modal-buttons">
-                  <button type="submit" className="save-btn">
+                  <button type="submit" className="save-btn-manager">
                     บันทึก
                   </button>
                   <button
                     type="button"
-                    className="cancel-btn"
+                    className="cancel-btn-manager"
                     onClick={closeModal}
                   >
                     ยกเลิก

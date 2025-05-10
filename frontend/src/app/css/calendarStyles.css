@@ -1,7 +1,8 @@
 :root {
   --text-color: #03045e;
 }
-.message-box {
+
+.sub-field-detail-container-calendar .message-box {
   position: fixed;
   top: 50%;
   left: 50%;
@@ -14,15 +15,18 @@
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
-.error {
+.sub-field-detail-container-calendar .error {
   display: flex;
   align-items: center;
-  color: #d90429;
   background-color: #ffd4cc;
+}
+
+.sub-field-detail-container-calendar .error p{
+  color: #d90429;
   font-size: 14px;
 }
 
-.success {
+.sub-field-detail-container-calendar .success {
   background-color: #d4edda;
   color: #155724;
   border: 1px solid #c3e6cb;
@@ -30,7 +34,12 @@
   display: flex;
 }
 
-.sub-field-detail-container {
+.sub-field-detail-container-calendar .success p{
+  color: #155724;
+  font-size: 14px;
+}
+
+.sub-field-detail-container-calendar {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -189,7 +198,7 @@
   background-color: var(--text-color);
 } */
 
-.save-btn button {
+.save-btn-calendar button {
   width: 40%;
   height: 50px;
   text-align: center;
@@ -207,7 +216,7 @@
   transition: background-color 0.3s ease;
 }
 
-.save-btn button:hover {
+.save-btn-calendar button:hover {
   background-color: #45a049;
 }
 
@@ -232,8 +241,8 @@
     font-size: 22px;
     padding: 5px;
   }
-  .sub-field-detail-container {
-    .detail{
+  .sub-field-detail-container-calendar {
+    .detail-calendar{
       justify-content: left;
       text-align: left;
       display: flex;

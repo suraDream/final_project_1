@@ -3,14 +3,16 @@ import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
 import "@/app/css/register.css";
 import { useAuth } from "@/app/contexts/AuthContext";
+import Link from "next/link";
 
 export default function Register() {
   const { user, isLoading } = useAuth();
 
   useEffect(() => {
     if (isLoading) return;
+
     if (user) {
-      router.push("/");
+      router.replace("/");
     }
   }, [user, isLoading]);
 
@@ -56,7 +58,7 @@ export default function Register() {
       if (updatedPassword.length < 10) {
         setErrors((prevErrors) => ({
           ...prevErrors,
-          passwordLength: "รหัสผ่านต้องมีอย่างน้อย 10 ตัวอักษร",
+          passwordLength: "*รหัสผ่านต้องมีอย่างน้อย 10 ตัวอักษร",
         }));
       } else {
         setErrors((prevErrors) => ({
@@ -68,7 +70,7 @@ export default function Register() {
       if (updatedPassword !== updatedConfirmPassword) {
         setErrors((prevErrors) => ({
           ...prevErrors,
-          passwordMatch: "รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน",
+          passwordMatch: "*รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน",
         }));
       } else {
         setErrors((prevErrors) => ({
@@ -77,12 +79,12 @@ export default function Register() {
         }));
       }
     }
-    const allowDomain = ["@gmail.com", "@hotmail.com"];
+    const allowDomain = ["@gmail.com", "@hotmail.com", "@rmuti.ac.th"];
     if (name === "email" && value.length > 0) {
       if (!allowDomain.some((domain) => value.endsWith(domain))) {
         setErrors((prevErrors) => ({
           ...prevErrors,
-          email: "โดเมนที่ใช้ได้ ได้แก่ @gmail.com, @hotmail.com",
+          email: "*โดเมนที่ใช้ได้ ได้แก่ @gmail.com, @hotmail.com",
         }));
       } else {
         setErrors((prevErrors) => ({
@@ -99,7 +101,7 @@ export default function Register() {
         setErrors((prevErrors) => ({
           ...prevErrors,
           password:
-            "รหัสผ่านต้องประกอบด้วยตัวอักษรพิมพ์ใหญ่[A-Z], พิมพ์เล็ก[a-z], ตัวเลข[0-9] และอักขระพิเศษ[!@#$%^&*]",
+            "*รหัสผ่านต้องประกอบด้วยตัวอักษรพิมพ์ใหญ่[A-Z], พิมพ์เล็ก[a-z], ตัวเลข[0-9] และอักขระพิเศษ[!@#$%^&*]",
         }));
       } else {
         setErrors((prevErrors) => ({
@@ -121,7 +123,7 @@ export default function Register() {
             setErrors((prevErrors) => ({
               ...prevErrors,
               [name]: `${
-                name === "user_name" ? "ชื่อผู้ใช้" : "อีเมล"
+                name === "user_name" ? "*ชื่อผู้ใช้" : "*อีเมล"
               } นี้ถูกใช้แล้ว`,
             }));
           } else {
@@ -130,7 +132,7 @@ export default function Register() {
         } catch (error) {
           console.error("Error checking duplicates:", error);
         }
-      }, 500); // ลดการร้องขอ API โดยรอ 500ms ก่อนตรวจสอบ
+      }, 500);
     }
   };
 
@@ -140,16 +142,16 @@ export default function Register() {
 
     Object.keys(formData).forEach((field) => {
       if (formData[field].trim() === "") {
-        newErrors[field] = "กรุณากรอกข้อมูลในช่องนี้";
+        newErrors[field] = "*กรุณากรอกข้อมูลในช่องนี้";
       }
     });
 
     if (formData.password.length < 10) {
-      newErrors.passwordLength = "รหัสผ่านต้องมีอย่างน้อย 10 ตัวอักษร";
+      newErrors.passwordLength = "*รหัสผ่านต้องมีอย่างน้อย 10 ตัวอักษร";
     }
 
     if (formData.password !== formData.confirmPassword) {
-      newErrors.passwordMatch = "รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน";
+      newErrors.passwordMatch = "*รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน";
     }
 
     const passwordRegex =
@@ -157,13 +159,13 @@ export default function Register() {
 
     if (!passwordRegex.test(formData.password)) {
       newErrors.password =
-        "รหัสผ่านต้องประกอบด้วยตัวอักษรพิมพ์ใหญ่[A-Z], พิมพ์เล็ก[a-z], ตัวเลข[0-9] และอักขระพิเศษ[!@#$%^&*]";
+        "*รหัสผ่านต้องประกอบด้วยตัวอักษรพิมพ์ใหญ่[A-Z], พิมพ์เล็ก[a-z], ตัวเลข[0-9] และอักขระพิเศษ[!@#$%^&*]";
     }
 
     // ตรวจสอบอีเมลและชื่อผู้ใช้
-    const allowDomain = ["@gmail.com", "@hotmail.com"];
+    const allowDomain = ["@gmail.com", "@hotmail.com", "@rmuti.ac.th"];
     if (!allowDomain.some((domain) => formData.email.endsWith(domain))) {
-      newErrors.email = "โดเมนที่ใช้ได้ ได้แก่ @gmail.com, @hotmail.com";
+      newErrors.email = "*โดเมนที่ใช้ได้ ได้แก่ @gmail.com, @hotmail.com";
     }
 
     if (!newErrors.user_name && !newErrors.email) {
@@ -183,11 +185,11 @@ export default function Register() {
         ]);
 
         if (userNameData.isDuplicate) {
-          newErrors.user_name = "ชื่อผู้ใช้ซ้ำ";
+          newErrors.user_name = "*ชื่อผู้ใช้ซ้ำ";
         }
 
         if (emailData.isDuplicate) {
-          newErrors.email = "อีเมลซ้ำ";
+          newErrors.email = "*อีเมลซ้ำ";
         }
       } catch (error) {
         console.error("Error checking duplicates:", error);
@@ -217,8 +219,8 @@ export default function Register() {
 
       setSuccessMessage("ลงทะเบียนสำเร็จ");
       setTimeout(() => {
-        router.push("/login");
-      }, 1500);
+        router.replace("/login");
+      }, 1000);
 
       setFormData({
         user_name: "",
@@ -245,11 +247,12 @@ export default function Register() {
 
   return (
     <div className="register-container">
-      <h2>ลงทะเบียน</h2>
+      <h2 className="register-head">ลงทะเบียน</h2>
       <form onSubmit={handleSubmit}>
-        <div className="input-group">
+        <div className="input-group-register">
           <label>ชื่อผู้ใช้:</label>
           <input
+            maxLength={20}
             type="text"
             name="user_name"
             value={formData.user_name}
@@ -263,9 +266,10 @@ export default function Register() {
           )}
         </div>
 
-        <div className="input-group">
+        <div className="input-group-register">
           <label>อีเมล:</label>
           <input
+            maxLength={100}
             type="email"
             name="email"
             value={formData.email}
@@ -278,9 +282,10 @@ export default function Register() {
             </p>
           )}
         </div>
-        <div className="input-group">
+        <div className="input-group-register">
           <label>ชื่อจริง:</label>
           <input
+            maxLength={100}
             type="text"
             name="first_name"
             value={formData.first_name}
@@ -294,9 +299,10 @@ export default function Register() {
           )}
         </div>
 
-        <div className="input-group">
+        <div className="input-group-register">
           <label>นามสกุล:</label>
           <input
+            maxLength={100}
             type="text"
             name="last_name"
             value={formData.last_name}
@@ -310,7 +316,7 @@ export default function Register() {
           )}
         </div>
 
-        <div className="input-group">
+        <div className="input-group-register">
           <label>รหัสผ่าน:</label>
           <input
             type="password"
@@ -330,7 +336,7 @@ export default function Register() {
           )}
         </div>
 
-        <div className="input-group">
+        <div className="input-group-register">
           <label>ยืนยันรหัสผ่าน:</label>
           <input
             type="password"
@@ -350,9 +356,13 @@ export default function Register() {
           )}
         </div>
 
-        <button type="submit">ลงทะเบียน</button>
+        <button className="register-button" type="submit">
+          ลงทะเบียน
+        </button>
         <div className="login-title">
-          <a href="/login"className="login-link">หรือคุณมีบัญชีอยู่แล้ว Login เลย</a>
+          <Link href="/login" className="login-link">
+            หรือคุณมีบัญชีอยู่แล้ว Login เลย
+          </Link>
         </div>
 
         {successMessage && (

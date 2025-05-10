@@ -2,8 +2,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import LogoutButton from "@/app/components/LogoutButton";
 import "@/app/css/Nav.css";
-import { useRouter } from "next/navigation";
+import { useRouter,usePathname } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
+import Link from "next/link";
 
 export default function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -13,8 +14,8 @@ export default function Navbar() {
   const dropdownRef = useRef(null);
   const userProfileRef = useRef(null); 
   const router = useRouter("");
+  const pathname = usePathname();
   const { user, isLoading } = useAuth();
-
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -52,24 +53,41 @@ export default function Navbar() {
 
   return (
     <nav>
-      <a href="/" className="logo">⚽</a>
-      {/* เมนูหลัก */}
+      <Link href="/" className="logo">⚽</Link>
       <div className="ullist">
-        <ul className={isMenuOpen ? "active" : ""}>
-          <li><a href="/">หน้าแรก</a></li>
-          <li><a href="/categories">หมวดหมู่</a></li>
-          <li><a href="/contact">ติดต่อเรา</a></li>
-        </ul>
-        <div className="hamburger" onClick={toggleMenu}>
-          <span className="bar"></span>
-          <span className="bar"></span>
-          <span className="bar"></span>
-        </div>
+          <ul className={isMenuOpen ? "active" : ""}>
+            <li>
+              <Link
+                href="/"
+                className={pathname === "/" ? "active" : ""}
+              >
+                หน้าแรก
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/categories"
+                className={pathname === "/categories" ? "active" : ""}
+              >
+                หมวดหมู่
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/contact"
+                className={pathname === "/contact" ? "active" : ""}
+              >
+                ติดต่อ
+              </Link>
+            </li>
+          </ul>
+      <div className="hamburger" onClick={toggleMenu}>
+        <span className="bar"></span>
+        <span className="bar"></span>
+        <span className="bar"></span>
       </div>
-
-      {/* ส่วนของ User */}
+    </div>
       <div className="user">
-        {/* ปุ่มค้นหาลอย */}
         <div className="search-container" ref={searchRef}>
           <button className="search-button" onClick={() => setIsSearchOpen(!isSearchOpen)}>
             🔍
@@ -89,30 +107,29 @@ export default function Navbar() {
             onClick={toggleDropdown} 
             ref={userProfileRef}  
           >
-            <span className="user-name">{user.user_name || "ผู้ใช้"}</span>
+            <span className="user-name">{user?.user_name || "ผู้ใช้"}</span>
 
-            {/* Dropdown เมนู */}
             <div className="dropdown" ref={dropdownRef}>
               <ul>
-                {user.role === "customer" &&  <li><a href="/editprofile">แก้ไขโปรไฟล์</a></li>}
-                {user.role === "customer" && <li><a href="/reservations">ดูรายละเอียดการจอง</a></li>}
-                {user.role === "customer" && <li><a href="/registerField">ลงทะเบียนสนาม</a></li>}
-                {user.role === "field_owner" && <li><a href="/editprofile">แก้ไขโปรไฟล์</a></li>}
-                {user.role === "field_owner" && <li><a href="/registerField">ลงทะเบียนสนาม</a></li>}
-                {user.role === "field_owner" && <li><a href="/myfield">สนามของฉัน</a></li>}
-                {user.role === "admin" && <li><a href="/editprofile">แก้ไขโปรไฟล์</a></li>}
-                {user.role === "admin" && <li><a href="/manager">จัดการผู้ใช้</a></li>}
-                {user.role === "admin" && <li><a href="/myfield">จัดการสนามกีฬา</a></li>}
-                {user.role === "admin" && <li><a href="/addfac">จัดการสิ่งอำนวยความสะดวก</a></li>}
-                {user.role === "admin" && <li><a href="/addtype">จัดการประเภทกีฬา</a></li>}
+                {user?.role === "customer" &&  <li><Link href="/editprofile">แก้ไขโปรไฟล์</Link></li>}
+                {user?.role === "customer" && <li><Link href="/reservations">ดูรายละเอียดการจอง</Link></li>}
+                {user?.role === "customer" && <li><Link href="/registerField">ลงทะเบียนสนาม</Link></li>}
+                {user?.role === "field_owner" && <li><Link href="/editprofile">แก้ไขโปรไฟล์</Link></li>}
+                {user?.role === "field_owner" && <li><Link href="/registerField">ลงทะเบียนสนาม</Link></li>}
+                {user?.role === "field_owner" && <li><Link href="/myfield">สนามของฉัน</Link></li>}
+                {user?.role === "admin" && <li><Link href="/editprofile">แก้ไขโปรไฟล์</Link></li>}
+                {user?.role === "admin" && <li><Link href="/manager">จัดการผู้ใช้</Link></li>}
+                {user?.role === "admin" && <li><Link href="/myfield">จัดการสนามกีฬา</Link></li>}
+                {user?.role === "admin" && <li><Link href="/addfac">จัดการสิ่งอำนวยความสะดวก</Link></li>}
+                {user?.role === "admin" && <li><Link href="/addtype">จัดการประเภทกีฬา</Link></li>}
                 <LogoutButton />
               </ul>
             </div>
           </div>
         ) : (
           <>
-            <a href="/login" className="login">เข้าสู่ระบบ</a>
-            <a href="/register" className="register">สมัครสมาชิก</a>
+            <Link href="/login" className="login">เข้าสู่ระบบ</Link>
+            <Link href="/register" className="register">สมัครสมาชิก</Link>
           </>
         )}
       </div>

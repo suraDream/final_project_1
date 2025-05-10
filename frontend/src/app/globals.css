@@ -57,8 +57,12 @@ body {
 * {
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
   font-family: "Kanit", sans-serif;
+  box-sizing: border-box;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
 }
 
 body {

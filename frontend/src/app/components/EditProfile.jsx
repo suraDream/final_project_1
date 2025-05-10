@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import "@/app/css/editProfile.css";
 import { useAuth } from "@/app/contexts/AuthContext";
+import Link from "next/link";
 
 export default function EditProfile() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -23,12 +24,12 @@ export default function EditProfile() {
     if (isLoading) return;
 
     if (!user) {
-      router.push("/login");
+      router.replace("/login");
       return;
     }
 
     if (user?.status !== "ตรวจสอบแล้ว") {
-      router.push("/verification");
+      router.replace("/verification");
     }
     if (user) {
       setCurrentUser(user);
@@ -39,7 +40,7 @@ export default function EditProfile() {
         role: user?.role,
       });
     } else {
-      router.push("/login");
+      router.replace("/login");
     }
   }, [user,isLoading,router]);
 
@@ -104,7 +105,6 @@ export default function EditProfile() {
         return;
       }
       setMessage({ text: "ข้อมูลโปรไฟล์ของคุณถูกอัปเดตแล้ว", type: "success" });
-      router.push("/editprofile");
     } catch (error) {
       console.error("Error updating profile:", error);
       setMessage({ text: "เกิดข้อผิดพลาดในการอัปเดตข้อมูล", type: "error" });
@@ -130,25 +130,27 @@ export default function EditProfile() {
   return (
     <>
       <div className="edit-profile-container">
-        <h2>แก้ไขโปรไฟล์</h2>
-        <form onSubmit={handleUpdateProfile}>
-          <label>ชื่อ:</label>
+        <h2 className="head-edit-profile">แก้ไขโปรไฟล์</h2>
+        <form onSubmit={handleUpdateProfile} className="editprofile-form">
+          <label className="edit-profile-title">ชื่อ:</label>
           <input
             type="text"
+            maxLength={100}
             value={updatedUser.first_name}
             onChange={(e) =>
               setUpdatedUser({ ...updatedUser, first_name: e.target.value })
             }
           />
-          <label>นามสกุล:</label>
+          <label className="edit-profile-title">นามสกุล:</label>
           <input
             type="text"
+            maxLength={100}
             value={updatedUser.last_name}
             onChange={(e) =>
               setUpdatedUser({ ...updatedUser, last_name: e.target.value })
             }
           />
-          <label>อีเมล:</label>
+          <label className="edit-profile-title">อีเมล:</label>
           <input
             type="email"
             value={updatedUser.email}
@@ -156,7 +158,7 @@ export default function EditProfile() {
               setUpdatedUser({ ...updatedUser, email: e.target.value })
             }
           />
-          {/* แสดงข้อความผิดพลาดหรือสำเร็จ */}
+          
           {message.text && (
             <div className={`message ${message.type}`}>
               <p>{message.text}</p>
@@ -166,10 +168,10 @@ export default function EditProfile() {
           <button type="submit" className="save-btn">
             บันทึก
           </button>
-          <label>เปลี่ยนรหัสผ่าน</label>
-          <a href="/change-password" className="change-password-link">
+          <label className="edit-profile-title">เปลี่ยนรหัสผ่าน</label>
+          <Link href="/change-password" className="change-password-link">
             เปลี่ยนรหัสผ่าน
-          </a>
+          </Link>
         </form>
       </div>
     </>

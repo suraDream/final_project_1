@@ -272,7 +272,7 @@ router.post("/verify-otp", async (req, res) => {
 // อัปเดตรหัสผ่าน
 router.put("/:id/change-password", authMiddleware, async (req, res) => {
   const { id } = req.params;
-  const { password } = req.body;  // ใช้แค่รหัสผ่านใหม่
+  const { password } = req.body; 
 
   try {
     if (!password) {
@@ -299,7 +299,7 @@ router.put("/:id/change-password", authMiddleware, async (req, res) => {
 
 router.put("/:id/change-password-reset", async (req, res) => {
   const { id } = req.params;
-  const { password } = req.body;  // ใช้แค่รหัสผ่านใหม่
+  const { password } = req.body;
 
   try {
     if (!password) {

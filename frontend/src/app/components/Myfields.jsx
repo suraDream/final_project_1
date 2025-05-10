@@ -10,26 +10,25 @@ export default function MyFieldPage() {
   const [myFields, setMyFields] = useState([]);
   const [filteredFields, setFilteredFields] = useState([]);
   const [error, setError] = useState(null);
-  const [statusFilter, setStatusFilter] = useState("ทั้งหมด"); // Default filter to show all
+  const [statusFilter, setStatusFilter] = useState("ทั้งหมด");
   const [currentUser, setCurrentUser] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [fieldIdToDelete, setFieldIdToDelete] = useState(null);
   const { user, isLoading } = useAuth();
 
-
   useEffect(() => {
     if (isLoading) return;
 
     if (!user) {
-      router.push("/login");
+      router.replace("/login");
     }
 
     if (user?.status !== "ตรวจสอบแล้ว") {
-      router.push("/verification");
+      router.replace("/verification");
     }
 
     if (user?.role !== "admin" && user?.role !== "field_owner") {
-      router.push("/");
+      router.replace("/");
     }
   }, [user, isLoading, , router]);
 
@@ -45,14 +44,13 @@ export default function MyFieldPage() {
         });
 
         const data = await res.json();
-        console.log(data);
 
         if (!res.ok) {
           throw new Error(data.error || "เกิดข้อผิดพลาดในการดึงข้อมูลสนาม");
         }
 
         setMyFields(data);
-        setFilteredFields(data); // Initially set the filtered fields to all fields
+        setFilteredFields(data);
       } catch (err) {
         console.error("Error loading fields:", err.message);
         setError(err.message);
@@ -62,10 +60,9 @@ export default function MyFieldPage() {
     fetchMyFields();
   }, []);
 
-  // Filter fields based on the selected status
   useEffect(() => {
     if (statusFilter === "ทั้งหมด") {
-      setFilteredFields(myFields); // Show all fields
+      setFilteredFields(myFields);
     } else {
       setFilteredFields(
         myFields.filter((field) => field.status === statusFilter)
@@ -74,7 +71,6 @@ export default function MyFieldPage() {
   }, [statusFilter, myFields]);
 
   const handleDeleteField = (field_id) => {
-    // Set the field_id to be deleted and show the modal
     setFieldIdToDelete(field_id);
     setShowDeleteModal(true);
   };
@@ -96,14 +92,13 @@ export default function MyFieldPage() {
         throw new Error("Failed to delete field");
       }
 
-      // Remove the deleted field from the state
       setMyFields(
         myFields.filter((field) => field.field_id !== fieldIdToDelete)
       );
       setFilteredFields(
         filteredFields.filter((field) => field.field_id !== fieldIdToDelete)
       );
-      setShowDeleteModal(false); // Close the modal after deletion
+      setShowDeleteModal(false);
     } catch (error) {
       console.error("Error deleting field:", error);
     }
@@ -116,13 +111,17 @@ export default function MyFieldPage() {
     );
 
   return (
-    <div className="container">
-      <div className="section-title-container">
-        <h2 className="section-title">สนามของฉัน</h2>
+    <div className="myfield-container">
+      <div className="field-section-title-container">
+        {user?.role === "admin" ? (
+          <h2 className="field-section-title">สนามทั้งหมด</h2>
+        ) : (
+          <h2 className="field-section-title">สนามของฉัน</h2>
+        )}
         <select
           onChange={(e) => setStatusFilter(e.target.value)}
           value={statusFilter}
-          className="sport-select"
+          className="sport-select-myfield"
         >
           <option value="ทั้งหมด">ทั้งหมด</option>
           <option value="ผ่านการอนุมัติ">ผ่านการอนุมัติ</option>
@@ -130,10 +129,10 @@ export default function MyFieldPage() {
           <option value="ไม่ผ่านการอนุมัติ">ไม่ผ่าน</option>
         </select>
       </div>
-      <div className="grid">
+      <div className="grid-myfield">
         {filteredFields.length > 0 ? (
           filteredFields.map((field) => (
-            <div key={field.field_id} className="card">
+            <div key={field.field_id} className="card-myfield">
               <img
                 onClick={() => router.push(`/profile/${field.field_id}`)}
                 src={
@@ -142,31 +141,41 @@ export default function MyFieldPage() {
                     : "https://via.placeholder.com/300x200"
                 }
                 alt={field.field_name}
-                className="card-img"
+                className="card-myfield-img"
               />
               <h3 className="custom-field-name">{field.field_name}</h3>
-              <p className="custom-owner-info">
+              <div className="custom-owner-info-myfield">
                 เจ้าของ: {field.first_name} {field.last_name}
-              </p>
-              <p className="custom-owner-info">: {field.status}</p>
-              <div className="custom-button-group">
+              </div>
+              <div
+                className={`custom-owner-info-myfield ${
+                  field.status === "ผ่านการอนุมัติ"
+                    ? "passed"
+                    : field.status === "ไม่ผ่านการอนุมัติ"
+                    ? "failed"
+                    : "pending"
+                }`}
+              >
+                {field.status}
+              </div>
+              <div className="custom-button-group-myfield">
                 <button
                   onClick={() => router.push(`/checkField/${field.field_id}`)}
-                  className="custom-button-view"
+                  className="custom-button-view-myfield"
                 >
                   ดูรายละเอียด
                 </button>
                 {field.status !== "รอตรวจสอบ" && (
                   <button
                     onClick={() => router.push(`/editField/${field.field_id}`)}
-                    className="custom-button-edit"
+                    className="custom-button-edit-myfield"
                   >
                     แก้ไข
                   </button>
                 )}
                 <button
                   onClick={() => handleDeleteField(field.field_id)}
-                  className="custom-button-delete"
+                  className="custom-button-delete-myfield"
                 >
                   ลบ
                 </button>
@@ -180,17 +189,20 @@ export default function MyFieldPage() {
         )}
       </div>
       {showDeleteModal && (
-        <div className="modal-overlay">
-          <div className="modal">
+        <div className="modal-overlay-myfield">
+          <div className="modal-myfield">
             <h3>ยืนยันการลบสนาม</h3>
             <p>คุณต้องการลบสนามหรือไม่</p>
-            <div className="modal-actions">
-              <button className="savebtn" onClick={confirmDeleteSubField}>
+            <div className="modal-actions-myfield">
+              <button
+                className="savebtn-myfield"
+                onClick={confirmDeleteSubField}
+              >
                 ยืนยัน
               </button>
               <button
-                className="canbtn"
-                onClick={() => setShowDeleteModal(false)} // Close the modal
+                className="canbtn-myfield"
+                onClick={() => setShowDeleteModal(false)}
               >
                 ยกเลิก
               </button>

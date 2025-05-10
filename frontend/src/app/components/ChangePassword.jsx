@@ -18,12 +18,12 @@ export default function ChangePassword() {
     if (isLoading) return;
 
     if (!user) {
-      router.push("/login");
+      router.replace("/login");
       return;
     }
 
     if (user?.status !== "ตรวจสอบแล้ว") {
-      router.push("/verification");
+      router.replace("/verification");
     }
   }, [user, isLoading, router]);
 
@@ -133,32 +133,35 @@ export default function ChangePassword() {
 
   return (
     <div>
-      {message && (
-        <div className={`message-box ${messageType}`}>
-          <p>{message}</p>
-        </div>
-      )}
       <div className="change-password-container">
-        <h2>เปลี่ยนรหัสผ่าน</h2>
-        <form onSubmit={handlePasswordChange}>
-          <label>รหัสเดิม:</label>
+        {message && (
+          <div className={`message-box ${messageType}`}>
+            <p>{message}</p>
+          </div>
+        )}
+        <h2 className="change-password-head">เปลี่ยนรหัสผ่าน</h2>
+        <form onSubmit={handlePasswordChange} className="changepassword-form">
+          <label className="change-reset-password">รหัสเดิม:</label>
           <input
+            maxLength={50}
             type="password"
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
             required
           />
 
-          <label>รหัสใหม่:</label>
+          <label className="change-reset-password">รหัสใหม่:</label>
           <input
+            maxLength={50}
             type="password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             required
           />
 
-          <label>ยืนยันรหัสใหม่:</label>
+          <label className="change-reset-password">ยืนยันรหัสใหม่:</label>
           <input
+            maxLength={50}
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}

@@ -1,6 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap");
 :root {
-  --text-color: #03045E;
+  --text-color: #03045e;
+  --active-color: #0014c7;
 }
 
 * {
@@ -11,7 +12,7 @@
 }
 
 body {
-  background: rgba(173, 216, 230, 0.514) ;
+  background: rgba(173, 216, 230, 0.514);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -59,7 +60,7 @@ ul {
 
 ul li a {
   text-decoration: none;
-  color: var(--text-color); 
+  color: var(--text-color);
   font-size: 20px;
   position: relative;
   transition: color 0.3s ease;
@@ -72,21 +73,31 @@ ul li a {
   left: 0;
   width: 0;
   height: 2px;
-  background-color: var(--text-color); 
+  background-color: var(--text-color);
   transition: width 0.3s ease-in-out;
 }
 
 ul li a::before {
-  top: -5px; 
+  top: -5px;
 }
 
 ul li a::after {
-  bottom: -5px; 
+  bottom: -5px;
 }
 
 ul li a:hover::after,
 ul li a:hover::before {
   width: 100%;
+}
+
+ul li a.active::before,
+ul li a.active::after {
+  width: 100%;
+  background-color: var(--text-color);
+}
+
+ul li a.active {
+  color: var(--active-color);
 }
 
 .search-container {
@@ -156,15 +167,14 @@ ul li a:hover::before {
   background-color: #f0f0f0;
 }
 
-.profile-img {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
 .user-name {
   font-size: 16px;
+  max-width: 100%;
+  width: 50px;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .dropdown {
@@ -290,15 +300,15 @@ ul li a:hover::before {
     gap: 20px;
     list-style: none;
   }
-  
+
   ul li a {
     text-decoration: none;
-    color: var(--text-color); 
+    color: var(--text-color);
     font-size: 20px;
     position: relative;
     transition: color 0.3s ease;
   }
-  
+
   .ullist ul li a::after,
   .ullist ul li a::before {
     content: "";
@@ -306,21 +316,31 @@ ul li a:hover::before {
     left: 0;
     width: 0;
     height: 2px;
-    background-color: var(--text-color); 
+    background-color: var(--text-color);
     transition: width 0.3s ease-in-out;
   }
-  
+
   ul li a::before {
-    top: -5px; 
+    top: -5px;
   }
-  
+
   ul li a::after {
-    bottom: -5px; 
+    bottom: -5px;
   }
-  
+
   ul li a:hover::after,
   ul li a:hover::before {
     width: 100%;
+  }
+
+  ul li a.active::before,
+  ul li a.active::after {
+    width: 100%;
+    background-color: var(--text-color);
+  }
+
+  ul li a.active {
+    color: var(--active-color);
   }
 
   .search-container {
@@ -363,7 +383,7 @@ ul li a:hover::before {
   .search-box.active {
     width: 250px;
     opacity: 1;
-    border-color: #023E8A;
+    border-color: #023e8a;
     background: white;
   }
 
@@ -391,7 +411,7 @@ ul li a:hover::before {
   }
 
   .user-name {
-    font-size: 16px;
+    font-size: 14px;
   }
 
   .dropdown {
@@ -437,17 +457,17 @@ ul li a:hover::before {
     width: 100%;
   }
 }
-@media screen and (max-width: 1180px){
+@media screen and (max-width: 1180px) {
   .search-box.active {
     width: 200px;
   }
 }
-@media screen and (max-width: 1070px){
+@media screen and (max-width: 1070px) {
   .search-box.active {
     width: 150px;
   }
 }
-@media screen and (max-width: 980px){
+@media screen and (max-width: 980px) {
   .search-box.active {
     width: 130px;
   }
@@ -496,7 +516,7 @@ ul li a:hover::before {
 
   ul li a {
     text-decoration: none;
-    color: var(--text-color); 
+    color: var(--text-color);
     position: relative;
     transition: color 0.3s ease;
   }
@@ -508,21 +528,31 @@ ul li a:hover::before {
     left: 0;
     width: 0;
     height: 2px;
-    background-color: var(--text-color); 
+    background-color: var(--text-color);
     transition: width 0.3s ease-in-out;
   }
-  
+
   ul li a::before {
-    top: -5px; 
+    top: -5px;
   }
-  
+
   ul li a::after {
-    bottom: -5px; 
+    bottom: -5px;
   }
-  
+
   ul li a:hover::after,
   ul li a:hover::before {
     width: 100%;
+  }
+
+  ul li a.active::before,
+  ul li a.active::after {
+    width: 100%;
+    background-color: var(--text-color);
+  }
+
+  ul li a.active {
+    color: var(--active-color);
   }
 
   .search-container {
@@ -565,7 +595,7 @@ ul li a:hover::before {
   .search-box.active {
     width: 130px;
     opacity: 1;
-    border-color: #023E8A;
+    border-color: #023e8a;
     background: white;
   }
 
@@ -587,20 +617,8 @@ ul li a:hover::before {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     transition: 0.3s;
   }
-
   .user-profile:hover {
     background-color: #f0f0f0;
-  }
-
-  .profile-img {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    object-fit: cover;
-  }
-
-  .user-name {
-    font-size: 16px;
   }
 
   .dropdown {
@@ -664,7 +682,7 @@ ul li a:hover::before {
     padding: 10px 0;
     z-index: 10;
   }
-  
+
   .ullist ul li a::after,
   .ullist ul li a::before {
     content: "";
@@ -672,21 +690,31 @@ ul li a:hover::before {
     left: 0;
     width: 0;
     height: 2px;
-    background-color: var(--text-color); 
+    background-color: var(--text-color);
     transition: width 0.3s ease-in-out;
   }
-  
+
   ul li a::before {
-    top: -5px; 
+    top: -5px;
   }
-  
+
   ul li a::after {
-    bottom: -5px; 
+    bottom: -5px;
   }
-  
+
   ul li a:hover::after,
   ul li a:hover::before {
     width: 100%;
+  }
+
+  ul li a.active::before,
+  ul li a.active::after {
+    width: 100%;
+    background-color: var(--text-color);
+  }
+
+  ul li a.active {
+    color: var(--active-color);
   }
 
   ul.active {
@@ -712,7 +740,7 @@ ul li a:hover::before {
     position: absolute;
     top: 100%;
     margin-top: 5px;
-    transform: translateX(-65%);
+    transform: translateX(-75%);
     width: 280px;
     padding: 5px 20px;
     z-index: 999;
@@ -819,9 +847,9 @@ ul li a:hover::before {
   .login,
   .register {
     width: 100%;
+    font-size: 10px;
     padding: 12px 0;
   }
-  
 }
 
 @media screen and (max-width: 460px) {
@@ -879,7 +907,6 @@ ul li a:hover::before {
     width: 100%;
     padding: 12px 0;
   }
-  
 }
 
 @media screen and (max-width: 350px) {
@@ -937,7 +964,6 @@ ul li a:hover::before {
     width: 100%;
     padding: 12px 0;
   }
-  
 }
 
 @media screen and (max-width: 325px) {
@@ -1038,5 +1064,4 @@ ul li a:hover::before {
     display: block;
     width: 100%;
   }
-
 }

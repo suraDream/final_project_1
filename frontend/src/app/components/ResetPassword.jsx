@@ -2,6 +2,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import "@/app/css/resetPassword.css";
+import Link from "next/link";
 
 export default function ResetPassword() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -21,13 +22,10 @@ export default function ResetPassword() {
 
     if (Date.now() < expiresAt) {
       const user = JSON.parse(sessionStorage.getItem("user"));
-      if (user?.status !== "ตรวจสอบแล้ว") {
-        router.push("/verification");
-      }
     } else {
       sessionStorage.removeItem("expiresAt");
       sessionStorage.removeItem("user");
-      router.push("/resetPassword");
+      router.replace("/resetPassword");
     }
   }, []);
 
@@ -56,7 +54,6 @@ export default function ResetPassword() {
 
       const result = await res.json();
       if (res.ok) {
-        console.log(result);
         setMessage(`ส่ง OTP ไปที่ ${email} สำเร็จ`);
         setMessageType("success");
         sessionStorage.setItem("user", JSON.stringify(result.user)); // เก็บข้อมูลผู้ใช้
@@ -97,7 +94,6 @@ export default function ResetPassword() {
 
       const result = await res.json();
       if (res.ok) {
-        console.log(result);
         setMessage(`ส่ง OTP ใหม่ไปที่ ${email} สำเร็จ`);
         setMessageType("success");
         sessionStorage.setItem("user", JSON.stringify(result.user)); // เก็บข้อมูลผู้ใช้
@@ -105,7 +101,7 @@ export default function ResetPassword() {
       } else {
         sessionStorage.removeItem("user", JSON.stringify(result));
         sessionStorage.removeItem("expiresAt", result);
-        router.push("/resetPassword");
+        router.replace("/resetPassword");
         setMessage(result.message);
         setMessageType("error");
       }
@@ -140,7 +136,7 @@ export default function ResetPassword() {
         setMessage("ยืนยัน OTP สำเร็จ กำลังเข้าสู่การรีเซ็ตรหัสผ่าน");
         setMessageType("success");
         setTimeout(() => {
-          router.push("/confirmResetPassword");
+          router.replace("/confirmResetPassword");
         }, 1500);
       } else {
         setMessage(result.message);
@@ -165,19 +161,20 @@ export default function ResetPassword() {
 
   return (
     <div>
-      {message && (
-        <div className={`message-box ${messageType}`}>
-          <p>{message}</p>
-        </div>
-      )}
       <div className="reset_password_container">
+        {message && (
+          <div className={`message-box ${messageType}`}>
+            <p>{message}</p>
+          </div>
+        )}
         <div className="head-titel">
           <h1>ลืมรหัสผ่าน</h1>
         </div>
         {canRead && (
           <form onSubmit={onSubmit}>
-            <div className="input">
+            <div className="input-foget-password">
               <input
+                maxLength={100}
                 required
                 type="email"
                 placeholder="ใส่ Email ของคุณ"
@@ -186,24 +183,24 @@ export default function ResetPassword() {
               />
             </div>
             {sentEmail && (
-              <div className="btn">
-                <button className="btn" type="submit">
-                  ยืนยัน
-                </button>
+              <div className="btn-submit-reset-password">
+                <button type="submit">ยืนยัน</button>
               </div>
             )}
           </form>
         )}
         {!canRead && (
-          <div className="input">
+          <div className="input-foget-password">
             <input readOnly required value={email} />
           </div>
         )}
         {canEnterOTP && (
-          <div className="input">
+          <div className="input-foget-password">
             <input
-              type="text"
               required
+              type="text"
+              minLength={6}
+              maxLength={6}
               placeholder="ใส่ OTP"
               value={otp}
               onChange={(e) => setOTP(e.target.value)}
@@ -219,12 +216,15 @@ export default function ResetPassword() {
         )}
         {!canRequestOTP && <p>กรุณารอ {timer} วินาทีก่อนขอ OTP ใหม่</p>}
         {canEnterOTP && (
-          <div className="btn">
-            <button type="button" className="btn" onClick={verifyOTP}>
+          <div className="btn-submit-reset-password">
+            <button type="button" onClick={verifyOTP}>
               ยืนยัน OTP
             </button>
           </div>
         )}
+        <Link href="/login" className="login-reset-password">
+          กลับหน้า Login
+        </Link>
       </div>
     </div>
   );
