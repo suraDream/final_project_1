@@ -11,6 +11,7 @@ export default function Booking() {
   const [closeHours, setCloseHours] = useState("");
   const [slots, setSlots] = useState([]);
   const [selectedSlots, setSelectedSlots] = useState([]); // array เก็บ index ที่เลือก
+  const [selectedSlotsArr, setSelectedSlotsArr] = useState([]); // array เก็บ index ที่เลือก
   const [canBook, setCanBook] = useState(false);
   const [timeStart, setTimeStart] = useState("");
   const [timeEnd, setTimeEnd] = useState("");
@@ -49,8 +50,10 @@ export default function Booking() {
   const [timeLeft, setTimeLeft] = useState(600); // เริ่มที่ 10 นาที (600 วิ)
   const [showModal, setShowModal] = useState(false);
   const timerRef = useRef(null); // กัน setInterval ซ้ำ
+  const isTimeoutRef = useRef(false);
   const [message, setMessage] = useState(""); // ข้อความแสดงผลผิดพลาด
   const [messageType, setMessageType] = useState("");
+  const [bookTimeArr, setBookTimeArr] = useState([]);
 
   useEffect(() => {
     if (isLoading) return;
@@ -69,26 +72,69 @@ export default function Booking() {
 
   useEffect(() => {
     if (!bookingDate || !subFieldId) return;
-  
+
     const fetchBookedSlots = async () => {
       try {
-        const today = new Date(bookingDate);
-        const dayAfterTomorrow = new Date(today);
-        dayAfterTomorrow.setDate(today.getDate() + 2); // ดึงถึงวันหลังจากวันถัดไป
-    
+        // ✅ รับ booking_date ที่บันทึกไว้แบบ YYYY-MM-DD
+        // bookingDateRaw: ค่าที่มาจาก sessionStorage
+        const bookingDateRaw = sessionStorage.getItem("booking_date");
+
+        // ✅ ถ้า format คือ "Tue May 13 2025" → แปลงใหม่
+
+        const bookingDateFormatted = new Date(bookingDate).toLocaleDateString(
+          "en-CA"
+        );
+
+        const day = new Date(`${bookingDateFormatted}T00:00:00`);
+        const today = new Date(day);
+        today.setDate(day.getDate() + 1);
+        const tomorrow = new Date(day);
+        tomorrow.setDate(day.getDate() + 2);
+
         const start = today.toISOString().split("T")[0];
-        const end = dayAfterTomorrow.toISOString().split("T")[0];
-    
+        const end = tomorrow.toISOString().split("T")[0];
+
+        console.log(`today: ${bookingDateRaw}`);
+        console.log(`start: ${start}`);
+        console.log(`end: ${end}`);
+
         const res = await fetch(
-          `${API_URL}/booking/booked-range/${subFieldId}/${start}/${end}`
+          `${API_URL}/booking/booked-block/${subFieldId}/${start}/${end}`
         );
         const data = await res.json();
-    
+
         console.log("📦 Booked from API:", data);
-    
+
         if (!data.error) {
           console.log("Booked slots:", data.data);
+
           setBookedSlots(data.data);
+         
+ const timeRangesWithStatus = data.data.flatMap(item =>
+  (item.selected_slots || []).map(time => ({
+    time,
+    status: item.status
+  }))
+);
+
+// Step 3: ดึง slot ทั้งหมดเป็น array เดียว (string เท่านั้น)
+const selectedSlotsFromAPI = timeRangesWithStatus.map(item => item.time);
+
+// Step 4: เซ็ตค่าที่ต้องใช้ใน state
+setBookTimeArr(timeRangesWithStatus);       // สำหรับการแสดงผลพร้อม status
+setSelectedSlotsArr(selectedSlotsFromAPI);  // สำหรับเทียบกับ slot ที่ user เลื
+
+
+
+
+
+      
+          console.log("bookingtime",timeRangesWithStatus); // "23:30 - 00:00"
+          
+         
+
+          console.log("xx");
+          console.log(data.data);
         } else {
           console.error("API returned error:", data.message);
         }
@@ -96,22 +142,24 @@ export default function Booking() {
         console.error("❌ Failed to fetch booked slots:", error.message);
       }
     };
-  
+
     fetchBookedSlots();
-  
+
     if (isBooked) {
       fetchBookedSlots();
       setIsBooked(false);
     }
   }, [bookingDate, subFieldId, isBooked]);
-  
+
+
+         
 
   useEffect(() => {
     if (!field_id) {
       console.log("field_id is not defined. Skipping fetch.");
       return; // ถ้าไม่มี field_id ก็ไม่ให้ทำงานต่อ
     }
-
+    console.log(`bookedSlots${bookedSlots}`);
     const fetchData = async () => {
       try {
         const res = await fetch(`${API_URL}/field/field-fac/${field_id}`, {
@@ -260,44 +308,15 @@ export default function Booking() {
     return slots;
   }
 
-    function getSlotStatus(slot) {
-      const [slotStartStr, slotEndStr] = slot.split(" - ");
-      const [slotStartHour, slotStartMinute] = slotStartStr.split(":").map(Number);
-      const [slotEndHour, slotEndMinute] = slotEndStr.split(":").map(Number);
-    
-      let slotStartMin = slotStartHour * 60 + slotStartMinute;
-      let slotEndMin = slotEndHour * 60 + slotEndMinute;
-      if (slotEndMin <= slotStartMin) {
-        slotEndMin += 1440;
-      }
-    
-      for (let booking of bookedSlots) {
-        const [bStartHour, bStartMin] = booking.start_time.slice(0, 5).split(":").map(Number);
-        const [bEndHour, bEndMin] = booking.end_time.slice(0, 5).split(":").map(Number);
-    
-        let bookingStartMin = bStartHour * 60 + bStartMin;
-        let bookingEndMin = bEndHour * 60 + bEndMin;
-        if (bookingEndMin <= bookingStartMin) {
-          bookingEndMin += 1440;
-        }
-    
-        const shifts = [0, -1440, 1440];
-    
-        for (let shift of shifts) {
-          let shiftedBookingStart = bookingStartMin + shift;
-          let shiftedBookingEnd = bookingEndMin + shift;
-    
-          if (slotStartMin < shiftedBookingEnd && slotEndMin > shiftedBookingStart) {
-            return booking.status;
-          }
-        }
-      }
-    
-      return null;
-  }
-  
 
-  
+function getSlotStatus(slot) {
+  console.log(bookTimeArr)
+  const found = bookTimeArr.find(b => b.time === slot);
+  console.log(`CHECK: slot = ${slot}, found =`, found);
+  return found ? found.status : null;
+}
+
+
   function calculateSelectedTimes() {
     if (selectedSlots.length === 0) {
       setTimeStart("");
@@ -307,11 +326,11 @@ export default function Booking() {
       setTotalHours(0);
       return;
     }
-  
+
     const sorted = [...selectedSlots].sort((a, b) => a - b);
     const start = slots[sorted[0]].split("-")[0].trim();
     let end = slots[sorted[sorted.length - 1]].split("-")[1].trim();
-  
+
     const [startHour, startMinute] = start.split(":").map(Number);
     const [endHour, endMinute] = end.split(":").map(Number);
     const [openHour, openMinute] = openHours.split(":").map(Number);
@@ -326,31 +345,33 @@ export default function Booking() {
       startDateObj.setDate(startDateObj.getDate() + 1);
       endDateObj.setDate(endDateObj.getDate() + 1);
     }
-  
+
     // ถ้าเวลาสิ้นสุดข้ามวัน ให้เพิ่มวันให้ endDateObj
-    if (endHour < startHour || (endHour === startHour && endMinute < startMinute)) {
+    if (
+      endHour < startHour ||
+      (endHour === startHour && endMinute < startMinute)
+    ) {
       endDateObj.setDate(endDateObj.getDate() + 1);
     }
-  
+
     setStartDate(startDateObj.toISOString().split("T")[0]); // แปลงเป็นรูปแบบ YYYY-MM-DD
     setEndDate(endDateObj.toISOString().split("T")[0]); // แปลงเป็นรูปแบบ YYYY-MM-DD
     setTimeStart(start);
     setTimeEnd(end);
-  
+
     const startInMinutes = startHour * 60 + startMinute;
     const endInMinutes = endHour * 60 + endMinute;
     let minutes = endInMinutes - startInMinutes;
-  
+
     if (minutes < 0) minutes += 24 * 60; // คำนวณกรณีข้ามวัน
-  
+
     let hours = minutes / 60;
     if (hours % 1 === 0.5) {
       hours = Math.floor(hours) + 0.5;
     }
-  
+
     setTotalHours(hours);
   }
-  
 
   useEffect(() => {
     calculateSelectedTimes();
@@ -457,6 +478,8 @@ export default function Booking() {
   };
 
   function resetSelection() {
+    setStartDate("");
+    setEndDate("");
     setShowFacilities(false);
     setCanBook(false);
     setSelectedSlots([]);
@@ -470,6 +493,7 @@ export default function Booking() {
     setTotalPrice(0);
     setTotalRemaining(0);
   }
+
   const handleConfirm = () => {
     if (!payMethod) {
       setMessage("กรุณาเลือกช่องทางการชำระเงิน");
@@ -482,11 +506,12 @@ export default function Booking() {
 
   const handleCancel = () => {
     setShowModal(false);
+    isTimeoutRef.current = false; // บอกว่าไม่ใช่หมดเวลาอัตโนมัติ
     if (timerRef.current) {
-      clearInterval(timerRef.current); // หยุดนับถอยหลัง
-      timerRef.current = null; // เคลียร์ค่าอ้างอิง
+      clearInterval(timerRef.current);
+      timerRef.current = null;
     }
-    setTimeLeft(0); // รีเซ็ตเวลา
+    setTimeLeft(0); // ไม่ trigger redirect เพราะ isTimeoutRef = false
     setPayMethod("");
     setDepositSlip(null);
     setImgPreview("");
@@ -536,6 +561,7 @@ export default function Booking() {
         startDate: startDate,
         endTime: timeEnd,
         endDate: endDate,
+        selectedSlots:selectedSlotsArr,
         totalHours: totalHours,
         totalPrice: totalPrice,
         payMethod: payMethod,
@@ -561,6 +587,8 @@ export default function Booking() {
         const errorData = await response.json();
         setMessage(errorData.message);
         setMessageType("error");
+        setStartDate("");
+        setEndDate("");
         setCanBook(false);
         setSelectedSlots([]);
         setPayMethod("");
@@ -578,6 +606,14 @@ export default function Booking() {
         if (data.success) {
           setMessage("บันทึกการจองสำเร็จ");
           setMessageType("success");
+          isTimeoutRef.current = false; // บอกว่าไม่ใช่หมดเวลาอัตโนมัติ
+          if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+          }
+          setStartDate("");
+          setEndDate("");
+          setTimeLeft(0); // ไม่ trigger redirect เพราะ isTimeoutRef = false
           setIsBooked(true);
           setCanBook(false);
           setSelectedSlots([]);
@@ -602,6 +638,10 @@ export default function Booking() {
       setMessageType("error");
     }
   };
+
+   console.log("dd");
+   console.log(slots);
+          
 
   // const showPrice = () => {
   //   // แสดงราคาใน UI
@@ -630,45 +670,59 @@ export default function Booking() {
     console.log(newPrice);
     console.log(totalHours);
     console.log(sumFac);
+    
 
     if (newPrice && totalHours) {
       calculatePrice(newPrice, totalHours, sumFac);
     }
   }, [newPrice, totalHours, sumFac]);
+  useEffect(() => {});
 
   const startCountdown = () => {
+    isTimeoutRef.current = true; // เริ่มนับแบบอัตโนมัติ
     timerRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current);
-          setCanBook(false);
-          router.replace("/");
-          localStorage.clear();
-          sessionStorage.clear();
-          return 0;
-        }
-        return prev - 1;
-      });
+      setTimeLeft((prev) => prev - 1);
     }, 1000);
   };
 
-  // ป้องกันลืมเคลียร์ตอน component ออกจาก DOM
+  useEffect(() => {
+    if (timeLeft <= 0 && isTimeoutRef.current) {
+      clearInterval(timerRef.current);
+      setCanBook(false);
+      localStorage.clear();
+      sessionStorage.clear();
+      router.replace("/");
+    }
+  }, [timeLeft]);
+
   useEffect(() => {
     return () => clearInterval(timerRef.current);
   }, []);
 
-  function toggleSelectSlot(index) {
-    if (selectedSlots.length === 0) {
-      setSelectedSlots([index]);
-      setCanBook(true);
-    } else if (selectedSlots.length === 1) {
-      setSelectedSlots((prev) => [...prev, index]);
-      setCanBook(true);
-    } else {
-      setSelectedSlots([index]); // ถ้าเลือกครบแล้วให้เริ่มใหม่
-      setCanBook(true);
+function toggleSelectSlot(index) {
+  if (selectedSlots.length === 0) {
+    setSelectedSlots([index]);
+    setSelectedSlotsArr([slots[index]]); // ดึงชื่อ slot จาก index
+    setCanBook(true);
+  } else if (selectedSlots.length === 1) {
+    const range = [selectedSlots[0], index].sort((a, b) => a - b);
+    const allIndexes = [];
+    const allSlots = [];
+    for (let i = range[0]; i <= range[1]; i++) {
+      allIndexes.push(i);
+      allSlots.push(slots[i]);
     }
+    setSelectedSlots(allIndexes);
+    setSelectedSlotsArr(allSlots);
+    setCanBook(true);
+  } else {
+    setSelectedSlots([index]);
+    setSelectedSlotsArr([slots[index]]);
+    setCanBook(true);
   }
+}
+
+
   useEffect(() => {
     if (message) {
       const timer = setTimeout(() => {
@@ -679,10 +733,10 @@ export default function Booking() {
       return () => clearTimeout(timer);
     }
   }, [message]);
+  console.log(selectedSlotsArr);
 
   return (
     <div>
-      <h1 className="select-time-book">เลือกช่วงเวลา</h1>
       <div className="container-bookings">
         {message && (
           <div className={`message-box ${messageType}`}>
@@ -694,16 +748,38 @@ export default function Booking() {
           <p>กำลังโหลด...</p>
         ) : (
           <div className="book-content">
-            <div className="slots-grid">
+            <h1 className="select-time-book">เลือกช่วงเวลา</h1>
+            <div className="sum-status-box-book">
+              <div className="status-item-book">
+                <div className="status-box-book-1"></div>
+                <label>ว่าง</label>
+              </div>
+              <div className="status-item-book">
+                <div className="status-box-book-2"></div>
+                <label>รอตรวจสอบ</label>
+              </div>
+              <div className="status-item-book">
+                <div className="status-box-book-3"></div>
+                <label>จองแล้ว</label>
+              </div>
+            </div>
+            <div className="slots-grid-book">
               {slots.map((slot, index) => {
-                const slotStatus = getSlotStatus(slot); // ตรวจสอบสถานะของ slot
+                const minIndex = Math.min(...selectedSlots);
+                const maxIndex = Math.max(...selectedSlots);
+                const isSelected =
+                  selectedSlots.length > 0 &&
+                  index >= minIndex &&
+                  index <= maxIndex;
+
+                const slotStatus = getSlotStatus(slot); // ใช้แทน isSlotBooked
                 const isBooked = slotStatus !== null;
-              
-                let slotClass = "slot-box";
+
+                let slotClass = "slot-box-book";
                 if (slotStatus === "approved") slotClass += " approved-slot";
                 else if (slotStatus === "pending") slotClass += " pending-slot";
-                else if (selectedSlots.includes(index)) slotClass += " selected-slot";
-              
+                else if (isSelected) slotClass += " selected-slot";
+
                 return (
                   <div
                     key={index}
@@ -713,22 +789,22 @@ export default function Booking() {
                     }}
                     style={{ cursor: isBooked ? "not-allowed" : "pointer" }}
                   >
-                    <div className="slot-time">{slot}</div>
-                    <div className="slot-tag">
+                    <div className="slot-time-book">{slot}</div>
+                    <div className="slot-tag-book">
                       {slotStatus === "approved"
-                        ? "จองแล้ว"
+                        ? ""
                         : slotStatus === "pending"
-                        ? "รอตรวจสอบ"
-                        : selectedSlots.includes(index)
-                        ? "กำลังเลือก..."
-                        : "ว่าง"}
+                        ? ""
+                        : isSelected
+                        ? "กำลังเลือก"
+                        : ""}
                     </div>
                   </div>
                 );
               })}
             </div>
-            <div className="addon-options">
-              <div className="addon-grid">
+            <div className="addon-options-book">
+              <div className="addon-grid-book">
                 <div
                   className={`addon-card ${
                     selectPrice === "subFieldPrice" ? "selected" : ""
@@ -737,8 +813,8 @@ export default function Booking() {
                     handlePriceOnChange({ target: { value: "subFieldPrice" } })
                   }
                 >
-                  <p className="addon-content">ปกติ</p>
-                  <p className="addon-price">{price} บาท/ชม.</p>
+                  <p className="addon-content-book">ปกติ</p>
+                  <p className="addon-price-book">{price} บาท/ชม.</p>
                 </div>
 
                 {addOns.map((addOn) => (
@@ -753,8 +829,8 @@ export default function Booking() {
                       })
                     }
                   >
-                    <p className="addon-content">{addOn.content}</p>
-                    <p className="addon-price">{addOn.price} บาท/ชม.</p>
+                    <p className="addon-content-book">{addOn.content}</p>
+                    <p className="addon-price-book">{addOn.price} บาท/ชม.</p>
                   </div>
                 ))}
               </div>
@@ -763,10 +839,7 @@ export default function Booking() {
         )}
         <div className="book-sider">
           <div className="book-sum-box">
-            <div className="time-info">
-              <p>{bookingDate}</p> เปิด: {openHours} - {closeHours} น
-            </div>
-            <h1 className="field-title">{fieldName}</h1>
+            <h1 className="field-title-book">{fieldName}</h1>
             {subFieldData !== "ไม่พบข้อมูล" ? (
               <h2 className="sub-field-title">
                 สนาม: {subFieldData.sub_field_name}
@@ -777,11 +850,13 @@ export default function Booking() {
               </h2>
             )}
 
+            <div className="time-info">
+              <p>{bookingDate}</p> เปิด: {openHours} - {closeHours} น
+            </div>
+
             <div className="time-info-book">
               <strong>เวลาเริ่ม: {timeStart || "-"}</strong>
-              <strong>เวลาเริ่ม: {startDate || "-"}</strong>
               <strong>เวลาสิ้นสุด: {timeEnd || "-"}</strong>
-              <strong>เวลาสิ้นสุด: {endDate || "-"}</strong>
               <strong>
                 รวมเวลา: {totalHours ? `${totalHours} ชั่วโมง` : "-"}
               </strong>
@@ -815,23 +890,28 @@ export default function Booking() {
                   .padStart(2, "0")}
                 :{(timeLeft % 60).toString().padStart(2, "0")}
               </div>
-              <h1 className="field-title">{fieldName}</h1>
-              {subFieldData !== "ไม่พบข้อมูล" ? (
-                <h2 className="sub-field-title-modal">
-                  สนาม: {subFieldData.sub_field_name}
-                </h2>
-              ) : (
-                <h2 className="sub-field-title-modal sub-field-error">
-                  สนาม: {subFieldData}
-                </h2>
-              )}
-              <div className="time-info-book">
-                <strong>เวลาเริ่ม: {timeStart || "-"}</strong>
-                <strong>เวลาสิ้นสุด: {timeEnd || "-"}</strong>
-                <strong>
-                  รวมเวลา: {totalHours ? `${totalHours} ชั่วโมง` : "-"}
-                </strong>
-              </div>{" "}
+              <div className="detail-total-hour">
+                <h1 className="field-title-book">{fieldName}</h1>
+                {subFieldData !== "ไม่พบข้อมูล" ? (
+                  <h2 className="sub-field-title-modal">
+                    สนาม: {subFieldData.sub_field_name}
+                  </h2>
+                ) : (
+                  <h2 className="sub-field-title-modal sub-field-error">
+                    สนาม: {subFieldData}
+                  </h2>
+                )}
+                <div className="time-info-book">
+                  <strong>เวลาเริ่ม: {timeStart || "-"}</strong>
+                  <strong>เวลาสิ้นสุด: {timeEnd || "-"}</strong>
+                  <strong>
+                    รวมเวลา: {totalHours ? `${totalHours} ชั่วโมง` : "-"}
+                  </strong>
+                  <strong className="total-per-hour">
+                    ราคา: {totalPrice} บาท
+                  </strong>
+                </div>
+              </div>
               <div className="facility-wrapper">
                 <button
                   onClick={() => setShowFacilities(!showFacilities)}
@@ -916,6 +996,15 @@ export default function Booking() {
                 </div>
               </div>
               <div className={`total-box ${canBook ? "show" : ""}`}>
+                <div className="summary">
+                  <strong className="price-deposit">
+                    มัดจำที่ต้องจ่าย: {priceDeposit} บาท
+                  </strong>
+
+                  <strong className="total-remaining">
+                    ยอดรวมสุทธิ: {totalRemaining} บาท
+                  </strong>
+                </div>
                 <div className="payment-method">
                   <div className="radio-group-book">
                     <label>
@@ -938,14 +1027,6 @@ export default function Booking() {
                     </label>
                   </div>
                 </div>
-                <strong>ราคา: {totalPrice} บาท</strong>
-                <strong className="price-deposit">
-                  มัดจำที่ต้องจ่าย: {priceDeposit} บาท
-                </strong>
-
-                <strong className="total-remaining">
-                  ยอดรวมสุทธิ: {totalRemaining} บาท
-                </strong>
               </div>
               <div className="modal-buttons-confirmbooking">
                 <button

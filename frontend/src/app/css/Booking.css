@@ -2,81 +2,145 @@
   --text-color: #03045e;
 }
 
-.container-bookings .message-box {
-  position: fixed;
-  height: 90px;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: white;
-  border: 2px solid #ccc;
-  padding: 20px 30px;
-  z-index: 1000;
-  border-radius: 8px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-  font-size: 14px;
-}
-
-.container-bookings .error {
-  display: flex;
-  align-items: center;
-  color: #d90429;
-  background-color: #ffe0e0;
-}
-.container-bookings .error p{
-  font-size: 16px;
-  color: #d90429;
-}
-
-.container-bookings .success {
-  display: flex;
-  align-items: center;
-  background-color: #d4edda;
-  color: #155724;
-}
-
-.container-bookings .success p{
-  color: #155724;
-  font-size: 16px;
-}
-
 .select-time-book {
   text-align: center;
-  font-size: 1.6rem;
+  font-size: 2rem;
   font-weight: 700;
-  margin: 90px auto 0 auto;
-  color: var(--text-color); 
+  margin: 0px auto 0 auto;
+  color: var(--text-color);
   padding: 12px 24px;
-  /* border-radius: 0.75rem; */
-  background-color: #f3f4f6; 
-  /* box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e5e7eb; */
+  /* background-color: #f3f4f6; */
 }
 
-.container-bookings {
+.sum-status-box-book {
+  margin: 0px auto 5px auto;
+  color: #333;
+  font-weight: 100;
+  font-size: 1.2rem;
   display: flex;
-  justify-content: space-between;
-  padding: 3px 30px 30px 30px;
-  width: 100%;
-  margin: 0 auto 0 auto;
-  position: relative; 
-  /* border-radius: 0.75rem; */
-  background-color: #f3f4f6; 
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e5e7eb;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 40px;
+  height: 85px;
 }
 
-.book-content {
-  margin: 10px 0 10px 0;
-  width: 75%;
-  padding: 20px;
+.status-item-book {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 7px;
 }
 
-.slots-grid {
+.status-item-book label {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #333;
+}
+
+.status-box-book-1 {
+  height: 40px;
+  background-color: #22c55e;
+  width: 80px;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: background-color 0.3s ease;
+}
+
+.status-box-book-2 {
+  height: 40px;
+  width: 80px;
+  background-color: #e8c124;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: background-color 0.3s ease;
+}
+
+.status-box-book-3 {
+  height: 40px;
+  background-color: #b31e1e;
+  width: 80px;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: background-color 0.3s ease;
+}
+
+.slot-time-book {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.slots-grid-book {
   width: 100%;
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
+}
+
+.slot-box-book {
+  flex: 1 1 calc(11.66% - 1rem); /* 6 ช่องต่อแถว + gap */
+  min-width: 120px;
+  max-width: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background-color: #22c55e;
+  height: 80px;
+  color: white;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  width: 9rem;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: background-color 0.3s ease;
+  cursor: pointer;
+}
+
+.slot-box-book:hover {
+  background-color: #16a34a;
+}
+
+.slot-box-book.selected-slot {
+  background-color: #93c5fd;
+  border: 2px solid #2563eb;
+  color: #1e3a8a;
+}
+.approved-slot {
+  background-color: #b31e1e;
+  color: #ffffff;
+  pointer-events: none;
+}
+
+.pending-slot {
+  background-color: #e8c124;
+  color: rgb(73, 69, 69);
+  pointer-events: none;
+}
+
+.container-bookings {
+  gap: 20px;
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 30px 10px 30px;
+  width: 100%;
+  margin: 70px auto 0 auto;
+  position: relative;
+  /* background-color: #f3f4f6; */
+  /* box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08); */
+  /* border: 1px solid #e5e7eb; */
+}
+
+.book-content {
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border: 2px solid #e5e7eb;
+  margin: 5px 0 10px 0;
+  width: 75%;
+  padding: 5px 20px 20px 20px;
 }
 
 .book-sider {
@@ -85,7 +149,7 @@
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
   position: sticky;
-  margin-top: 20px;
+  margin-top: 30px;
   margin-bottom: 20px;
   top: 30px;
   align-self: flex-start;
@@ -97,8 +161,15 @@
   padding: 30px;
 }
 
-.field-title {
-  margin: 10px auto;
+.detail-total-hour {
+  border: 2px solid #ddd;
+  padding: 12px;
+  border-radius: 12px;
+  background-color: #f9f9f9;
+}
+
+.field-title-book {
+  margin: 0px auto;
   font-size: 24px;
   font-weight: 600;
   color: var(--text-color);
@@ -107,7 +178,7 @@
 .sub-field-title {
   font-size: 18px;
   color: var(--text-color);
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 .sub-field-title-modal {
   font-size: 18px;
@@ -118,12 +189,12 @@
 .sub-field-error {
   color: #757575;
 }
-.payment-book{
+.payment-book {
   color: var(--text-color);
   margin: 0px auto;
 }
 
-.book-owner-info{
+.book-owner-info {
   min-height: 280px;
   overflow-y: auto;
   border: 2px solid #ddd;
@@ -176,7 +247,7 @@
   transition: background 0.2s ease-in-out;
 }
 
-.file-container-book{
+.file-container-book {
   box-sizing: border-box;
   margin: 10px auto;
   text-align: center;
@@ -225,10 +296,8 @@
 .radio-group-book input[type="radio"] {
   width: 20px;
   height: 20px;
-  accent-color: var(--text-color) ;
+  accent-color: var(--text-color);
 }
-
-
 
 .total-box {
   margin-top: 10px;
@@ -258,6 +327,25 @@
   display: block;
 }
 
+.summary {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  /* min-height: 280px; */
+  overflow-y: auto;
+  border: 2px solid #ddd;
+  padding: 12px;
+  border-radius: 12px;
+  background-color: #f9f9f9;
+}
+
+.total-per-hour {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+  margin-top: 10px;
+}
 .total-remaining {
   font-size: 18px;
   font-weight: 700;
@@ -296,12 +384,13 @@
   display: flex;
   text-align: center;
   font-size: 18px;
-  color: #4b5563; 
+  color: #4b5563;
+  margin-bottom: 10px;
 }
 
-.addon-options {
+.addon-options-book {
   padding: 20px 0 3px;
-  /* margin-top: 30px; */
+  margin-top: 10px;
 }
 
 .addon-title {
@@ -313,7 +402,7 @@
   margin-bottom: 12px;
 }
 
-.addon-grid {
+.addon-grid-book {
   justify-content: center;
   align-items: center;
   display: flex;
@@ -341,12 +430,12 @@
   background-color: #f3f3ff;
 }
 
-.addon-content {
+.addon-content-book {
   font-size: 16px;
   font-weight: 500;
 }
 
-.addon-price {
+.addon-price-book {
   font-size: 14px;
   color: #333;
   margin-top: 4px;
@@ -382,55 +471,10 @@
   margin-bottom: 10px;
 }
 
-.facility-item-book label{
+.facility-item-book label {
   margin-left: 6px;
   font-size: 16px;
 }
-
-.slot-box {
-  background-color: #22c55e;
-  color: white;
-  padding: 1rem;
-  border-radius: 0.75rem;
-  width: 10rem;
-  text-align: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  transition: background-color 0.3s ease;
-  cursor: pointer;
-}
-
-.slot-box:hover {
-  background-color: #16a34a;
-}
-
-.slot-box.selected-slot {
-  background-color: #93c5fd; /* ฟ้าพาสเทล */
-  border: 2px solid #2563eb; /* น้ำเงินสด */
-  color: #1e3a8a;
-}
-.approved-slot {
-  background-color: #b31e1e; /* แดงเข้ม */
-  color: #ffffff;
-  pointer-events: none;
-}
-
-.pending-slot {
-  background-color: #e8c124;
-  color: rgb(73, 69, 69);
-  pointer-events: none;
-}
-
-.slot-time {
-  font-size: 1rem;
-  font-weight: 600;
-}
-
-.slot-tag {
-  font-size: 0.9rem;
-  margin-top: 0.5rem;
-  font-weight: 500;
-}
-
 
 .modal-overlay-confirmbooking {
   position: fixed;
@@ -465,7 +509,7 @@
   font-weight: bold;
   color: red;
 }
-.confirm-header-book{
+.confirm-header-book {
   margin: 0 auto 10px auto;
   display: flex;
   justify-content: center;
@@ -491,7 +535,7 @@
 }
 
 .modal-buttons-confirmbooking {
-  position: sticky; 
+  position: sticky;
   margin-top: 20px;
   display: flex;
   justify-content: space-around;
@@ -505,6 +549,7 @@
   border-radius: 6px;
   border: none;
 }
+
 .btn-confirm-confirmbooking:hover {
   background: #21cd49;
 }
@@ -517,8 +562,47 @@
   border-radius: 6px;
   border: none;
 }
+
 .btn-cancel-confirmbooking:hover {
   background-color: #c82333;
+}
+
+.container-bookings .message-box {
+  position: fixed;
+  height: 90px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border: 2px solid #ccc;
+  padding: 20px 30px;
+  z-index: 1000;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  font-size: 14px;
+}
+
+.container-bookings .error {
+  display: flex;
+  align-items: center;
+  color: #d90429;
+  background-color: #ffe0e0;
+}
+.container-bookings .error p {
+  font-size: 16px;
+  color: #d90429;
+}
+
+.container-bookings .success {
+  display: flex;
+  align-items: center;
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.container-bookings .success p {
+  color: #155724;
+  font-size: 16px;
 }
 
 @media screen and (max-width: 1500px) {
@@ -527,12 +611,13 @@
     flex-direction: column;
     width: 100%;
   }
-  
+
   .book-content {
     width: 100%;
     margin-bottom: 10px;
   }
   .book-sider {
+    margin-top: 0;
     text-align: center;
     width: 100%;
   }
@@ -543,7 +628,7 @@
     flex-direction: column;
     text-align: center;
     font-size: 18px;
-    color: #4b5563; 
+    color: #4b5563;
   }
 
   .radio-group-book {
@@ -553,5 +638,69 @@
     font-size: 1.1rem;
     align-items: center;
     justify-content: center;
+  }
+}
+@media screen and (max-width: 450px) {
+  .confirm-header-book {
+    margin-top: 20px;
+  }
+  .countdown-timer-book {
+    width: 40%;
+  }
+  .sum-status-box-book {
+    font-size: 1rem;
+    gap: 20px;
+  }
+  .status-box-book-1 {
+    height: 40px;
+    background-color: #22c55e;
+    width: 50px;
+  }
+
+  .status-box-book-2 {
+    height: 40px;
+    width: 50px;
+  }
+
+  .status-box-book-3 {
+    height: 40px;
+    background-color: #b31e1e;
+    width: 50px;
+  }
+}
+@media screen and (max-width: 380px) {
+  .slot-box-book {
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: 100%;
+    margin: 5px auto;
+  }
+}
+@media screen and (max-width: 360px) {
+  .slot-box-book {
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: 100%;
+    margin: 5px auto;
+  }
+  .book-content {
+    width: 100%;
+    padding: 20px;
+  }
+  .slots-grid-book {
+    align-items: center;
+    justify-content: center;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(70px,2fr));
+    gap: 1rem;
+    width: 100%;
+    padding: 0.5rem;
+    margin: 5px auto;
   }
 }
