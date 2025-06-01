@@ -86,11 +86,12 @@ const getCancelDeadlineTime = (start_date, start_time, cancel_hours) => {
     <div>
       <h1>รายการจองของคุณ</h1>
 
-      {booking.length === 0 ? (
+        {booking.length === 0 ? (
         <p>ไม่พบคำสั่งจอง</p>
       ) : (
         booking.map((item, index) => (
           <li key={index} className="booking-card">
+            <div onClick={(e)=>{router.push(`/bookingDetail/${item.booking_id}`)}}>
             <p>
               <strong>ชื่อผู้จอง:</strong> {item.first_name} {item.last_name}
             </p>
@@ -130,6 +131,7 @@ const getCancelDeadlineTime = (start_date, start_time, cancel_hours) => {
             <p>
               <strong>ยอดค้างชำระ:</strong> {item.total_remaining}
             </p>
+            </div>
           </li>
         ))
       )}
