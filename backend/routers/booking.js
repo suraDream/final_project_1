@@ -414,9 +414,17 @@ router.get("/my-orders/:field_id", async (req, res) => {
 });
 
 router.get("/bookings-detail/:booking_id", async (req, res) => {
-  const { booking_id: booking_id } = req.params;
+  const { booking_id } = req.params;
 
   try {
+    
+    if (!booking_id ) {
+      return res.status(400).json({
+        status: 0,
+        message: "Missing booking_id  in request params.",
+      });
+    }
+    
 const result = await pool.query(
   `SELECT 
     b.booking_id,
@@ -445,7 +453,6 @@ const result = await pool.query(
     b.activity,
     b.selected_slots,
     bf.fac_name AS facility_name,
-    
     bf.field_fac_id,
     p.*
   FROM bookings b
@@ -488,11 +495,11 @@ router.put("/booking-status/:booking_id",async (req,res)=>{
 })
 
 router.delete("/cancel-bookings/:booking_id", async (req, res) => {
-  const { booking_id } = req.params; // รับ booking_id จาก URL
-  const { cancel_time } = req.body;  // รับเวลายกเลิกจาก frontend
+  const { booking_id } = req.params; 
+  const { cancel_time } = req.body;  
 
   try {
-    // ✅ ตรวจสอบว่า cancel_time ถูกส่งมาหรือไม่
+   
     if (!cancel_time) {
       return res.status(400).json({
         status: 0,
