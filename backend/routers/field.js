@@ -58,7 +58,8 @@ router.post("/register", upload.fields([{ name: "documents" }, { name: "img_fiel
       selectedFacilities,
       subFields,
       open_days,
-      field_description  // New field for description
+      field_description,
+      cancel_hours  
     } = JSON.parse(req.body.data);
 
          // ตรวจสอบว่ามีไฟล์เอกสารอัปโหลดหรือไม่
@@ -74,15 +75,15 @@ router.post("/register", upload.fields([{ name: "documents" }, { name: "img_fiel
     }
 
     const fieldResult = await pool.query(
-      `INSERT INTO field (user_id, field_name, address, gps_location, open_hours, close_hours, number_bank, account_holder, price_deposit, name_bank, documents, img_field, status, open_days, field_description) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING field_id`,
-      [user_id, field_name, address, gps_location, open_hours, close_hours, number_bank, account_holder, price_deposit, name_bank, documents, imgField, status || "รอตรวจสอบ", open_days, field_description]  // Save the description
+      `INSERT INTO field (user_id, field_name, address, gps_location, open_hours, close_hours, number_bank, account_holder, price_deposit, name_bank, documents, img_field, status, open_days, field_description,cancel_hours ) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,$16) RETURNING field_id`,
+      [user_id, field_name, address, gps_location, open_hours, close_hours, number_bank, account_holder, price_deposit, name_bank, documents, imgField, status || "รอตรวจสอบ", open_days, field_description,cancel_hours ]  
     );
         
 
     const field_id = fieldResult.rows[0].field_id;
     
-    // INSERT ข้อมูลสนามย่อย
+   
     for (const sub of subFields) {
       const subFieldResult = await pool.query(
         `INSERT INTO sub_field (field_id, sub_field_name, price, sport_id, user_id) 
@@ -90,7 +91,7 @@ router.post("/register", upload.fields([{ name: "documents" }, { name: "img_fiel
         [field_id, sub.name, sub.price, sub.sport_id, user_id]
       );
       const sub_field_id = subFieldResult.rows[0].sub_field_id;
-      // เพิ่ม add_on ที่เกี่ยวข้องกับ sub_field
+      
       for (const addon of sub.addOns) {
         await pool.query(
           `INSERT INTO add_on (sub_field_id, content, price) VALUES ($1, $2, $3) RETURNING add_on_id`,
@@ -99,7 +100,7 @@ router.post("/register", upload.fields([{ name: "documents" }, { name: "img_fiel
       }
     }
 
-    // INSERT ข้อมูลสิ่งอำนวยความสะดวก
+  
     for (const facId in selectedFacilities) {
       await pool.query(
         `INSERT INTO field_facilities (field_id, facility_id, fac_price) 
@@ -107,17 +108,17 @@ router.post("/register", upload.fields([{ name: "documents" }, { name: "img_fiel
         [field_id, facId, selectedFacilities[facId]]
       );
     }
-     // ดึงข้อมูลผู้ใช้ (รวมถึง user_email)
+     
      const userData = await pool.query("SELECT * FROM users WHERE user_id = $1", [user_id]);
 
-     // สมมุติว่าในตาราง users มีคอลัมน์ชื่อ user_email
-     const userEmail = userData.rows[0].email; // << ใช้ค่านี้ส่งอีเมล
+     
+     const userEmail = userData.rows[0].email; 
 
-     // ส่งอีเมล
+     
      try {
        const resultEmail = await resend.emails.send({
          from: process.env.Sender_Email,
-         to: userEmail, // ใช้ค่าที่ดึงมา
+         to: "surachai.up@rmuti.ac.th", 
          subject: "ลงทะเบียนสนาม",
          text: "คุณได้ลงทะเบียนสนามเรียบร้อยแล้ว รอผู้ดูแลตรวจสอบ",
        });
@@ -137,11 +138,11 @@ router.post("/register", upload.fields([{ name: "documents" }, { name: "img_fiel
 
 router.put("/update-status/:field_id", authMiddleware, async (req, res) => {
   try {
-    const { field_id } = req.params;  // รับ field_id จาก URL params
-    const { status } = req.body;      // รับ status ที่จะอัปเดตจาก body
-    const { user_id, role } = req.user;  // ดึงข้อมูลจาก token เพื่อเช็ค role ของผู้ใช้
+    const { field_id } = req.params;  
+    const { status } = req.body;      
+    const { user_id, role } = req.user;  
 
-    // ตรวจสอบว่า status ที่ส่งมาถูกต้องหรือไม่ (ต้องเป็น "รออนุมัติ")
+    
     if (status !== "รอตรวจสอบ") {
       return res.status(400).json({ error: "สถานะที่ส่งมาไม่ถูกต้อง" });
     }
@@ -203,7 +204,7 @@ router.get("/:field_id", authMiddleware, async (req, res) => {
           f.field_id, f.field_name, f.address, f.gps_location, f.documents,
           f.open_hours, f.close_hours, f.img_field, f.name_bank, 
           f.number_bank, f.account_holder, f.status, f.price_deposit, 
-          f.open_days, f.field_description,
+          f.open_days, f.field_description,f.cancel_hours,
           u.user_id, u.first_name, u.last_name, u.email,
           COALESCE(json_agg(
             DISTINCT jsonb_build_object(
@@ -244,7 +245,7 @@ router.get("/:field_id", authMiddleware, async (req, res) => {
           f.field_id, f.field_name, f.address, f.gps_location, f.documents,
           f.open_hours, f.close_hours, f.img_field, f.name_bank, 
           f.number_bank, f.account_holder, f.status, f.price_deposit, 
-          f.open_days, f.field_description,
+          f.open_days, f.field_description,f.cancel_hours ,
           u.user_id, u.first_name, u.last_name, u.email,
           COALESCE(json_agg(
             DISTINCT jsonb_build_object(

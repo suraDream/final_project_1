@@ -4,9 +4,23 @@ const cors = require("cors");
 require("dotenv").config();
 const path = require("path");
 const cookieParser = require('cookie-parser');
-
+const http = require("http"); 
+const { Server } = require("socket.io"); // ดึง Server class จาก socket.io
+ 
 const app = express();
-
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
+//  Middleware ผูก io เข้ากับ req
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
 app.use(
   cors({
     origin: "http://localhost:3000", 
@@ -15,6 +29,7 @@ app.use(
     allowedHeaders: ["Content-Type"],
   })
 );
+
 
 app.use(bodyParser.json());
 app.use(express.json()); 
@@ -36,6 +51,8 @@ const profile = require("./routers/profile");
 const posts = require("./routers/posts");
 const booking = require("./routers/booking");
 
+
+
 app.get("/", (req, res) => {
   res.send("Welcome to the API");
 });
@@ -51,8 +68,15 @@ app.use("/myfield", myfieldRoute);
 app.use("/profile", profile);
 app.use("/posts", posts);
 app.use("/booking",booking)
+io.on("connection", (socket) => {
+  console.log(" Client connected:", socket.id);
+
+  socket.on("disconnect", () => {
+    console.log(" Client disconnected:", socket.id);
+  });
+});
 
 const port = 5000;
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });

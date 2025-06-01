@@ -3,9 +3,12 @@ import React, { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import "@/app/css/Booking.css";
 import { useAuth } from "@/app/contexts/AuthContext";
+import { io } from "socket.io-client";
+
 export default function Booking() {
   const { subFieldId } = useParams();
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  const socketRef = useRef(null);
 
   const [openHours, setOpenHours] = useState("");
   const [closeHours, setCloseHours] = useState("");
@@ -18,6 +21,7 @@ export default function Booking() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [totalHours, setTotalHours] = useState(0);
+  const [totalHoursFormat, setTotalHoursFormat] = useState(0);
   const [price, setPrice] = useState(0);
   const [newPrice, setNewPrice] = useState(0);
   const [addOns, setAddOns] = useState([]);
@@ -30,6 +34,7 @@ export default function Booking() {
   const [totalPrice, setTotalPrice] = useState(0);
   const [totalRemaining, setTotalRemaining] = useState(0);
   const [payMethod, setPayMethod] = useState("");
+
   const router = useRouter();
   const bookingDate = sessionStorage.getItem("booking_date");
   const bookingDateFormatted = new Date(bookingDate).toLocaleDateString(
@@ -54,6 +59,7 @@ export default function Booking() {
   const [message, setMessage] = useState(""); // ข้อความแสดงผลผิดพลาด
   const [messageType, setMessageType] = useState("");
   const [bookTimeArr, setBookTimeArr] = useState([]);
+  const [bookingId,setBookingId] = useState("");
 
   useEffect(() => {
     if (isLoading) return;
@@ -70,16 +76,46 @@ export default function Booking() {
     }
   }, [user, isLoading, router, bookingDate]);
 
+useEffect(() => {
+  console.log("API_URL:", API_URL);
+  console.log(" connecting socket...");
+
+  socketRef.current = io(API_URL, {
+    transports: ['websocket'],
+    withCredentials: true,
+  });
+
+  const socket = socketRef.current;
+
+  socket.on("connect", () => {
+    console.log(" Socket connected:", socket.id);
+  });
+
+  socket.on("slot_booked", (data) => {
+    console.log("📡 booking_id:", data.bookingId);
+    setBookingId(data.bookingId);
+  });
+
+  socket.on("connect_error", (err) => {
+    console.error(" Socket connect_error:", err.message);
+  });
+
+  return () => {
+    socket.disconnect();
+  };
+}, []);
+ 
+
+
   useEffect(() => {
     if (!bookingDate || !subFieldId) return;
 
     const fetchBookedSlots = async () => {
       try {
-        // ✅ รับ booking_date ที่บันทึกไว้แบบ YYYY-MM-DD
-        // bookingDateRaw: ค่าที่มาจาก sessionStorage
+      
         const bookingDateRaw = sessionStorage.getItem("booking_date");
 
-        // ✅ ถ้า format คือ "Tue May 13 2025" → แปลงใหม่
+        
 
         const bookingDateFormatted = new Date(bookingDate).toLocaleDateString(
           "en-CA"
@@ -103,38 +139,33 @@ export default function Booking() {
         );
         const data = await res.json();
 
-        console.log("📦 Booked from API:", data);
+        
 
         if (!data.error) {
-          console.log("Booked slots:", data.data);
+          
 
           setBookedSlots(data.data);
+
+          const timeRangesWithStatus = data.data.flatMap((item) =>
+            (item.selected_slots || []).map((time) => ({
+              time,
+              status: item.status,
+            }))
+          );
+
          
- const timeRangesWithStatus = data.data.flatMap(item =>
-  (item.selected_slots || []).map(time => ({
-    time,
-    status: item.status
-  }))
-);
+          const selectedSlotsFromAPI = timeRangesWithStatus.map(
+            (item) => item.time
+          );
 
-// Step 3: ดึง slot ทั้งหมดเป็น array เดียว (string เท่านั้น)
-const selectedSlotsFromAPI = timeRangesWithStatus.map(item => item.time);
-
-// Step 4: เซ็ตค่าที่ต้องใช้ใน state
-setBookTimeArr(timeRangesWithStatus);       // สำหรับการแสดงผลพร้อม status
-setSelectedSlotsArr(selectedSlotsFromAPI);  // สำหรับเทียบกับ slot ที่ user เลื
-
-
-
-
-
-      
-          console.log("bookingtime",timeRangesWithStatus); // "23:30 - 00:00"
           
-         
+          setBookTimeArr(timeRangesWithStatus); 
+          setSelectedSlotsArr(selectedSlotsFromAPI); 
 
-          console.log("xx");
-          console.log(data.data);
+         // console.log("bookingtime", timeRangesWithStatus); 
+
+          
+          //console.log(data.data);
         } else {
           console.error("API returned error:", data.message);
         }
@@ -149,17 +180,14 @@ setSelectedSlotsArr(selectedSlotsFromAPI);  // สำหรับเทียบ
       fetchBookedSlots();
       setIsBooked(false);
     }
-  }, [bookingDate, subFieldId, isBooked]);
-
-
-         
+  }, [bookingDate, subFieldId, isBooked,bookingId]);
 
   useEffect(() => {
     if (!field_id) {
       console.log("field_id is not defined. Skipping fetch.");
       return; // ถ้าไม่มี field_id ก็ไม่ให้ทำงานต่อ
     }
-    console.log(`bookedSlots${bookedSlots}`);
+   // console.log(`bookedSlots${bookedSlots}`);
     const fetchData = async () => {
       try {
         const res = await fetch(`${API_URL}/field/field-fac/${field_id}`, {
@@ -173,7 +201,7 @@ setSelectedSlotsArr(selectedSlotsFromAPI);  // สำหรับเทียบ
         if (!data.error && data.data) {
           const fac = data.data.filter((f) => f.fac_price !== 0); // ตรวจสอบว่า fac_price ไม่เป็น 0
           setFacilities(fac);
-          console.log(fac); // แสดงข้อมูลที่ได้จาก API
+         // console.log(fac); // แสดงข้อมูลที่ได้จาก API
         } else {
           console.error("Error fetching data:", data.message);
         }
@@ -208,6 +236,7 @@ setSelectedSlotsArr(selectedSlotsFromAPI);  // สำหรับเทียบ
           );
           if (subField) {
             console.log("subField:", subField);
+            
             setAddOns(subField.add_ons);
             setPrice(subField.price); // กำหนดราคาเริ่มต้น
             setNewPrice(subField.price);
@@ -224,6 +253,8 @@ setSelectedSlotsArr(selectedSlotsFromAPI);  // สำหรับเทียบ
     };
     fetchData();
   }, [subFieldId]);
+
+
 
   useEffect(() => {
     if (!subFieldId) {
@@ -247,7 +278,7 @@ setSelectedSlotsArr(selectedSlotsFromAPI);  // สำหรับเทียบ
                 (subField) => subField.sub_field_id === parseInt(subFieldId)
               ) || "ไม่พบข้อมูล";
             setSubFieldData(selectedSubField);
-            console.log("ข้อมูลสนาม", data);
+           
           }
         })
         .catch((error) => {
@@ -308,14 +339,12 @@ setSelectedSlotsArr(selectedSlotsFromAPI);  // สำหรับเทียบ
     return slots;
   }
 
-
-function getSlotStatus(slot) {
-  console.log(bookTimeArr)
-  const found = bookTimeArr.find(b => b.time === slot);
-  console.log(`CHECK: slot = ${slot}, found =`, found);
-  return found ? found.status : null;
-}
-
+  function getSlotStatus(slot) {
+    console.log(bookTimeArr);
+    const found = bookTimeArr.find((b) => b.time === slot);
+    //console.log(`CHECK: slot = ${slot}, found =`, found);
+    return found ? found.status : null;
+  }
 
   function calculateSelectedTimes() {
     if (selectedSlots.length === 0) {
@@ -364,13 +393,24 @@ function getSlotStatus(slot) {
     let minutes = endInMinutes - startInMinutes;
 
     if (minutes < 0) minutes += 24 * 60; // คำนวณกรณีข้ามวัน
-
+    let totalHoursFormat
     let hours = minutes / 60;
     if (hours % 1 === 0.5) {
       hours = Math.floor(hours) + 0.5;
+       setTotalHoursFormat(totalHoursFormat);
+    }
+
+     
+      if (hours % 1 != 0) {
+      totalHoursFormat = Math.floor(hours) + 0.3;
+       setTotalHoursFormat(totalHoursFormat);
+    }
+    else{
+      setTotalHoursFormat(hours)
     }
 
     setTotalHours(hours);
+   
   }
 
   useEffect(() => {
@@ -387,7 +427,7 @@ function getSlotStatus(slot) {
     if (selectedValue === "subFieldPrice") {
       setNewPrice(price); // ใช้ราคา base ของ subField
       console.log("subField price:", price); // แสดงราคาที่เลือก
-      setActivity("ราคาปกติ");
+      setActivity(subFieldData.sport_name);
     } else {
       // หา add-on ที่เลือกจาก add_ons
       const selectedAddOn = addOns.find(
@@ -561,8 +601,8 @@ function getSlotStatus(slot) {
         startDate: startDate,
         endTime: timeEnd,
         endDate: endDate,
-        selectedSlots:selectedSlotsArr,
-        totalHours: totalHours,
+        selectedSlots: selectedSlotsArr,
+        totalHours: totalHoursFormat,
         totalPrice: totalPrice,
         payMethod: payMethod,
         totalRemaining: totalRemaining,
@@ -627,7 +667,11 @@ function getSlotStatus(slot) {
           setTotalPrice(0);
           setTotalRemaining(0);
           setShowFacilities(false);
-          router.replace("");
+          //router.replace("");
+          setTimeout(() => {
+           router.replace("");
+        }, 2000); // รอ 2 วิให้ console log แสดงทัน
+
         } else {
           setMessage(`Error:${data.message}`);
           setMessageType("error");
@@ -638,10 +682,6 @@ function getSlotStatus(slot) {
       setMessageType("error");
     }
   };
-
-   console.log("dd");
-   console.log(slots);
-          
 
   // const showPrice = () => {
   //   // แสดงราคาใน UI
@@ -670,7 +710,6 @@ function getSlotStatus(slot) {
     console.log(newPrice);
     console.log(totalHours);
     console.log(sumFac);
-    
 
     if (newPrice && totalHours) {
       calculatePrice(newPrice, totalHours, sumFac);
@@ -699,29 +738,28 @@ function getSlotStatus(slot) {
     return () => clearInterval(timerRef.current);
   }, []);
 
-function toggleSelectSlot(index) {
-  if (selectedSlots.length === 0) {
-    setSelectedSlots([index]);
-    setSelectedSlotsArr([slots[index]]); // ดึงชื่อ slot จาก index
-    setCanBook(true);
-  } else if (selectedSlots.length === 1) {
-    const range = [selectedSlots[0], index].sort((a, b) => a - b);
-    const allIndexes = [];
-    const allSlots = [];
-    for (let i = range[0]; i <= range[1]; i++) {
-      allIndexes.push(i);
-      allSlots.push(slots[i]);
+  function toggleSelectSlot(index) {
+    if (selectedSlots.length === 0) {
+      setSelectedSlots([index]);
+      setSelectedSlotsArr([slots[index]]); // ดึงชื่อ slot จาก index
+      setCanBook(true);
+    } else if (selectedSlots.length === 1) {
+      const range = [selectedSlots[0], index].sort((a, b) => a - b);
+      const allIndexes = [];
+      const allSlots = [];
+      for (let i = range[0]; i <= range[1]; i++) {
+        allIndexes.push(i);
+        allSlots.push(slots[i]);
+      }
+      setSelectedSlots(allIndexes);
+      setSelectedSlotsArr(allSlots);
+      setCanBook(true);
+    } else {
+      setSelectedSlots([index]);
+      setSelectedSlotsArr([slots[index]]);
+      setCanBook(true);
     }
-    setSelectedSlots(allIndexes);
-    setSelectedSlotsArr(allSlots);
-    setCanBook(true);
-  } else {
-    setSelectedSlots([index]);
-    setSelectedSlotsArr([slots[index]]);
-    setCanBook(true);
   }
-}
-
 
   useEffect(() => {
     if (message) {
@@ -858,7 +896,7 @@ function toggleSelectSlot(index) {
               <strong>เวลาเริ่ม: {timeStart || "-"}</strong>
               <strong>เวลาสิ้นสุด: {timeEnd || "-"}</strong>
               <strong>
-                รวมเวลา: {totalHours ? `${totalHours} ชั่วโมง` : "-"}
+                รวมเวลา: {totalHoursFormat ? `${totalHoursFormat} ชั่วโมง` : "-"}
               </strong>
             </div>
 
@@ -905,7 +943,7 @@ function toggleSelectSlot(index) {
                   <strong>เวลาเริ่ม: {timeStart || "-"}</strong>
                   <strong>เวลาสิ้นสุด: {timeEnd || "-"}</strong>
                   <strong>
-                    รวมเวลา: {totalHours ? `${totalHours} ชั่วโมง` : "-"}
+                    รวมเวลา: {totalHoursFormat ? `${totalHoursFormat} ชั่วโมง` : "-"}
                   </strong>
                   <strong className="total-per-hour">
                     ราคา: {totalPrice} บาท

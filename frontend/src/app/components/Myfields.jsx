@@ -16,6 +16,7 @@ export default function MyFieldPage() {
   const [fieldIdToDelete, setFieldIdToDelete] = useState(null);
   const { user, isLoading } = useAuth();
 
+
   useEffect(() => {
     if (isLoading) return;
 
@@ -50,6 +51,7 @@ export default function MyFieldPage() {
         }
 
         setMyFields(data);
+        console.log(data)
         setFilteredFields(data);
       } catch (err) {
         console.error("Error loading fields:", err.message);
@@ -59,6 +61,8 @@ export default function MyFieldPage() {
 
     fetchMyFields();
   }, []);
+
+  console.log(myFields.field_id)
 
   useEffect(() => {
     if (statusFilter === "ทั้งหมด") {

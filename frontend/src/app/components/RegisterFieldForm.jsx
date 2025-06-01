@@ -45,6 +45,7 @@ export default function RegisterFieldForm() {
     depositChecked: false,
     open_days: [], // เพิ่ม open_days
     field_description: "", // Include description
+    cancel_hours :0,
   });
 
   //  โหลดประเภทกีฬา
@@ -353,6 +354,7 @@ export default function RegisterFieldForm() {
         subFields: subFields,
         open_days: fieldData.open_days, // เพิ่ม open_days
         field_description: fieldData.field_description, // Include description
+        cancel_hours: fieldData.cancel_hours
       })
     );
 
@@ -389,6 +391,7 @@ export default function RegisterFieldForm() {
         depositChecked: false,
         open_days: [], // ล้าง open_days
         field_description: "", // Include description
+        cancel_hours: "",
       });
       setSubFields([]); // เคลียร์สนามย่อย
       setSelectedFacilities({}); // เคลียร์สิ่งอำนวยความสะดวก
@@ -521,6 +524,21 @@ export default function RegisterFieldForm() {
               </div>
             </div>
           </div>
+          <div className="input-group-register-field">
+  <label>ยกเลิกการจองได้ล่วงหน้า (ชั่วโมง)</label>
+  <input
+    type="number"
+    name="cancel_hours"
+    placeholder="เช่น 2 = ยกเลิกได้ก่อน 2 ชม."
+    min="0"
+    value={fieldData.cancel_hours}
+    onChange={(e) => {
+      const value = parseInt(e.target.value);
+      setFieldData({ ...fieldData, cancel_hours: isNaN(value) ? 0 : value });
+    }}
+  />
+</div>
+
           <div className="subfieldcon">
             {subFields.map((sub, subIndex) => (
               <div key={subIndex}>
