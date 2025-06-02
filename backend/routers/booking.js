@@ -35,7 +35,7 @@ const upload = multer({
   },
 });
 
-// ทำงานทุก 1 นาที
+
 cron.schedule("0,30 * * * *", async () => {
   const now = new Date();
   const todayStr = now.toISOString().split("T")[0]; // YYYY-MM-DD
@@ -48,10 +48,10 @@ cron.schedule("0,30 * * * *", async () => {
       FROM bookings b
       JOIN users u ON u.user_id = b.user_id
       JOIN field f ON f.field_id = b.field_id
-      WHERE b.status = 'pending' AND b.start_date = $1
+      WHERE b.status = 'approved' AND b.start_date = $1
     `, [todayStr]);
 
-    console.log(`📦 พบการจองทั้งหมด ${result.rows.length} รายการ`);
+    console.log(` พบการจองทั้งหมด ${result.rows.length} รายการ`);
 
     for (const booking of result.rows) {
       try {
@@ -63,22 +63,22 @@ cron.schedule("0,30 * * * *", async () => {
         const nowTime = new Date(`${todayDate}T${now.toTimeString().split(" ")[0]}+07:00`); // เวลาปัจจุบัน
 
         if (isNaN(startTime.getTime())) {
-          console.warn(`⚠️ ข้าม booking ${booking.booking_id} เพราะ startTime invalid`);
+          console.warn(` ข้าม booking ${booking.booking_id} เพราะ startTime invalid`);
           continue;
         }
 
         const diffMinutes = (startTime - nowTime) / (1000 * 60);
 
-        console.log(`🔍 ตรวจ booking: ${booking.booking_id}`);
-        console.log(`🕒 startTime: ${startTime.toISOString()}`);
-        console.log(`🕒 nowTime:   ${nowTime.toISOString()}`);
-        console.log(`🧮 diff:      ${diffMinutes.toFixed(2)} นาที`);
+        console.log(` ตรวจ booking: ${booking.booking_id}`);
+        console.log(` startTime: ${startTime.toISOString()}`);
+        console.log(` nowTime:   ${nowTime.toISOString()}`);
+        console.log(` diff:      ${diffMinutes.toFixed(2)} นาที`);
 
         if (diffMinutes >= 29 && diffMinutes <= 31) {
           await resend.emails.send({
             from: process.env.Sender_Email,
             to: "surachai.up@rmuti.ac.th",
-            subject: "⏰ ใกล้ถึงเวลาจองสนามแล้ว!",
+            subject: " ใกล้ถึงเวลาจองสนามแล้ว!",
             html: `
               <p>คุณมีการจองสนาม <strong>${booking.field_name}</strong></p>
               <p>เริ่มเวลา <strong>${booking.start_time}</strong> วันที่ <strong>${todayDate}</strong></p>
@@ -88,7 +88,7 @@ cron.schedule("0,30 * * * *", async () => {
 
 
 
-          console.log(`📧 ส่งแจ้งเตือนสำเร็จ: ${booking.email}`);
+          console.log(` ส่งแจ้งเตือนสำเร็จ: ${booking.email}`);
         } 
         else if(diffMinutes==0){
           await resend.emails.send({
@@ -105,14 +105,14 @@ cron.schedule("0,30 * * * *", async () => {
 
         }
         else {
-          console.log(`⏳ ยังไม่ถึงเวลาแจ้งเตือน (เหลือ ${diffMinutes.toFixed(2)} นาที)`);
+          console.log(` ยังไม่ถึงเวลาแจ้งเตือน (เหลือ ${diffMinutes.toFixed(2)} นาที)`);
         }
       } catch (error) {
-        console.warn(`⚠️ ข้าม booking ${booking.booking_id} เพราะ error:`, error.message);
+        console.warn(` ข้าม booking ${booking.booking_id} เพราะ error:`, error.message);
       }
     }
   } catch (err) {
-    console.error("❌ เกิดข้อผิดพลาดใน CRON:", err);
+    console.error(" เกิดข้อผิดพลาดใน CRON:", err);
   }
 });
 
@@ -361,37 +361,39 @@ router.get("/my-orders/:field_id", async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT 
-    b.booking_id,
-    b.user_id,
-    b.field_id,
-    u.first_name,
-    u.last_name,
-    u.email,
-    f.user_id
-    f.field_name,
-    f.gps_location,
-    f.price_deposit,
-    f.cancel_hours ,
-    b.sub_field_id,
-    sf.sub_field_name,
-    sf.price,
-    b.booking_date,
-    b.start_date,
-    b.start_time,
-    b.end_date,
-    b.end_time,
-    b.total_hours,
-    b.total_price,
-    b.total_remaining,
-    b.pay_method,
-    b.status,
-    b.activity,
-    b.selected_slots
+  b.booking_id,
+  b.user_id,
+  b.field_id,
+  u.first_name,
+  u.last_name,
+  u.email,
+  f.field_name,
+  f.gps_location,
+  f.price_deposit,
+  f.cancel_hours,
+  b.sub_field_id,
+  sf.sub_field_name,
+  sf.price,
+  b.booking_date,
+  b.start_date,
+  b.start_time,
+  b.end_date,
+  b.end_time,
+  b.total_hours,
+  b.total_price,
+  b.total_remaining,
+  b.pay_method,
+  b.status,
+  b.activity,
+  b.selected_slots,
+  bf.fac_name AS facility_name,
+  bf.field_fac_id
 
-  FROM bookings b
-  LEFT JOIN field f ON b.field_id = f.field_id
-  LEFT JOIN sub_field sf ON b.sub_field_id = sf.sub_field_id
-  INNER JOIN users u ON u.user_id = b.user_id
+FROM bookings b
+LEFT JOIN field f ON b.field_id = f.field_id
+LEFT JOIN sub_field sf ON b.sub_field_id = sf.sub_field_id
+LEFT JOIN booking_fac bf ON bf.booking_id = b.booking_id
+INNER JOIN  users u ON u.user_id = b.user_id
   WHERE b.field_id = $1
   ORDER BY b.booking_date DESC;
   `,
@@ -484,6 +486,9 @@ router.put("/booking-status/:booking_id",async (req,res)=>{
   try{
     
     const result = await pool.query("UPDATE bookings SET status = $1 WHERE booking_id = $2",[booking_status,booking_id])
+     req.io.emit("slot_booked", {
+          booking_status,
+        })
     return res.status(200).json({status:1,data:result.rows})
   }
   catch(error){
@@ -516,8 +521,8 @@ router.delete("/cancel-bookings/:booking_id", async (req, res) => {
       });
     }
 
-    console.log(`📌 ยกเลิก booking_id = ${booking_id}`);
-    console.log(`🕒 เวลาที่กดปุ่ม cancel: ${now.toISOString()}`);
+    console.log(` ยกเลิก booking_id = ${booking_id}`);
+    console.log(` เวลาที่กดปุ่ม cancel: ${now.toISOString()}`);
 
     const fieldDataResult = await pool.query(`
       SELECT f.cancel_hours, b.start_date, b.start_time, f.field_name
@@ -556,20 +561,20 @@ router.delete("/cancel-bookings/:booking_id", async (req, res) => {
     else{
     
 
-    // ✅ แปลงวันที่ให้เป็น string ถ้าไม่ใช่ Date object
+   
     const startDateStr =  start_date.toISOString().slice(0, 10)
      
 
-    // ✅ รวม date + time เป็น full datetime พร้อม timezone ไทย (+07:00)
+  
     const startDateTime = new Date(`${startDateStr}T${start_time}+07:00`);
 
-    // ✅ คำนวณเส้นตายยกเลิก
+  
     const cancelDeadline = new Date(startDateTime.getTime() - cancel_hours * 60 * 60 * 1000);
 
-    console.log(`📆 เวลาเริ่มเล่น: ${startDateTime.toISOString()}`);
-    console.log(`⏳ เส้นตายยกเลิก: ${cancelDeadline.toISOString()}`);
+    console.log(` เวลาเริ่มเล่น: ${startDateTime.toISOString()}`);
+    console.log(` เส้นตายยกเลิก: ${cancelDeadline.toISOString()}`);
 
-    // ✅ เปรียบเทียบ cancel_time < cancelDeadline
+    
     if (now < cancelDeadline) {
    await pool.query(`DELETE FROM booking_fac WHERE booking_id = $1`, [booking_id]);
   await pool.query(`DELETE FROM bookings WHERE booking_id = $1`, [booking_id]);

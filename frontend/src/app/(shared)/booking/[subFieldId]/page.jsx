@@ -92,7 +92,7 @@ useEffect(() => {
   });
 
   socket.on("slot_booked", (data) => {
-    console.log("📡 booking_id:", data.bookingId);
+    console.log(" booking_id:", data.bookingId);
     setBookingId(data.bookingId);
   });
 
@@ -535,10 +535,18 @@ useEffect(() => {
   }
 
   const handleConfirm = () => {
+       if (priceDeposit > 0) {
+      if (!depositSlip) {
+        setMessage("กรุณาแนบสลิปหลักฐานการชำระเงินมัดจำก่อนทำการจอง");
+        setMessageType("error");
+        return;
+      }
+    }
     if (!payMethod) {
       setMessage("กรุณาเลือกช่องทางการชำระเงิน");
       setMessageType("error");
       return;
+
     }
     setShowModal(false);
     handleSubmit(); // ฟังก์ชันที่ใช้จองจริง
@@ -567,13 +575,7 @@ useEffect(() => {
       return;
     }
 
-    // if (priceDeposit > 0) {
-    //   if (!depositSlip) {
-    //     setMessage("กรุณาแนบสลิปหลักฐานการชำระเงินมัดจำก่อนทำการจอง");
-    //     setMessageType("error");
-    //     return;
-    //   }
-    // }
+ 
 
     setShowModal(true); // ถ้าผ่าน validation แล้วค่อยแสดงโมดอล
     setTimeLeft(600); // รีเซ็ตเวลา

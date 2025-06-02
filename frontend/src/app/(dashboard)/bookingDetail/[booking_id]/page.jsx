@@ -1,8 +1,10 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState,useRef } from "react";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { useRouter, useParams } from "next/navigation";
 import { split } from "postcss/lib/list";
+import { io } from "socket.io-client";
+ 
 
 export default function BookingDetail() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -12,9 +14,10 @@ export default function BookingDetail() {
   const { booking_id } = useParams();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [newStatus, setNewStatus] = useState(""); 
-    const [message, setMessage] = useState(""); // 
+  const [message, setMessage] = useState(""); // 
   const [messageType, setMessageType] = useState(""); 
-  
+  const [status,setStatus] = useState("");
+  const socketRef = useRef(null);
 
   useEffect(() => {
     if (isLoading) return;
@@ -28,6 +31,35 @@ export default function BookingDetail() {
       router.replace("/verification");
     }
   }, [user, isLoading, router]);
+
+  useEffect(() => {
+    console.log("API_URL:", API_URL);
+    console.log(" connecting socket...");
+  
+    socketRef.current = io(API_URL, {
+      transports: ['websocket'],
+      withCredentials: true,
+    });
+  
+    const socket = socketRef.current;
+  
+    socket.on("connect", () => {
+      console.log(" Socket connected:", socket.id);
+    });
+  
+    socket.on("slot_booked", (data) => {
+      console.log(" booking_id:", data.booking_status);
+      setStatus(data.booking_status);
+    });
+  
+    socket.on("connect_error", (err) => {
+      console.error(" Socket connect_error:", err.message);
+    });
+  
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -51,7 +83,7 @@ export default function BookingDetail() {
     };
 
     fetchData();
-  }, [booking_id, API_URL]);
+  }, [booking_id, API_URL,status]);
 
   const formatDate = (isoString) => {
     const date = new Date(isoString);
@@ -245,9 +277,13 @@ const cancelBooking = async (booking_id) => {
             
             <p>
               <strong>ยอดค้างชำระ:</strong> {item.total_remaining}
+            </p> 
+            <p>
+              <strong>สถานะการจอง:</strong> {item.status}
             </p>
+
                  <div className="status-buttons">
-          {user?.user_id  === item.user_id && (
+          {user?.role  === "field_owner" && (
             <>
             <button
   className="approve-btn"
