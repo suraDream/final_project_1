@@ -83,6 +83,25 @@ export default function HomePage() {
     setSelectedSportName(sport ? sport.sport_name : "");
   };
 
+ 
+const groupedFields = approvedFields.reduce((acc, curr) => {
+  const existing = acc.find((item) => item.field_id === curr.field_id);
+
+  if (existing) {
+    if (!existing.sport_names.includes(curr.sport_name)) {
+      existing.sport_names.push(curr.sport_name);
+    }
+  } else {
+    acc.push({
+      ...curr,
+      sport_names: [curr.sport_name],
+    });
+  }
+
+  return acc;
+}, []);
+
+
   return (
     <>
       <div className="container-home">
@@ -103,49 +122,44 @@ export default function HomePage() {
         </div>
 
         <div className="grid-home">
-          {approvedFields.length > 0 ? (
-            approvedFields.map((field, index) => (
-              <div
-                key={`${field.field_id}-${index}`}
-                className="card-home"
-                onClick={() => router.push(`/profile/${field.field_id}`)}
-              >
-                <img
-                  src={
-                    field.img_field
-                      ? `${API_URL}/${field.img_field}`
-                      : "https://via.placeholder.com/300x200"
-                  }
-                  alt={field.field_name}
-                  className="card-img-home"
-                />
-                <div className="card-body-home">
-                  <h3>{field.field_name}</h3>
-                  <div className="firsttime-home">
-                    <p className="filedname">
-                      <span className="first-label-time">เปิดเวลา: </span>
-                      {field.open_hours} น. - {field.close_hours} น.
-                    </p>
-                  </div>
-                  <div className="firstopen-home">
-                    <p>
-                      <span className="first-label-time">วันทำการ: </span>
-                      {convertToThaiDays(field.open_days)}
-                    </p>
-                  </div>
-                  <div className="firstopen-home">
-                    <p>
-                      <span className="first-label-time">กีฬา: </span>
-                      {convertToThaiDays(field.sport_name)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div> </div>
-          )}
-
+      {groupedFields.map((field) => (
+  <div
+    key={field.field_id}
+    className="card-home"
+    onClick={() => router.push(`/profile/${field.field_id}`)}
+  >
+    <img
+      src={
+        field.img_field
+          ? `${API_URL}/${field.img_field}`
+          : "https://via.placeholder.com/300x200"
+      }
+      alt={field.field_name}
+      className="card-img-home"
+    />
+    <div className="card-body-home">
+      <h3>{field.field_name}</h3>
+      <div className="firsttime-home">
+        <p className="filedname">
+          <span className="first-label-time">เปิดเวลา: </span>
+          {field.open_hours} น. - {field.close_hours} น.
+        </p>
+      </div>
+      <div className="firstopen-home">
+        <p>
+          <span className="first-label-time">วันทำการ: </span>
+          {convertToThaiDays(field.open_days)}
+        </p>
+      </div>
+      <div className="firstopen-home">
+        <p>
+          <span className="first-label-time">กีฬา: </span>
+          {field.sport_names.join(", ")}
+        </p>
+      </div>
+    </div>
+  </div>
+))}
           {approvedFields.length === 0 && (
             <div className="no-fields-message">
               ยังไม่มีสนาม <strong>{selectedSportName}</strong> สำหรับกีฬานี้
