@@ -241,7 +241,7 @@ router.post(
         );
         
       await client.query("COMMIT");
-      console.log("🔔 emitting slot_booked", bookingId);
+      console.log(" emitting slot_booked", bookingId);
       if (req.io) {
         req.io.emit("slot_booked", {
           bookingId,
@@ -519,7 +519,6 @@ router.delete("/cancel-bookings/:booking_id", async (req, res) => {
     console.log(`📌 ยกเลิก booking_id = ${booking_id}`);
     console.log(`🕒 เวลาที่กดปุ่ม cancel: ${now.toISOString()}`);
 
-    // ✅ ดึงข้อมูลจาก database
     const fieldDataResult = await pool.query(`
       SELECT f.cancel_hours, b.start_date, b.start_time, f.field_name
       FROM bookings b
@@ -541,6 +540,10 @@ router.delete("/cancel-bookings/:booking_id", async (req, res) => {
 
   await pool.query(`DELETE FROM booking_fac WHERE booking_id = $1`, [booking_id]);
   await pool.query(`DELETE FROM bookings WHERE booking_id = $1`, [booking_id]);
+
+   req.io.emit("slot_booked", {
+          booking_id,
+        })
 
   return res.status(200).json({
     status: 1,
@@ -571,7 +574,10 @@ router.delete("/cancel-bookings/:booking_id", async (req, res) => {
    await pool.query(`DELETE FROM booking_fac WHERE booking_id = $1`, [booking_id]);
   await pool.query(`DELETE FROM bookings WHERE booking_id = $1`, [booking_id]);
 
-
+      
+   req.io.emit("slot_booked", {
+          booking_id,
+        })
       return res.status(200).json({
         status: 1,
         message: `Booking for ${field_name} at ${start_time} on ${startDateStr} canceled successfully.`,
