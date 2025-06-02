@@ -247,7 +247,7 @@ const cancelBooking = async (booking_id) => {
               <strong>ยอดค้างชำระ:</strong> {item.total_remaining}
             </p>
                  <div className="status-buttons">
-          {user?.role === "field_owner" && (
+          {user?.user_id  === item.user_id && (
             <>
             <button
   className="approve-btn"

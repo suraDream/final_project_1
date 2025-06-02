@@ -235,14 +235,11 @@ router.post(
         );
       }
 
-      // เชื่อมต่อกับ payment
-      if (depositSlip) {
-        const paymentResult = await client.query(
+      const paymentResult = await client.query(
           `INSERT INTO payment (booking_id, deposit_slip) VALUES ($1, $2) RETURNING payment_id`,
           [bookingId, depositSlip]
         );
-      }
-
+        
       await client.query("COMMIT");
       console.log("🔔 emitting slot_booked", bookingId);
       if (req.io) {
@@ -370,6 +367,7 @@ router.get("/my-orders/:field_id", async (req, res) => {
     u.first_name,
     u.last_name,
     u.email,
+    f.user_id
     f.field_name,
     f.gps_location,
     f.price_deposit,
