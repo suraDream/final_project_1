@@ -159,7 +159,7 @@ export default function CheckFieldDetail() {
 
   const scrollToBookingSection = () => {
     document
-      .querySelector(".undercontainer-proflie")
+      .querySelector(".sub-fields-profile")
       ?.scrollIntoView({ behavior: "smooth" });
   };
 
@@ -350,7 +350,7 @@ export default function CheckFieldDetail() {
           </div>
         )}
         <div className="undercontainer-proflie">
-          <h1>สนามย่อย</h1>
+          <h1 className="sub-fields-profile">สนามย่อย</h1>
           <div className="sub-fields-container-profile">
             {fieldData?.sub_fields && fieldData.sub_fields.length > 0 ? (
               fieldData.sub_fields.map((sub) => (
@@ -557,7 +557,10 @@ export default function CheckFieldDetail() {
                   )}
                   {canPost && (
                     <div className="post-actions-profile">
-                      <button onClick={() => handleEdit(post)} className="btn-profile">
+                      <button
+                        onClick={() => handleEdit(post)}
+                        className="btn-profile"
+                      >
                         แก้ไขโพส
                       </button>
                       <button
@@ -605,7 +608,9 @@ export default function CheckFieldDetail() {
               <strong>เวลาเปิด-ปิด:</strong> {fieldData?.open_hours} -{" "}
               {fieldData?.close_hours}
             </p>
-
+            <p>
+              <strong>ยกเลิกการจองได้ก่อน: </strong>{fieldData?.cancel_hours} ชม.
+            </p>
             <p>
               <strong>ค่ามัดจำ:</strong> {fieldData?.price_deposit} บาท
             </p>

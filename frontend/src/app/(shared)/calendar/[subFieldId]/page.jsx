@@ -214,7 +214,7 @@ export default function MyCalendar() {
       </div>
       <div className="select-day">
         <p>
-          เลือกวันที่: {date ? formatDateToThai(date) : "ยังไม่ได้เลือกวันที่"}
+          วันที่: {date ? formatDateToThai(date) : "ยังไม่ได้เลือกวันที่"}
         </p>
         <div>**สามารถจองล่วงหน้าได้ไม่เกิน 7 วัน</div>
       </div>

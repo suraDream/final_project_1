@@ -6,7 +6,6 @@ const path = require("path");
 const cookieParser = require('cookie-parser');
 const http = require("http"); 
 const { Server } = require("socket.io"); // ดึง Server class จาก socket.io
- 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -30,14 +29,13 @@ app.use(
   })
 );
 
-
 app.use(bodyParser.json());
 app.use(express.json()); 
-app.use('/uploads/images', express.static(path.join(__dirname, 'uploads/images')));
+app.use('/uploads/images/field-profile', express.static(path.join(__dirname, 'uploads/images/field-profile')));
 app.use('/uploads/images/posts', express.static(path.join(__dirname, 'uploads/images/posts')));
+app.use('/uploads/images/slip', express.static(path.join(__dirname, 'uploads/images/slip')));
 app.use('/uploads/documents', express.static(path.join(__dirname, 'uploads/documents')));
 app.use(cookieParser());
-app.use('/uploads/images/slip', express.static(path.join(__dirname, 'uploads/images/slip')));
 
 const registerRoute = require("./routers/register");
 const loginRoute = require("./routers/login");
@@ -49,7 +47,7 @@ const sportsTypesRoutes = require("./routers/sportsTypes");
 const myfieldRoute = require("./routers/myfield");
 const profile = require("./routers/profile");
 const posts = require("./routers/posts");
-const booking = require("./routers/booking");
+const booking = require("./routers/booking")(io);
 
 
 

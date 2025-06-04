@@ -12,7 +12,7 @@ router.get("/:field_id", async (req, res) => {
             f.field_id, f.field_name, f.address, f.gps_location, f.documents,
             f.open_hours, f.close_hours, f.img_field, f.name_bank, 
             f.number_bank, f.account_holder, f.status, f.price_deposit, 
-            f.open_days, f.field_description,
+            f.open_days, f.field_description,f.cancel_hours,
             u.user_id, u.first_name, u.last_name, u.email,
             COALESCE(json_agg(
               DISTINCT jsonb_build_object(

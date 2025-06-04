@@ -54,12 +54,12 @@ export default function Booking() {
   const [imgPreview, setImgPreview] = useState(""); // เก็บ URL
   const [timeLeft, setTimeLeft] = useState(600); // เริ่มที่ 10 นาที (600 วิ)
   const [showModal, setShowModal] = useState(false);
-  const timerRef = useRef(null); // กัน setInterval ซ้ำ
+  const timerRef = useRef(null);
   const isTimeoutRef = useRef(false);
   const [message, setMessage] = useState(""); // ข้อความแสดงผลผิดพลาด
   const [messageType, setMessageType] = useState("");
   const [bookTimeArr, setBookTimeArr] = useState([]);
-  const [bookingId,setBookingId] = useState("");
+  const [bookingId, setBookingId] = useState("");
 
   useEffect(() => {
     if (isLoading) return;
@@ -76,51 +76,45 @@ export default function Booking() {
     }
   }, [user, isLoading, router, bookingDate]);
 
-useEffect(() => {
-  console.log("API_URL:", API_URL);
-  console.log(" connecting socket...");
+  useEffect(() => {
+    console.log("API_URL:", API_URL);
+    console.log(" connecting socket...");
 
-  socketRef.current = io(API_URL, {
-    transports: ['websocket'],
-    withCredentials: true,
-  });
+    socketRef.current = io(API_URL, {
+      transports: ["websocket"],
+      withCredentials: true,
+    });
 
-  const socket = socketRef.current;
+    const socket = socketRef.current;
 
-  socket.on("connect", () => {
-    console.log(" Socket connected:", socket.id);
-  });
+    socket.on("connect", () => {
+      console.log(" Socket connected:", socket.id);
+    });
 
   socket.on("slot_booked", (data) => {
-    console.log(" booking_id:", data.bookingId);
-    setBookingId(data.bookingId);
-  });
+  console.log("booking_id:", data.bookingId);
+  setBookingId(data.bookingId);
+  setIsBooked(true); 
+});
 
-  socket.on("connect_error", (err) => {
-    console.error(" Socket connect_error:", err.message);
-  });
+    socket.on("connect_error", (err) => {
+      console.error(" Socket connect_error:", err.message);
+    });
 
-  return () => {
-    socket.disconnect();
-  };
-}, []);
- 
-
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
     if (!bookingDate || !subFieldId) return;
 
     const fetchBookedSlots = async () => {
       try {
-      
         const bookingDateRaw = sessionStorage.getItem("booking_date");
-
-        
-
         const bookingDateFormatted = new Date(bookingDate).toLocaleDateString(
           "en-CA"
         );
-
         const day = new Date(`${bookingDateFormatted}T00:00:00`);
         const today = new Date(day);
         today.setDate(day.getDate() + 1);
@@ -135,15 +129,14 @@ useEffect(() => {
         console.log(`end: ${end}`);
 
         const res = await fetch(
-          `${API_URL}/booking/booked-block/${subFieldId}/${start}/${end}`
+          `${API_URL}/booking/booked-block/${subFieldId}/${start}/${end}`,
+          {
+            credentials: "include",
+          }
         );
         const data = await res.json();
 
-        
-
         if (!data.error) {
-          
-
           setBookedSlots(data.data);
 
           const timeRangesWithStatus = data.data.flatMap((item) =>
@@ -153,46 +146,42 @@ useEffect(() => {
             }))
           );
 
-         
           const selectedSlotsFromAPI = timeRangesWithStatus.map(
             (item) => item.time
           );
 
-          
-          setBookTimeArr(timeRangesWithStatus); 
-          setSelectedSlotsArr(selectedSlotsFromAPI); 
+          setBookTimeArr(timeRangesWithStatus);
+          setSelectedSlotsArr(selectedSlotsFromAPI);
 
-         // console.log("bookingtime", timeRangesWithStatus); 
-
-          
+          // console.log("bookingtime", timeRangesWithStatus);
           //console.log(data.data);
         } else {
           console.error("API returned error:", data.message);
         }
       } catch (error) {
-        console.error("❌ Failed to fetch booked slots:", error.message);
+        console.error("Failed to fetch booked slots:", error.message);
       }
     };
-
     fetchBookedSlots();
 
     if (isBooked) {
       fetchBookedSlots();
       setIsBooked(false);
     }
-  }, [bookingDate, subFieldId, isBooked,bookingId]);
+  }, [bookingDate, subFieldId, isBooked, bookingId]);
 
   useEffect(() => {
     if (!field_id) {
       console.log("field_id is not defined. Skipping fetch.");
       return; // ถ้าไม่มี field_id ก็ไม่ให้ทำงานต่อ
     }
-   // console.log(`bookedSlots${bookedSlots}`);
+    // console.log(`bookedSlots${bookedSlots}`);
     const fetchData = async () => {
       try {
         const res = await fetch(`${API_URL}/field/field-fac/${field_id}`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
         });
 
         const data = await res.json();
@@ -201,7 +190,7 @@ useEffect(() => {
         if (!data.error && data.data) {
           const fac = data.data.filter((f) => f.fac_price !== 0); // ตรวจสอบว่า fac_price ไม่เป็น 0
           setFacilities(fac);
-         // console.log(fac); // แสดงข้อมูลที่ได้จาก API
+          // console.log(fac); // แสดงข้อมูลที่ได้จาก API
         } else {
           console.error("Error fetching data:", data.message);
         }
@@ -219,6 +208,7 @@ useEffect(() => {
         const res = await fetch(`${API_URL}/field/field-data/${subFieldId}`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
         });
         const data = await res.json();
         if (!data.error) {
@@ -236,7 +226,7 @@ useEffect(() => {
           );
           if (subField) {
             console.log("subField:", subField);
-            
+
             setAddOns(subField.add_ons);
             setPrice(subField.price); // กำหนดราคาเริ่มต้น
             setNewPrice(subField.price);
@@ -253,8 +243,6 @@ useEffect(() => {
     };
     fetchData();
   }, [subFieldId]);
-
-
 
   useEffect(() => {
     if (!subFieldId) {
@@ -278,7 +266,6 @@ useEffect(() => {
                 (subField) => subField.sub_field_id === parseInt(subFieldId)
               ) || "ไม่พบข้อมูล";
             setSubFieldData(selectedSubField);
-           
           }
         })
         .catch((error) => {
@@ -393,24 +380,21 @@ useEffect(() => {
     let minutes = endInMinutes - startInMinutes;
 
     if (minutes < 0) minutes += 24 * 60; // คำนวณกรณีข้ามวัน
-    let totalHoursFormat
+    let totalHoursFormat;
     let hours = minutes / 60;
     if (hours % 1 === 0.5) {
       hours = Math.floor(hours) + 0.5;
-       setTotalHoursFormat(totalHoursFormat);
+      setTotalHoursFormat(totalHoursFormat);
     }
 
-     
-      if (hours % 1 != 0) {
+    if (hours % 1 != 0) {
       totalHoursFormat = Math.floor(hours) + 0.3;
-       setTotalHoursFormat(totalHoursFormat);
-    }
-    else{
-      setTotalHoursFormat(hours)
+      setTotalHoursFormat(totalHoursFormat);
+    } else {
+      setTotalHoursFormat(hours);
     }
 
     setTotalHours(hours);
-   
   }
 
   useEffect(() => {
@@ -535,19 +519,18 @@ useEffect(() => {
   }
 
   const handleConfirm = () => {
-       if (priceDeposit > 0) {
-      if (!depositSlip) {
-        setMessage("กรุณาแนบสลิปหลักฐานการชำระเงินมัดจำก่อนทำการจอง");
-        setMessageType("error");
-        return;
-      }
-    }
     if (!payMethod) {
       setMessage("กรุณาเลือกช่องทางการชำระเงิน");
       setMessageType("error");
       return;
-
     }
+    //     if (priceDeposit > 0) {
+    //   if (!depositSlip) {
+    //     setMessage("กรุณาแนบสลิปหลักฐานการชำระเงินมัดจำก่อนทำการจอง");
+    //     setMessageType("error");
+    //     return;
+    //   }
+    // }
     setShowModal(false);
     handleSubmit(); // ฟังก์ชันที่ใช้จองจริง
   };
@@ -575,7 +558,13 @@ useEffect(() => {
       return;
     }
 
- 
+    // if (priceDeposit > 0) {
+    //   if (!depositSlip) {
+    //     setMessage("กรุณาแนบสลิปหลักฐานการชำระเงินมัดจำก่อนทำการจอง");
+    //     setMessageType("error");
+    //     return;
+    //   }
+    // }
 
     setShowModal(true); // ถ้าผ่าน validation แล้วค่อยแสดงโมดอล
     setTimeLeft(600); // รีเซ็ตเวลา
@@ -592,6 +581,7 @@ useEffect(() => {
     }));
 
     bookingData.append("deposit_slip", depositSlip);
+    
     bookingData.append(
       "data",
       JSON.stringify({
@@ -619,10 +609,8 @@ useEffect(() => {
     try {
       const response = await fetch(`${API_URL}/booking`, {
         method: "POST",
-        headers: {
-          // ไม่มี Content-Type ที่ต้องระบุ
-        },
-        body: bookingData, // ส่งข้อมูลแบบ FormData
+        credentials: "include",
+        body: bookingData,
       });
 
       if (!response.ok) {
@@ -671,9 +659,8 @@ useEffect(() => {
           setShowFacilities(false);
           //router.replace("");
           setTimeout(() => {
-           router.replace("");
-        }, 2000); // รอ 2 วิให้ console log แสดงทัน
-
+            router.replace("");
+          }, 2000); // รอ 2 วิให้ console log แสดงทัน
         } else {
           setMessage(`Error:${data.message}`);
           setMessageType("error");
@@ -898,7 +885,8 @@ useEffect(() => {
               <strong>เวลาเริ่ม: {timeStart || "-"}</strong>
               <strong>เวลาสิ้นสุด: {timeEnd || "-"}</strong>
               <strong>
-                รวมเวลา: {totalHoursFormat ? `${totalHoursFormat} ชั่วโมง` : "-"}
+                รวมเวลา:{" "}
+                {totalHoursFormat ? `${totalHoursFormat} ชั่วโมง` : "-"}
               </strong>
             </div>
 
@@ -945,7 +933,8 @@ useEffect(() => {
                   <strong>เวลาเริ่ม: {timeStart || "-"}</strong>
                   <strong>เวลาสิ้นสุด: {timeEnd || "-"}</strong>
                   <strong>
-                    รวมเวลา: {totalHoursFormat ? `${totalHoursFormat} ชั่วโมง` : "-"}
+                    รวมเวลา:{" "}
+                    {totalHoursFormat ? `${totalHoursFormat} ชั่วโมง` : "-"}
                   </strong>
                   <strong className="total-per-hour">
                     ราคา: {totalPrice} บาท
@@ -1004,7 +993,7 @@ useEffect(() => {
                   <label className="file-label-book">
                     <input
                       type="file"
-                      onChange={handleimgChange}
+                      onChange={ handleimgChange}
                       accept="image/*"
                       className="file-input-hidden-book"
                     />
@@ -1017,7 +1006,7 @@ useEffect(() => {
                     </div>
                   )}
                 </div>
-                <div className="file-container-book">
+                {/* <div className="file-container-book">
                   <label className="file-label-book">
                     <input
                       type="file"
@@ -1033,7 +1022,7 @@ useEffect(() => {
                       <img src={imgPreview} alt="Preview" />
                     </div>
                   )}
-                </div>
+                </div> */}
               </div>
               <div className={`total-box ${canBook ? "show" : ""}`}>
                 <div className="summary">
@@ -1043,6 +1032,10 @@ useEffect(() => {
 
                   <strong className="total-remaining">
                     ยอดรวมสุทธิ: {totalRemaining} บาท
+                  </strong>
+
+                   <strong className="total-remaining">
+                    ยอดรวมทั้งหมด: {totalPrice} บาท
                   </strong>
                 </div>
                 <div className="payment-method">

@@ -136,6 +136,4 @@ router.get("/preview/type", async (req, res) => {
   }
 });
 
-
-
 module.exports = router;

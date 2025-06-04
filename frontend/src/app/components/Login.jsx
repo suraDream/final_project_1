@@ -1,6 +1,6 @@
 "use client";
-import { useRouter } from "next/navigation";
-import React, { useState, useEffect, use } from "react";
+import { useRouter,useSearchParams } from "next/navigation";
+import React, { useState, useEffect, } from "react";
 import "@/app/css/login.css";
 import { useAuth } from "@/app/contexts/AuthContext";
 import Link from "next/link";
@@ -15,16 +15,16 @@ export default function Login() {
   const [message, setMessage] = useState({ text: "", type: "" });
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+const rawRedirect = searchParams.get("redirectTo");
+const redirectTo = rawRedirect && rawRedirect.startsWith("/bookingDetail")
+  ? rawRedirect
+  : "/";
 
-  useEffect(() => {
-    if (isLoading) return;
 
-    if (!user) {
-      router.replace("/login");
-    } else {
-      router.replace("/");
-    }
-  }, [user, isLoading]);
+
+
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -56,11 +56,14 @@ export default function Login() {
       if (res.ok) {
         const userData = await res.json();
         setUser(userData);
+        console.log("userData:", userData);
+        console.log("redirectTo:", redirectTo);
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
         if (userData?.status !== "ตรวจสอบแล้ว") {
           router.replace("/verification");
         } else {
-          router.replace("/");
+          router.push(redirectTo);
         }
       }
     } catch (error) {
@@ -68,6 +71,8 @@ export default function Login() {
       setMessage({ text: "เกิดข้อผิดพลาดระหว่างเข้าสู่ระบบ", type: "error" });
     }
   };
+
+  
 
   return (
     <div className="login-container">

@@ -995,6 +995,42 @@ export default function CheckFieldDetail() {
             )}
           </div>
           <div className="input-group-editfield">
+            <label>ยกเลิกก่อนถึงเวลา: </label>
+            {editingField === "cancel_hours" ? (
+              <>
+                <input
+                  min="0"
+                  type="number"
+                  value={updatedValue}
+                  onChange={(e) => setUpdatedValue(Math.abs(e.target.value))}
+                />
+                <button
+                  className="savebtn-editfield"
+                  onClick={() => saveField("cancel_hours")}
+                >
+                  บันทึก
+                </button>
+                <button className="canbtn-editfield" onClick={cancelEditing}>
+                  ยกเลิก
+                </button>
+              </>
+            ) : (
+              <>
+                <p>{field?.cancel_hours || "ไม่มีข้อมูล"}</p>
+                <div>
+                  <button
+                    className="editbtn-editfield"
+                    onClick={() =>
+                      startEditing("cancel_hours", field?.cancel_hours)
+                    }
+                  >
+                    แก้ไข
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+          <div className="input-group-editfield">
             <label>ค่ามัดจำ: </label>
             {editingField === "price_deposit" ? (
               <>

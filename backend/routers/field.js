@@ -40,7 +40,6 @@ const upload = multer({
   },
 });
 
-// ลงทะเบียนสนามกีฬา
 router.post("/register", upload.fields([{ name: "documents" }, { name: "img_field" }]),authMiddleware, async (req, res) => {
   try {
     const {
@@ -83,7 +82,7 @@ router.post("/register", upload.fields([{ name: "documents" }, { name: "img_fiel
 
     const field_id = fieldResult.rows[0].field_id;
     
-   
+    // INSERT ข้อมูลสนามย่อย
     for (const sub of subFields) {
       const subFieldResult = await pool.query(
         `INSERT INTO sub_field (field_id, sub_field_name, price, sport_id, user_id) 
@@ -91,7 +90,7 @@ router.post("/register", upload.fields([{ name: "documents" }, { name: "img_fiel
         [field_id, sub.name, sub.price, sub.sport_id, user_id]
       );
       const sub_field_id = subFieldResult.rows[0].sub_field_id;
-      
+      // เพิ่ม add_on ที่เกี่ยวข้องกับ sub_field
       for (const addon of sub.addOns) {
         await pool.query(
           `INSERT INTO add_on (sub_field_id, content, price) VALUES ($1, $2, $3) RETURNING add_on_id`,
@@ -100,7 +99,7 @@ router.post("/register", upload.fields([{ name: "documents" }, { name: "img_fiel
       }
     }
 
-  
+    // INSERT ข้อมูลสิ่งอำนวยความสะดวก
     for (const facId in selectedFacilities) {
       await pool.query(
         `INSERT INTO field_facilities (field_id, facility_id, fac_price) 
@@ -108,17 +107,17 @@ router.post("/register", upload.fields([{ name: "documents" }, { name: "img_fiel
         [field_id, facId, selectedFacilities[facId]]
       );
     }
-     
+    
      const userData = await pool.query("SELECT * FROM users WHERE user_id = $1", [user_id]);
 
-     
+ 
      const userEmail = userData.rows[0].email; 
 
-     
+   
      try {
        const resultEmail = await resend.emails.send({
          from: process.env.Sender_Email,
-         to: "surachai.up@rmuti.ac.th", 
+         to: userEmail, // ใช้ค่าที่ดึงมา
          subject: "ลงทะเบียนสนาม",
          text: "คุณได้ลงทะเบียนสนามเรียบร้อยแล้ว รอผู้ดูแลตรวจสอบ",
        });
@@ -138,11 +137,11 @@ router.post("/register", upload.fields([{ name: "documents" }, { name: "img_fiel
 
 router.put("/update-status/:field_id", authMiddleware, async (req, res) => {
   try {
-    const { field_id } = req.params;  
-    const { status } = req.body;      
-    const { user_id, role } = req.user;  
+    const { field_id } = req.params;  // รับ field_id จาก URL params
+    const { status } = req.body;      // รับ status ที่จะอัปเดตจาก body
+    const { user_id, role } = req.user;  // ดึงข้อมูลจาก token เพื่อเช็ค role ของผู้ใช้
 
-    
+    // ตรวจสอบว่า status ที่ส่งมาถูกต้องหรือไม่ (ต้องเป็น "รออนุมัติ")
     if (status !== "รอตรวจสอบ") {
       return res.status(400).json({ error: "สถานะที่ส่งมาไม่ถูกต้อง" });
     }
@@ -245,7 +244,7 @@ router.get("/:field_id", authMiddleware, async (req, res) => {
           f.field_id, f.field_name, f.address, f.gps_location, f.documents,
           f.open_hours, f.close_hours, f.img_field, f.name_bank, 
           f.number_bank, f.account_holder, f.status, f.price_deposit, 
-          f.open_days, f.field_description,f.cancel_hours ,
+          f.open_days, f.field_description,
           u.user_id, u.first_name, u.last_name, u.email,
           COALESCE(json_agg(
             DISTINCT jsonb_build_object(
@@ -486,7 +485,7 @@ router.put("/edit/:field_id", authMiddleware, async (req, res) => {
   try {
     const { field_id } = req.params;
     const { user_id, role } = req.user;  // ดึง user_id และ role จาก token ใน authMiddleware
-    const { field_name, address, gps_location, open_hours, close_hours, price_deposit, name_bank, account_holder, number_bank, img_field, documents, field_description } = req.body;
+    const { field_name, address, gps_location, open_hours, close_hours, price_deposit, name_bank, account_holder, number_bank, img_field, documents, field_description,cancel_hours } = req.body;
 
     console.log("field_id ที่ได้รับ:", field_id);
     console.log("ข้อมูลที่ได้รับจาก Frontend:", req.body);
@@ -522,10 +521,11 @@ router.put("/edit/:field_id", authMiddleware, async (req, res) => {
              number_bank = COALESCE($9, number_bank),
              img_field = COALESCE($10, img_field),
              documents = COALESCE($11, documents),
-             field_description = COALESCE($12, field_description)
-         WHERE field_id = $13
+             field_description = COALESCE($12, field_description),
+             cancel_hours = COALESCE($13, cancel_hours)
+         WHERE field_id = $14
          RETURNING *;`,
-        [field_name, address, gps_location, open_hours, close_hours, price_deposit, name_bank, account_holder, number_bank, img_field, documents, field_description, field_id]
+        [field_name, address, gps_location, open_hours, close_hours, price_deposit, name_bank, account_holder, number_bank, img_field, documents, field_description,cancel_hours, field_id]
       );
 
       console.log("ข้อมูลอัปเดตสำเร็จ:", result.rows[0]);
@@ -549,10 +549,11 @@ router.put("/edit/:field_id", authMiddleware, async (req, res) => {
              number_bank = COALESCE($9, number_bank),
              img_field = COALESCE($10, img_field),
              documents = COALESCE($11, documents),
-             field_description = COALESCE($12, field_description)
-         WHERE field_id = $13 AND user_id = $14
+             field_description = COALESCE($12, field_description),
+             cancel_hours = COALESCE($13, cancel_hours)
+         WHERE field_id = $14 AND user_id = $15
          RETURNING *;`,
-        [field_name, address, gps_location, open_hours, close_hours, price_deposit, name_bank, account_holder, number_bank, img_field, documents, field_description, field_id, user_id]
+        [field_name, address, gps_location, open_hours, close_hours, price_deposit, name_bank, account_holder, number_bank, img_field, documents, field_description,cancel_hours, field_id, user_id]
       );
 
       if (result.rows.length === 0) {
@@ -880,7 +881,7 @@ router.get("/open-days/:sub_field_id",authMiddleware, async (req, res) => {
   }
 });
 
-router.get("/field-data/:sub_field_id", async (req, res) => {
+router.get("/field-data/:sub_field_id",authMiddleware, async (req, res) => {
   const { sub_field_id } = req.params;
   if (isNaN(sub_field_id)) {
   return res.status(404).json({ error: "Invalid subfield ID" });
@@ -945,7 +946,7 @@ router.get("/field-data/:sub_field_id", async (req, res) => {
   }
   });
 
-  router.get('/field-fac/:field_id',async (req,res)=>{
+  router.get('/field-fac/:field_id',authMiddleware, async (req,res)=>{
     const { field_id} = req.params;
     try{
        const result = await pool.query(`SELECT fi.field_fac_id , fi.field_id , fi.facility_id , fi.fac_price ,fa.fac_name  
