@@ -16,6 +16,7 @@ export default function ResetPassword() {
   const [canRead, setCanRead] = useState(true);
   const [timer, setTimer] = useState(60); // เริ่มต้นจาก 60 วินาที
   const [canRequestOTP, setCanRequestOTP] = useState(true); // ใช้สำหรับการอนุญาตให้ผู้ใช้ขอ OTP ใหม่
+  const [startProcessLoad, SetstartProcessLoad] = useState(false);
 
   useEffect(() => {
     const expiresAt = sessionStorage.getItem("expiresAt");
@@ -42,8 +43,9 @@ export default function ResetPassword() {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-
+    SetstartProcessLoad(true);
     try {
+      await new Promise((resolve) => setTimeout(resolve, 200));
       const res = await fetch(`${API_URL}/users/reset-password`, {
         method: "POST",
         headers: {
@@ -68,8 +70,10 @@ export default function ResetPassword() {
         setMessageType("error");
       }
     } catch (error) {
-      setMessage("เกิดข้อผิดพลาดระหว่างการยืนยัน", error);
+      setMessage("เกิดข้อผิดพลาด", error);
       setMessageType("error");
+    } finally {
+      SetstartProcessLoad(false);
     }
   };
 
@@ -83,7 +87,9 @@ export default function ResetPassword() {
     }
     setCanRequestOTP(false);
     setTimer(60);
+    SetstartProcessLoad(true);
     try {
+      await new Promise((resolve) => setTimeout(resolve, 200));
       const res = await fetch(`${API_URL}/users/resent-reset-password`, {
         method: "POST",
         headers: {
@@ -106,8 +112,10 @@ export default function ResetPassword() {
         setMessageType("error");
       }
     } catch (error) {
-      setMessage("เกิดข้อผิดพลาดระหว่างการยืนยัน", error);
+      setMessage("เกิดข้อผิดพลาด", error);
       setMessageType("error");
+    } finally {
+      SetstartProcessLoad(false);
     }
   };
 
@@ -121,8 +129,9 @@ export default function ResetPassword() {
       setMessageType("error");
       return;
     }
-
+    SetstartProcessLoad(true);
     try {
+      await new Promise((resolve) => setTimeout(resolve, 200));
       const res = await fetch(`${API_URL}/users/verify-otp`, {
         method: "POST",
         headers: {
@@ -143,8 +152,10 @@ export default function ResetPassword() {
         setMessageType("error");
       }
     } catch (error) {
-      setMessage("เกิดข้อผิดพลาดระหว่างการยืนยัน OTP", error);
+      setMessage("เกิดข้อผิดพลาด", error);
       setMessageType("error");
+    } finally {
+      SetstartProcessLoad(false);
     }
   };
 
@@ -159,14 +170,21 @@ export default function ResetPassword() {
     }
   }, [message]);
 
+  // if (startProcessLoad)
+  //   return (
+  //     <div className="loading-overlay">
+  //       <div className="loading-spinner"></div>
+  //     </div>
+  //   );
+
   return (
     <div>
+      {message && (
+        <div className={`message-box ${messageType}`}>
+          <p>{message}</p>
+        </div>
+      )}
       <div className="reset_password_container">
-        {message && (
-          <div className={`message-box ${messageType}`}>
-            <p>{message}</p>
-          </div>
-        )}
         <div className="head-titel">
           <h1>ลืมรหัสผ่าน</h1>
         </div>
@@ -222,9 +240,15 @@ export default function ResetPassword() {
             </button>
           </div>
         )}
+
         <Link href="/login" className="login-reset-password">
           กลับหน้า Login
         </Link>
+        {startProcessLoad && (
+          <div className="loading-overlay">
+            <div className="loading-spinner"></div>
+          </div>
+        )}
       </div>
     </div>
   );

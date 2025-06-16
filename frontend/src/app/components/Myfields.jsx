@@ -15,6 +15,10 @@ export default function MyFieldPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [fieldIdToDelete, setFieldIdToDelete] = useState(null);
   const { user, isLoading } = useAuth();
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("");
+  const [dataLoading, setDataLoading] = useState(true);
+  const [startProcessLoad, SetstartProcessLoad] = useState(false);
 
   useEffect(() => {
     if (isLoading) return;
@@ -35,6 +39,7 @@ export default function MyFieldPage() {
   useEffect(() => {
     const fetchMyFields = async () => {
       try {
+        // await new Promise((resolve) => setTimeout(resolve, 2000));
         const res = await fetch(`${API_URL}/myfield/myfields`, {
           method: "GET",
           headers: {
@@ -54,6 +59,10 @@ export default function MyFieldPage() {
       } catch (err) {
         console.error("Error loading fields:", err.message);
         setError(err.message);
+        setMessage("ไม่สามารถเชือมต่อกับเซิร์ฟเวอร์ได้", err.message);
+        setMessageType("error");
+      } finally {
+        setDataLoading(false);
       }
     };
 
@@ -61,12 +70,21 @@ export default function MyFieldPage() {
   }, []);
 
   useEffect(() => {
-    if (statusFilter === "ทั้งหมด") {
-      setFilteredFields(myFields);
-    } else {
-      setFilteredFields(
-        myFields.filter((field) => field.status === statusFilter)
-      );
+    try {
+      if (statusFilter === "ทั้งหมด") {
+        setFilteredFields(myFields);
+      } else {
+        setFilteredFields(
+          myFields.filter((field) => field.status === statusFilter)
+        );
+      }
+    } catch (error) {
+      console.error("Error filtering fields:", error);
+      setMessage("ไม่สามารถเชือมต่อกับเซิร์ฟเวอร์ได้", error);
+      setMessageType("error");
+      setFilteredFields([]);
+    } finally {
+      setDataLoading(false);
     }
   }, [statusFilter, myFields]);
 
@@ -77,6 +95,7 @@ export default function MyFieldPage() {
 
   const confirmDeleteSubField = async () => {
     try {
+      SetstartProcessLoad(true);
       const res = await fetch(
         `${API_URL}/field/delete/field/${fieldIdToDelete}`,
         {
@@ -99,123 +118,153 @@ export default function MyFieldPage() {
         filteredFields.filter((field) => field.field_id !== fieldIdToDelete)
       );
       setShowDeleteModal(false);
+      setMessage("ลบสนามเรียบร้อย");
+      setMessageType("success");
     } catch (error) {
       console.error("Error deleting field:", error);
+      setMessage("ไม่สามารถเชือมต่อกับเซิร์ฟเวอร์ได้", error);
+      setMessageType("error");
+    } finally {
+      SetstartProcessLoad(false);
     }
   };
-  if (isLoading)
-    return (
-      <div className="load">
-        <span className="spinner"></span> กำลังโหลด...
-      </div>
-    );
+
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => {
+        setMessage("");
+        setMessageType("");
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
 
   return (
-    <div className="myfield-container">
-      <div className="field-section-title-container">
-        {user?.role === "admin" ? (
-          <h2 className="field-section-title">สนามทั้งหมด</h2>
-        ) : (
-          <h2 className="field-section-title">สนามของฉัน</h2>
-        )}
-        <select
-          onChange={(e) => setStatusFilter(e.target.value)}
-          value={statusFilter}
-          className="sport-select-myfield"
-        >
-          <option value="ทั้งหมด">ทั้งหมด</option>
-          <option value="ผ่านการอนุมัติ">ผ่านการอนุมัติ</option>
-          <option value="รอตรวจสอบ">รอตรวจสอบ</option>
-          <option value="ไม่ผ่านการอนุมัติ">ไม่ผ่าน</option>
-        </select>
-      </div>
-      <div className="grid-myfield">
-        {filteredFields.length > 0 ? (
-          filteredFields.map((field) => (
-            <div key={field.field_id} className="card-myfield">
-              <img
-                onClick={() => router.push(`/profile/${field.field_id}`)}
-                src={
-                  field.img_field
-                    ? `${API_URL}/${field.img_field}`
-                    : "https://via.placeholder.com/300x200"
-                }
-                alt={field.field_name}
-                className="card-myfield-img"
-              />
-              <h3 className="custom-field-name">{field.field_name}</h3>
-              <div className="custom-owner-info-myfield">
-                เจ้าของ: {field.first_name} {field.last_name}
-              </div>
-              <div
-                className={`custom-owner-info-myfield ${
-                  field.status === "ผ่านการอนุมัติ"
-                    ? "passed"
-                    : field.status === "ไม่ผ่านการอนุมัติ"
-                    ? "failed"
-                    : "pending"
-                }`}
-              >
-                {field.status}
-              </div>
-              <div className="custom-button-group-myfield">
-                <button
-                  onClick={() => router.push(`/checkField/${field.field_id}`)}
-                  className="custom-button-view-myfield"
+    <>
+      {message && (
+        <div className={`message-box ${messageType}`}>
+          <p>{message}</p>
+        </div>
+      )}
+      <div className="myfield-container">
+        <div className="field-section-title-container">
+          {user?.role === "admin" ? (
+            <h2 className="field-section-title">สนามทั้งหมด</h2>
+          ) : (
+            <h2 className="field-section-title">สนามของฉัน</h2>
+          )}
+          <select
+            onChange={(e) => setStatusFilter(e.target.value)}
+            value={statusFilter}
+            className="sport-select-myfield"
+          >
+            <option value="ทั้งหมด">ทั้งหมด</option>
+            <option value="ผ่านการอนุมัติ">ผ่านการอนุมัติ</option>
+            <option value="รอตรวจสอบ">รอตรวจสอบ</option>
+            <option value="ไม่ผ่านการอนุมัติ">ไม่ผ่าน</option>
+          </select>
+        </div>
+        {dataLoading ? (
+          <div className="loading-data">
+            <div className="loading-data-spinner"></div>
+          </div>
+        ) : filteredFields.length > 0 ? (
+          <div className="grid-myfield">
+            {filteredFields.map((field) => (
+              <div key={field.field_id} className="card-myfield">
+                <img
+                  onClick={() => router.push(`/profile/${field.field_id}`)}
+                  src={
+                    field.img_field
+                      ? `${API_URL}/${field.img_field}`
+                      : "https://via.placeholder.com/300x200"
+                  }
+                  alt={field.field_name}
+                  className="card-myfield-img"
+                />
+                <h3 className="custom-field-name">{field.field_name}</h3>
+                <div className="custom-owner-info-myfield">
+                  เจ้าของ: {field.first_name} {field.last_name}
+                </div>
+                <div
+                  className={`custom-owner-info-myfield ${
+                    field.status === "ผ่านการอนุมัติ"
+                      ? "passed"
+                      : field.status === "ไม่ผ่านการอนุมัติ"
+                      ? "failed"
+                      : "pending"
+                  }`}
                 >
-                  ดูรายละเอียด
-                </button>
-                {field.status !== "รอตรวจสอบ" && (
+                  {field.status}
+                </div>
+                <div className="custom-button-group-myfield">
                   <button
-                    onClick={() => router.push(`/editField/${field.field_id}`)}
-                    className="custom-button-edit-myfield"
+                    onClick={() => router.push(`/checkField/${field.field_id}`)}
+                    className="custom-button-view-myfield"
                   >
-                    แก้ไข
+                    ดูรายละเอียด
                   </button>
-                )}
+                  {field.status !== "รอตรวจสอบ" && (
+                    <button
+                      onClick={() =>
+                        router.push(`/editField/${field.field_id}`)
+                      }
+                      className="custom-button-edit-myfield"
+                    >
+                      แก้ไข
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleDeleteField(field.field_id)}
+                    className="custom-button-delete-myfield"
+                  >
+                    ลบ
+                  </button>
+                </div>
                 <button
-                  onClick={() => handleDeleteField(field.field_id)}
-                  className="custom-button-delete-myfield"
+                  onClick={() => router.push(`/myOrder/${field.field_id}`)}
+                  className="custom-button-view-order-myfield"
                 >
-                  ลบ
+                  รายการจองของสนาม
                 </button>
               </div>
-              <button
-                onClick={() => router.push(`/myOrder/${field.field_id}`)}
-                className="custom-button-view-order-myfield"
-              >
-                รายการจองของสนาม
-              </button>
-            </div>
-          ))
+            ))}
+          </div>
         ) : (
           <p className="custom-no-fields-message">
             ไม่มีสนามที่ตรงกับสถานะที่เลือก
           </p>
         )}
-      </div>
-      {showDeleteModal && (
-        <div className="modal-overlay-myfield">
-          <div className="modal-myfield">
-            <h3>ยืนยันการลบสนาม</h3>
-            <p>คุณต้องการลบสนามหรือไม่</p>
-            <div className="modal-actions-myfield">
-              <button
-                className="savebtn-myfield"
-                onClick={confirmDeleteSubField}
-              >
-                ยืนยัน
-              </button>
-              <button
-                className="canbtn-myfield"
-                onClick={() => setShowDeleteModal(false)}
-              >
-                ยกเลิก
-              </button>
+
+        {showDeleteModal && (
+          <div className="modal-overlay-myfield">
+            <div className="modal-myfield">
+              <h3>ยืนยันการลบสนาม</h3>
+              <p>คุณต้องการลบสนามหรือไม่</p>
+              <div className="modal-actions-myfield">
+                <button
+                  className="savebtn-myfield"
+                  onClick={confirmDeleteSubField}
+                >
+                  ยืนยัน
+                </button>
+                <button
+                  className="canbtn-myfield"
+                  onClick={() => setShowDeleteModal(false)}
+                >
+                  ยกเลิก
+                </button>
+              </div>
+              {startProcessLoad && (
+                <div className="loading-overlay">
+                  <div className="loading-spinner"></div>
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </>
   );
 }

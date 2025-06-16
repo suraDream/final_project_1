@@ -11,6 +11,7 @@ const CreatePost = ({ fieldId, onPostSuccess }) => {
   const [showPostForm, setShowPostForm] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
+  const [startProcessLoad, SetstartProcessLoad] = useState(false);
 
   const MAX_FILE_SIZE = 8 * 1024 * 1024;
   const MAX_FILES = 10;
@@ -78,8 +79,9 @@ const CreatePost = ({ fieldId, onPostSuccess }) => {
     images.forEach((image) => {
       formData.append("img_url", image);
     });
-
+    SetstartProcessLoad(true);
     try {
+      await new Promise((resolve) => setTimeout(resolve, 200));
       const response = await fetch(`${API_URL}/posts/post`, {
         method: "POST",
         credentials: "include",
@@ -102,8 +104,10 @@ const CreatePost = ({ fieldId, onPostSuccess }) => {
       }
     } catch (error) {
       console.error("Error submitting post:", error);
-      setMessage("เกิดข้อผิดพลาด");
+      setMessage("ไม่สามารถเชือมต่อกับเซิร์ฟเวอร์ได้", error);
       setMessageType("error");
+    } finally {
+      SetstartProcessLoad(false);
     }
   };
 
@@ -112,102 +116,109 @@ const CreatePost = ({ fieldId, onPostSuccess }) => {
       const timer = setTimeout(() => {
         setMessage("");
         setMessageType("");
-      }, 3500);
+      }, 3000);
 
       return () => clearTimeout(timer);
     }
   }, [message]);
 
   return (
-    <div className="post-container">
+    <>
       {message && (
         <div className={`message-box ${messageType}`}>
           <p>{message}</p>
         </div>
       )}
-      {!showPostForm && (
-        <button
-          className="add-post-button"
-          onClick={() => setShowPostForm(true)}
-        >
-          เพิ่มโพส
-        </button>
-      )}
+      <div className="post-container">
+        {!showPostForm && (
+          <button
+            className="add-post-button"
+            onClick={() => setShowPostForm(true)}
+          >
+            เพิ่มโพส
+          </button>
+        )}
 
-      {showPostForm && (
-        <form onSubmit={handleSubmit} className="post-form">
-          <div className="form-group-post">
-            <label>หัวข้อ</label>
-            <input
-              type="text"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              required
-              maxLength={255}
-            />
-          </div>
-
-          <div className="form-group-post">
-            <label>เนื้อหา</label>
-            <textarea
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              required
-              maxLength={255}
-            ></textarea>
-          </div>
-          <div className="form-group-post">
-            <label className="file-label-post">
+        {showPostForm && (
+          <form onSubmit={handleSubmit} className="post-form">
+            <div className="form-group-post">
+              <label>หัวข้อ</label>
               <input
-                multiple
-                type="file"
-                onChange={handleFileChange}
-                accept="image/*"
-                className="file-input-hidden-post"
+                type="text"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                required
+                maxLength={255}
               />
-              เลือกรูปภาพ
-            </label>
-          </div>
+            </div>
 
-          <div className="image-preview-container-post">
-            {images.length > 0 && (
-              <div>
-                <h3>รูปภาพที่เลือก</h3>
-                <ul>
-                  {images.map((image, index) => (
-                    <li key={index}>
-                      <img
-                        src={URL.createObjectURL(image)}
-                        alt={image.name}
-                        style={{ width: 100, height: 100 }}
-                      />
-                      <button
-                        type="button"
-                        className="delpre"
-                        onClick={() => removeImage(image.name)}
-                      >
-                        ลบ
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+            <div className="form-group-post">
+              <label>เนื้อหา</label>
+              <textarea
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+                maxLength={255}
+              ></textarea>
+            </div>
+            <div className="form-group-post">
+              <label className="file-label-post">
+                <input
+                  multiple
+                  type="file"
+                  onChange={handleFileChange}
+                  accept="image/*"
+                  className="file-input-hidden-post"
+                />
+                เลือกรูปภาพ
+              </label>
+            </div>
+
+            <div className="image-preview-container-post">
+              {images.length > 0 && (
+                <div>
+                  <h3>รูปภาพที่เลือก</h3>
+                  <ul>
+                    {images.map((image, index) => (
+                      <li key={index}>
+                        <img
+                          src={URL.createObjectURL(image)}
+                          alt={image.name}
+                          style={{ width: 100, height: 100 }}
+                        />
+                        <button
+                          type="button"
+                          className="delpre"
+                          onClick={() => removeImage(image.name)}
+                        >
+                          ลบ
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            <button type="submit" className="submit-btn-post">
+              สร้างโพส
+            </button>
+            <button
+              type="button"
+              className="cancel-btn"
+              onClick={() => setShowPostForm(false)}
+            >
+              ยกเลิก
+            </button>
+            {startProcessLoad && (
+              <div className="loading-overlay">
+                <div className="loading-spinner"></div>
               </div>
             )}
-          </div>
-
-          <button type="submit" className="submit-btn-post">
-            สร้างโพส
-          </button>
-          <button
-            type="button"
-            className="cancel-btn"
-            onClick={() => setShowPostForm(false)}
-          >
-            ยกเลิก
-          </button>
-        </form>
-      )}
-    </div>
+          </form>
+        )}
+      </div>
+    </>
   );
 };
 

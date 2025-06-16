@@ -16,6 +16,8 @@ export default function CheckFieldDetail() {
   const [messageType, setMessageType] = useState(""); // State สำหรับประเภทของข้อความ (error, success)
   const { user, isLoading } = useAuth();
   const [facilities, setFacilities] = useState([]);
+  const [dataLoading, setDataLoading] = useState(true);
+  const [startProcessLoad, SetstartProcessLoad] = useState(false);
 
   useEffect(() => {
     if (isLoading) return;
@@ -34,27 +36,38 @@ export default function CheckFieldDetail() {
   }, [user, isLoading, , router]);
 
   useEffect(() => {
-    if (!fieldId) return;
+    const fetchFieldData = async () => {
+      if (!fieldId) return;
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        const res = await fetch(`${API_URL}/field/${fieldId}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        });
 
-    fetch(`${API_URL}/field/${fieldId}`, {
-      method: "GET", // ใช้ method GET ในการดึงข้อมูล
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-    })
-      .then((res) => res.json())
-      .then((data) => {
+        const data = await res.json();
+
         if (data.error) {
-          setMessage("ไม่พบข้อมูลสนามกีฬา");
+          setMessage("ไม่พบข้อมูลสนามกีฬา", data.error);
           setMessageType("error");
-          router.push("/"); // กลับไปหน้าหลักถ้าเกิดข้อผิดพลาด
+          router.push("/");
         } else {
-          console.log(" ข้อมูลสนามกีฬา:", data); // ตรวจสอบข้อมูลที่ได้จาก Backend
+          console.log("ข้อมูลสนามกีฬา:", data);
           setFieldData(data);
         }
-      })
-      .catch((error) => console.error("Error fetching field data:", error));
+      } catch (error) {
+        console.error("Error fetching field data:", error);
+        setMessage("เกิดข้อผิดพลาดในการดึงข้อมูลสนามกีฬา", error);
+        setMessageType("error");
+      } finally {
+        setDataLoading(false); // จบการโหลด
+      }
+    };
+
+    fetchFieldData();
   }, [fieldId, router]);
 
   useEffect(() => {
@@ -70,6 +83,10 @@ export default function CheckFieldDetail() {
         setFacilities(data);
       } catch (err) {
         console.log(err);
+        setMessage("ไม่สามารถเชือมต่อกับเซิร์ฟเวอร์ได้", err);
+        setMessageType("error");
+      } finally {
+        setDataLoading(false);
       }
     };
 
@@ -89,6 +106,7 @@ export default function CheckFieldDetail() {
 
   // ฟังก์ชันอัปเดตสถานะสนามกีฬา
   const updateFieldStatus = async (fieldId, newStatus) => {
+    SetstartProcessLoad(true);
     try {
       const response = await fetch(`${API_URL}/field/${fieldId}`, {
         method: "PUT",
@@ -110,8 +128,10 @@ export default function CheckFieldDetail() {
       }
     } catch (error) {
       console.error(" Error updating status:", error);
-      setMessage("เกิดข้อผิดพลาดในการอัปเดตสถานะ");
+      setMessage("ไม่สามารถเชือมต่อกับเซิร์ฟเวอร์ได้", error);
       setMessageType("error");
+    } finally {
+      SetstartProcessLoad(false);
     }
   };
 
@@ -138,39 +158,41 @@ export default function CheckFieldDetail() {
       const timer = setTimeout(() => {
         setMessage("");
         setMessageType("");
-      }, 2000);
+      }, 3000);
 
       return () => clearTimeout(timer);
     }
   }, [message]);
 
-  if (!fieldData)
+    if (dataLoading)
     return (
       <div className="load">
-        <span className="spinner"></span> กำลังโหลด...
+        <span className="spinner"></span>
       </div>
     );
 
   return (
     <>
+      {message && (
+        <div className={`message-box ${messageType}`}>
+          <p>{message}</p>
+        </div>
+      )}
       <div className="check-field-detail-container">
-          {message && (
-          <div className={`message-box ${messageType}`}>
-            <p>{message}</p>
-          </div>
-        )}
         <h1 className="h1">รายละเอียดสนามกีฬา</h1>
         {/*  รูปภาพสนาม */}
         {fieldData?.img_field ? (
           <div className="image-container">
             <img
-              src={`${API_URL}/${fieldData.img_field}`} //  ใช้ Path ที่ Backend ส่งมาโดยตรง
+              src={`${API_URL}/${fieldData.img_field}`}
               alt="รูปสนามกีฬา"
               className="check-field-image"
             />
           </div>
         ) : (
-          <p>ไม่มีรูปสนามกีฬา</p>
+          <div className="loading-data">
+            <div className="loading-data-spinner"></div>
+          </div>
         )}
         <div className="check-field-info">
           <div className="check-field-under">
@@ -205,8 +227,15 @@ export default function CheckFieldDetail() {
             <p>
               <strong>วันที่เปิดทำการ</strong>
             </p>
-            {fieldData.open_days &&
-              fieldData.open_days.map((day, index) => <p key={index}>{day}</p>)}
+            {dataLoading ? (
+              <div className="loading-data">
+                <div className="loading-data-spinner"></div>
+              </div>
+            ) : (
+              fieldData?.open_days?.map((day, index) => (
+                <p key={index}>{day}</p>
+              ))
+            )}
 
             <p>
               <strong>เวลาทำการ:</strong> {fieldData?.open_hours} -{" "}
@@ -255,8 +284,8 @@ export default function CheckFieldDetail() {
         ) : (
           <p>ไม่มีเอกสารแนบ</p>
         )}
+        <h1>สิ่งอำนวยความสะดวก</h1>
         <div className="field-facilities-check-field">
-          <h1>สิ่งอำนวยความสะดวก</h1>
           {facilities.length === 0 ? (
             <p>ยังไม่มีสิ่งอำนวยความสะดวกสำหรับสนามนี้</p>
           ) : (
@@ -276,6 +305,7 @@ export default function CheckFieldDetail() {
           )}
         </div>
         {/* ข้อมูลสนามย่อย (sub_fields) */}
+        <h1>สนามย่อย</h1>
         <div className="sub-fields-container-check-field">
           {fieldData?.sub_fields && fieldData.sub_fields.length > 0 ? (
             fieldData.sub_fields.map((sub) => (
@@ -283,7 +313,6 @@ export default function CheckFieldDetail() {
                 key={sub.sub_field_id}
                 className="sub-field-card-check-field"
               >
-                <h2>สนามย่อย</h2>
                 <p>
                   <strong>ชื่อสนามย่อย:</strong> {sub.sub_field_name}
                 </p>
@@ -330,7 +359,11 @@ export default function CheckFieldDetail() {
             </>
           )}
         </div>
-
+        {startProcessLoad && (
+          <div className="loading-overlay">
+            <div className="loading-spinner"></div>
+          </div>
+        )}
         {/* โมดอลยืนยันการเปลี่ยนสถานะ */}
         {showConfirmModal && (
           <StatusChangeModal

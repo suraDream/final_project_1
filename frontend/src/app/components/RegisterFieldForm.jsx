@@ -16,10 +16,12 @@ export default function RegisterFieldForm() {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
   const { user, isLoading } = useAuth();
+  const [dataLoading, setDataLoading] = useState(true);
+  const [startProcessLoad, SetstartProcessLoad] = useState(false);
 
   useEffect(() => {
     if (isLoading) return;
-    
+
     if (!user) {
       router.replace("/login");
     }
@@ -45,27 +47,67 @@ export default function RegisterFieldForm() {
     depositChecked: false,
     open_days: [], // เพิ่ม open_days
     field_description: "", // Include description
-    cancel_hours :0,
+    cancel_hours: 0,
   });
 
-  //  โหลดประเภทกีฬา
   useEffect(() => {
-    fetch(`${API_URL}/sports_types`, {
-      credentials: "include",
-    })
-      .then((res) => res.json())
-      .then((data) => setSports(data))
-      .catch((error) => console.error("Error fetching sports:", error));
+    const fetchSports = async () => {
+      try {
+        const res = await fetch(`${API_URL}/sports_types`, {
+          credentials: "include",
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          setSports(data);
+        } else {
+          console.error("โหลดไม่สำเร็จ:", data.error);
+          setMessage("ไม่สามารถโหลดข้อมูลกีฬาได้");
+          setMessageType("error");
+        }
+      } catch (error) {
+        console.error("เชื่อมต่อกับเซิร์ฟเวอร์ไม่ได้:", error);
+        setMessage("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+        setMessageType("error");
+      } finally {
+        setDataLoading(false);
+      }
+    };
+
+    fetchSports();
   }, []);
 
   //  โหลดสิ่งอำนวยความสะดวก
   useEffect(() => {
-    fetch(`${API_URL}/facilities`, {
-      credentials: "include",
-    })
-      .then((res) => res.json())
-      .then((data) => setFacilities(data))
-      .catch((error) => console.error("Error fetching facilities:", error));
+    const fetchFacilities = async () => {
+      try {
+        const res = await fetch(`${API_URL}/facilities`, {
+          credentials: "include",
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          setFacilities(data);
+        } else {
+          console.error(
+            "โหลดไม่สำเร็จ:",
+            data.error || "ไม่สามารถโหลดข้อมูลได้"
+          );
+          setMessage(data.error || "ไม่สามารถโหลดข้อมูลได้");
+          setMessageType("error");
+        }
+      } catch (error) {
+        console.error("เกิดข้อผิดพลาด:", error);
+        setMessage("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้");
+        setMessageType("error");
+      } finally {
+        setDataLoading(false);
+      }
+    };
+
+    fetchFacilities();
   }, []);
 
   const handleFieldChange = (e) => {
@@ -110,7 +152,7 @@ export default function RegisterFieldForm() {
     const file = e.target.files[0];
     if (file.size > MAX_FILE_SIZE) {
       setMessage("ไฟล์รูปภาพมีขนาดใหญ่เกินไป (สูงสุด 5MB)");
-      setMessageType("error-message");
+      setMessageType("error");
       e.target.value = null;
       return;
     } // ดึงไฟล์รูปจาก input
@@ -125,7 +167,7 @@ export default function RegisterFieldForm() {
       } else {
         e.target.value = null;
         setMessage("โปรดเลือกเฉพาะไฟล์รูปภาพเท่านั้น");
-        setMessageType("error-message");
+        setMessageType("error");
       }
     }
   };
@@ -137,7 +179,7 @@ export default function RegisterFieldForm() {
 
     if (files.length > MAX_FILES) {
       setMessage(`คุณสามารถอัพโหลดได้สูงสุด ${MAX_FILES} ไฟล์`);
-      setMessageType("error-message");
+      setMessageType("error");
       e.target.value = null; // Reset the input value
       return;
     }
@@ -149,7 +191,7 @@ export default function RegisterFieldForm() {
       if (file.size > MAX_FILE_SIZE) {
         isValid = false;
         setMessage("ไฟล์มีขนาดใหญ่เกินไป (สูงสุด 5MB)");
-        setMessageType("error-message");
+        setMessageType("error");
         e.target.value = null; // รีเซ็ตไฟล์เมื่อขนาดไฟล์เกิน
         break;
       }
@@ -158,7 +200,7 @@ export default function RegisterFieldForm() {
       if (!fileType.startsWith("image/") && fileType !== "application/pdf") {
         isValid = false;
         setMessage("โปรดเลือกเฉพาะไฟล์รูปภาพหรือ PDF เท่านั้น");
-        setMessageType("error-message");
+        setMessageType("error");
         break;
       }
     }
@@ -195,25 +237,44 @@ export default function RegisterFieldForm() {
 
   //  ฟังก์ชันเพิ่มสิ่งอำนวยความสะดวกใหม่
   const addNewFacility = async () => {
-    if (!newFacility.trim()) return;
-    const res = await fetch(`${API_URL}/facilities/add`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ fac_name: newFacility }),
-    });
-
-    const data = await res.json();
-    if (data.error) {
-      console.error("Error:", data.error);
-      setMessage("สิ่งอำนวยความสะดวกนี้มีอยู่แล้ว");
-      setMessageType("error-message");
+    if (!newFacility.trim()) {
+      setMessage("กรุณากรอกชื่อสิ่งอำนวยความสะดวก");
+      setMessageType("error");
       return;
     }
 
-    setFacilities([...facilities, data]);
-    setNewFacility("");
-    setShowNewFacilityInput(false);
+    try {
+      SetstartProcessLoad(true);
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      const res = await fetch(`${API_URL}/facilities/add`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ fac_name: newFacility }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        console.error("Error:", data.error);
+        setMessage(data.error || "สิ่งอำนวยความสะดวกนี้มีอยู่แล้ว");
+        setMessageType("error");
+        return;
+      }
+
+      setFacilities([...facilities, data]);
+      setNewFacility("");
+      setShowNewFacilityInput(false);
+      setMessage("เพิ่มสิ่งอำนวยความสะดวกสำเร็จ");
+      setMessageType("success");
+    } catch (error) {
+      console.error("เกิดข้อผิดพลาด:", error);
+      setMessage("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้");
+      setMessageType("error");
+    } finally {
+      SetstartProcessLoad(false);
+    }
   };
 
   //  เพิ่มสนามย่อย (มี addOns ในตัวเอง)
@@ -271,7 +332,7 @@ export default function RegisterFieldForm() {
 
     if (!user) {
       setMessage("กรุณาเข้าสู่ระบบก่อน!");
-      setMessageType("error-message");
+      setMessageType("error");
       return;
     }
 
@@ -291,20 +352,20 @@ export default function RegisterFieldForm() {
       !fieldData.field_description
     ) {
       setMessage("กรุณากรอกข้อมูลให้ครบถ้วน");
-      setMessageType("error-message");
+      setMessageType("error");
       return;
     }
 
     if (fieldData.open_days.length === 0) {
       setMessage("กรุณาเลือกวันเปิดบริการ");
-      setMessageType("error-message");
+      setMessageType("error");
       return;
     }
 
     for (let sub of subFields) {
       if (!sub.name || !sub.price || !sub.sport_id) {
         setMessage("กรุณากรอกข้อมูลให้ครบถ้วนสำหรับสนามย่อยทุกสนาม");
-        setMessageType("error-message");
+        setMessageType("error");
         return;
       }
     }
@@ -312,19 +373,19 @@ export default function RegisterFieldForm() {
     // ถ้าเลือกเอกสารหรือรูปภาพไม่ได้
     if (!fieldData.documents || !fieldData.img_field) {
       setMessage("กรุณาเลือกเอกสารและรูปโปรไฟล์สนาม");
-      setMessageType("error-message");
+      setMessageType("error");
       return;
     }
     const selectedFacs = Object.keys(selectedFacilities); // ประกาศตัวแปร selectedFacs
     if (selectedFacs.length === 0) {
       setMessage("กรุณาเลือกสิ่งอำนวยความสะดวก");
-      setMessageType("error-message");
+      setMessageType("error");
       return;
     }
     for (const facId of selectedFacs) {
       if (selectedFacilities[facId] === "") {
         setMessage(`กรุณากรอกราคาสำหรับสิ่งอำนวยความสะดวก`);
-        setMessageType("error-message");
+        setMessageType("error");
         return;
       }
     }
@@ -354,11 +415,12 @@ export default function RegisterFieldForm() {
         subFields: subFields,
         open_days: fieldData.open_days, // เพิ่ม open_days
         field_description: fieldData.field_description, // Include description
-        cancel_hours: fieldData.cancel_hours
+        cancel_hours: fieldData.cancel_hours,
       })
     );
-
+    SetstartProcessLoad(true);
     try {
+      await new Promise((resolve) => setTimeout(resolve, 300));
       const res = await fetch(`${API_URL}/field/register`, {
         method: "POST",
         credentials: "include",
@@ -369,11 +431,11 @@ export default function RegisterFieldForm() {
       if (data.error) {
         console.error("Error:", data.error);
         setMessage("เกิดข้อผิดพลาด: " + data.error);
-        setMessageType("error-message");
+        setMessageType("error");
         return;
       }
       setMessage("ลงทะเบียนสนามเรียบร้อยรอผู้ดูแลระบบตรวจสอบ");
-      setMessageType("success-message");
+      setMessageType("success");
       setFieldData({
         field_name: "",
         address: "",
@@ -402,28 +464,38 @@ export default function RegisterFieldForm() {
     } catch (error) {
       console.error("Fetch Error:", error);
       setMessage("เกิดข้อผิดพลาดในการส่งข้อมูล");
-      setMessageType("error-message");
+      setMessageType("error");
+    } finally {
+      SetstartProcessLoad(false);
     }
   };
+
   useEffect(() => {
     if (message) {
       const timer = setTimeout(() => {
         setMessage("");
         setMessageType("");
-      }, 2000);
+      }, 3000);
 
       return () => clearTimeout(timer);
     }
   }, [message]);
 
+  if (dataLoading)
+    return (
+      <div className="load">
+        <span className="spinner"></span>
+      </div>
+    );
+
   return (
     <>
+      {message && (
+        <div className={`message-box ${messageType}`}>
+          <p>{message}</p>
+        </div>
+      )}
       <div className="field-register-contianer">
-        {message && (
-          <div className={`message-box ${messageType}`}>
-            <p>{message}</p>
-          </div>
-        )}
         <div className="heder">
           <h1 className="field-register">ลงทะเบียนสนามกีฬา</h1>
         </div>
@@ -525,19 +597,21 @@ export default function RegisterFieldForm() {
             </div>
           </div>
           <div className="input-group-register-field">
-  <label>ยกเลิกการจองได้ล่วงหน้า (ชั่วโมง)</label>
-  <input
-    type="number"
-    name="cancel_hours"
-    placeholder="เช่น 2 = ยกเลิกได้ก่อน 2 ชม."
-    min="0"
-    value={fieldData.cancel_hours}
-    onChange={(e) => {
-      const value = parseInt(e.target.value);
-      setFieldData({ ...fieldData, cancel_hours: isNaN(value) ? 0 : value });
-    }}
-  />
-</div>
+            <label>ยกเลิกการจองได้ภายใน (ชั่วโมง)</label>
+            <input
+              type="number"
+              name="cancel_hours"
+              placeholder="เช่น 2 = ยกเลิกได้ก่อน 2 ชม."
+              value={fieldData.cancel_hours}
+              onChange={(e) => {
+                const value = Math.abs(e.target.value);
+                setFieldData({
+                  ...fieldData,
+                  cancel_hours: isNaN(value) ? 0 : value,
+                });
+              }}
+            />
+          </div>
 
           <div className="subfieldcon">
             {subFields.map((sub, subIndex) => (
@@ -729,7 +803,7 @@ export default function RegisterFieldForm() {
                   setMessage(
                     "เลขที่กรอกไม่ถูกต้อง ถ้าเป็นบัญชีธนาคารต้อง 12 หลัก ถ้าเป็นพร้อมเพย์ต้อง 10 หรือ 13 หลัก"
                   );
-                  setMessageType("error-message");
+                  setMessageType("error");
                   setFieldData({ ...fieldData, number_bank: "" }); // เคลียร์ค่า
                 }
               }}
@@ -861,7 +935,7 @@ export default function RegisterFieldForm() {
               + เพิ่มสิ่งอำนวยความสะดวก
             </button>
           ) : (
-            <div>
+            <div className="input-group-register-field">
               <input
                 type="text"
                 maxLength={100}
@@ -883,6 +957,11 @@ export default function RegisterFieldForm() {
               >
                 ยกเลิก
               </button>
+              {startProcessLoad && (
+                <div className="loading-overlay">
+                  <div className="loading-spinner"></div>
+                </div>
+              )}
             </div>
           )}
           <div className="input-group-register-field">
@@ -900,6 +979,11 @@ export default function RegisterFieldForm() {
           <button className="submitbtn-regisfield" type="submit">
             ยืนยัน
           </button>
+          {startProcessLoad && (
+            <div className="loading-overlay">
+              <div className="loading-spinner"></div>
+            </div>
+          )}
         </form>
       </div>
     </>

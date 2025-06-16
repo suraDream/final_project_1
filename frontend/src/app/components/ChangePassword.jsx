@@ -13,6 +13,7 @@ export default function ChangePassword() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
   const router = useRouter();
   const { user, isLoading } = useAuth();
+  const [startProcessLoad, SetstartProcessLoad] = useState(false);
 
   useEffect(() => {
     if (isLoading) return;
@@ -66,8 +67,9 @@ export default function ChangePassword() {
       setMessageType("error");
       return;
     }
-
+    SetstartProcessLoad(true);
     try {
+      await new Promise((resolve) => setTimeout(resolve, 200));
       // ส่ง request ไปตรวจสอบรหัสเดิม
       const response = await fetch(
         `${API_URL}/users/${user.user_id}/check-password`,
@@ -114,9 +116,11 @@ export default function ChangePassword() {
         setMessageType("error");
       }
     } catch (err) {
-      setMessage("เกิดข้อผิดพลาดในการตรวจสอบรหัสเดิม");
+      setMessage("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้");
       setMessageType("error");
       console.error(err);
+    } finally {
+      SetstartProcessLoad(false);
     }
   };
 
@@ -131,12 +135,31 @@ export default function ChangePassword() {
     }
   }, [message]);
 
+  // if (startProcessLoad)
+  //   return (
+  //     <div className="loading-overlay">
+  //       <div className="loading-spinner"></div>
+  //     </div>
+  //   );
+
+  if (isLoading)
+    return (
+      <div className="load">
+        <span className="spinner"></span>
+      </div>
+    );
+
   return (
     <div>
+      {message && (
+        <div className={`message-box ${messageType}`}>
+          <p>{message}</p>
+        </div>
+      )}
       <div className="change-password-container">
-        {message && (
-          <div className={`message-box ${messageType}`}>
-            <p>{message}</p>
+        {isLoading && (
+          <div className="loading-data">
+            <div className="loading-data-spinner"></div>
           </div>
         )}
         <h2 className="change-password-head">เปลี่ยนรหัสผ่าน</h2>
@@ -170,6 +193,11 @@ export default function ChangePassword() {
           <button type="submit" className="save-btn">
             บันทึก
           </button>
+          {startProcessLoad && (
+            <div className="loading-overlay">
+              <div className="loading-spinner"></div>
+            </div>
+          )}
         </form>
       </div>
     </div>

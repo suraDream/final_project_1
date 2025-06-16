@@ -25,10 +25,10 @@ router.get("/myfields", authMiddleware, async (req, res) => {
     
     // สำหรับ admin ให้ดึงข้อมูลทั้งหมด
     if (role === "admin") {
-      query += `ORDER BY field.field_id ASC;`;
+      query += `ORDER BY field.field_id DESC;`;
     } else if (role === "field_owner") {
       // สำหรับ field_owner ให้กรองด้วย user_id ของตัวเอง
-      query += `AND field.user_id = $1 ORDER BY field.field_id ASC;`;
+      query += `AND field.user_id = $1 ORDER BY field.field_id DESC;`;
     }
 
     const values = role === "field_owner" ? [user_id] : []; // ถ้าเป็น field_owner ใส่ user_id เป็นค่าใน values

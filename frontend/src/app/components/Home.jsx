@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import "@/app/css/HomePage.css";
+import { useAuth } from "@/app/contexts/AuthContext";
 import Category from "@/app/components/SportType";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -16,26 +17,54 @@ export default function HomePage() {
   const [postData, setPostData] = useState([]);
   const [imageIndexes, setImageIndexes] = useState({});
   const [expandedPosts, setExpandedPosts] = useState({});
+  const { user, isLoading } = useAuth();
+  const [dataLoading, setDataLoading] = useState(true);
+  const [message, setMessage] = useState(""); // State for messages
+  const [messageType, setMessageType] = useState(""); // State for message type (error, success)
 
   useEffect(() => {
-    fetch(`${API_URL}/posts`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => res.json())
-      .then((data) => {
+    if (isLoading) return;
+
+    if (user) {
+      if (user?.status !== "ตรวจสอบแล้ว") {
+        router.push("/verification");
+      }
+    }
+  }, [user, isLoading, router]);
+
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        // await new Promise((resolve) => setTimeout(resolve, 100));
+        const res = await fetch(`${API_URL}/posts`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        const data = await res.json();
+
         if (data.message === "ไม่มีโพส") {
           setPostData([]);
         } else if (data.error) {
           console.error("Backend error:", data.error);
+          setMessage("ไม่สามารถดึงข้อมูลโพสได้", data.error);
+          setMessageType("error");
         } else {
           setPostData(data);
         }
-      })
-      .catch((error) => console.error("Error fetching post data:", error));
-  }, [router]);
+      } catch (error) {
+        console.error("Error fetching post data:", error);
+        setMessage("ไม่สามารถเชือมต่อกับเซิร์ฟเวอร์ได้", error);
+        setMessageType("error");
+      } finally {
+        setDataLoading(false);
+      }
+    };
+
+    fetchPosts();
+  }, []);
 
   const handlePrev = (postId, length) => {
     setImageIndexes((prev) => ({
@@ -83,8 +112,24 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, [postData]);
 
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => {
+        setMessage("");
+        setMessageType("");
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
+
   return (
     <>
+      {message && (
+        <div className={`message-box ${messageType}`}>
+          <p>{message}</p>
+        </div>
+      )}
       <div className="banner-container">
         <img
           src="/images/baner-img.png"
@@ -106,6 +151,11 @@ export default function HomePage() {
           <div className="title-notice">
             <h1>ข่าวสาร</h1>
           </div>
+          {dataLoading && (
+            <div className="loading-data">
+              <div className="loading-data-spinner"></div>
+            </div>
+          )}
           {postData.map((post) => (
             <div key={post.post_id} className="post-card-home">
               <h2 className="post-title-home">{post.content}</h2>
@@ -161,7 +211,7 @@ export default function HomePage() {
                   </div>
                 </div>
               )}
-              
+
               {post.title.length > 40 ? (
                 <p className="post-text-home">
                   {expandedPosts[post.post_id]

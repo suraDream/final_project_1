@@ -36,6 +36,8 @@ export default function CheckFieldDetail() {
   const [expandedPosts, setExpandedPosts] = useState({});
   const { user, isLoading } = useAuth();
   const router = useRouter();
+  const [dataLoading, setDataLoading] = useState(true);
+  const [startProcessLoad, SetstartProcessLoad] = useState(false);
 
   useEffect(() => {
     if (isLoading) return;
@@ -63,69 +65,102 @@ export default function CheckFieldDetail() {
   useEffect(() => {
     if (!fieldId) return;
 
-    localStorage.setItem("field_id", fieldId);
+    const fetchFieldData = async () => {
+      try {
+        localStorage.setItem("field_id", fieldId);
 
-    fetch(`${API_URL}/profile/${fieldId}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-    })
-      .then((res) => res.json())
-      .then((data) => {
+        const res = await fetch(`${API_URL}/profile/${fieldId}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        });
+
+        const data = await res.json();
+
         if (data.error) {
-          router.replace("/");
-        } else {
-          setFieldData(data);
-          localStorage.setItem("account_holder", data.account_holder);
-          localStorage.setItem("name_bank", data.name_bank);
-          localStorage.setItem("number_bank", data.number_bank);
-          localStorage.setItem("field_name", data.field_name);
-          const fieldOwnerId = data.user_id;
-          const currentUserId = user?.user_id;
-          const currentUserRole = user?.role;
-
-          if (currentUserRole === "admin" || fieldOwnerId === currentUserId) {
-            setCanPost(true);
-          } else {
-            setCanPost(false);
-          }
+          setMessage("ไม่สามารถดึงข้อมูลได้");
+          setMessageType("error");
+          setTimeout(() => {
+            router.replace("/");
+          }, 2000);
+          return;
         }
-        const status = data.status;
-        if (status != "ผ่านการอนุมัติ") {
-          setMessage(` สนามคุณ ${data.status}`);
+
+        setFieldData(data);
+
+        // เก็บข้อมูลใน localStorage
+        localStorage.setItem("account_holder", data.account_holder || "");
+        localStorage.setItem("name_bank", data.name_bank || "");
+        localStorage.setItem("number_bank", data.number_bank || "");
+        localStorage.setItem("field_name", data.field_name || "");
+
+        // ตรวจสอบสิทธิ์การโพสต์
+        const fieldOwnerId = data.user_id;
+        const currentUserId = user?.user_id;
+        const currentUserRole = user?.role;
+
+        if (currentUserRole === "admin" || fieldOwnerId === currentUserId) {
+          setCanPost(true);
+        } else {
+          setCanPost(false);
+        }
+
+        // ตรวจสอบสถานะสนาม
+        if (data.status !== "ผ่านการอนุมัติ") {
+          setMessage(`สนามคุณ ${data.status}`);
           setMessageType("error");
           setTimeout(() => {
             router.replace("/myfield");
           }, 1500);
         }
-      })
-      .catch((error) => console.error("Error fetching field data:", error));
+      } catch (error) {
+        console.error("Error fetching field data:", error);
+        setMessage("ไม่สามารถเชือมต่อกับเซิร์ฟเวอร์ได้", error);
+        setMessageType("error");
+      } finally {
+        setDataLoading(false);
+      }
+    };
+
+    fetchFieldData();
   }, [fieldId, user, router]);
 
   useEffect(() => {
     if (!fieldId) return;
 
-    fetch(`${API_URL}/posts/${fieldId}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-    })
-      .then((res) => res.json())
-      .then((data) => {
+    const fetchPosts = async () => {
+      try {
+        const res = await fetch(`${API_URL}/posts/${fieldId}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        });
+
+        const data = await res.json();
+
         if (data.message === "ไม่มีโพส") {
           setPostData([]);
         } else if (data.error) {
           console.error("Backend error:", data.error);
-          router.replace("/");
+          setMessage("ไม่สามารถดึงข้อมูลได้", data.error);
+          setMessageType("error");
         } else {
           setPostData(data);
         }
-      })
-      .catch((error) => console.error("Error fetching post data:", error));
+      } catch (error) {
+        console.error("Error fetching post data:", error);
+        setMessage("ไม่สามารถเชือมต่อกับเซิร์ฟเวอร์ได้", error);
+        setMessageType("error");
+      } finally {
+        setDataLoading(false);
+      }
+    };
+
+    fetchPosts();
   }, [fieldId, router]);
 
   useEffect(() => {
@@ -141,6 +176,10 @@ export default function CheckFieldDetail() {
         setFacilities(data);
       } catch (err) {
         console.error(err);
+        setMessage("ไม่สามารถเชือมต่อกับเซิร์ฟเวอร์ได้", err);
+        setMessageType("error");
+      } finally {
+        setDataLoading(false);
       }
     };
 
@@ -251,24 +290,33 @@ export default function CheckFieldDetail() {
     formData.append("title", editTitle);
     formData.append("content", editContent);
     newImages.forEach((img) => formData.append("img_url", img));
-    const res = await fetch(`${API_URL}/posts/update/${postId}`, {
-      method: "PATCH",
-      credentials: "include",
-      body: formData,
-    });
+    SetstartProcessLoad(true);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      const res = await fetch(`${API_URL}/posts/update/${postId}`, {
+        method: "PATCH",
+        credentials: "include",
+        body: formData,
+      });
 
-    if (res.ok) {
-      const updated = await res.json();
-      setPostData((prev) =>
-        prev.map((post) => (post.post_id === postId ? updated : post))
-      );
-      setEditingPostId(null);
-      setMessage("แก้ไขโพสต์สำเร็จ");
-      setMessageType("success");
-      setPreviewImages([]);
-    } else {
-      setMessage("แก้ไขโพสต์ไม่สำเร็จ");
+      if (res.ok) {
+        const updated = await res.json();
+        setPostData((prev) =>
+          prev.map((post) => (post.post_id === postId ? updated : post))
+        );
+        setEditingPostId(null);
+        setMessage("แก้ไขโพสต์สำเร็จ");
+        setMessageType("success");
+        setPreviewImages([]);
+      } else {
+        setMessage("แก้ไขโพสต์ไม่สำเร็จ");
+        setMessageType("error");
+      }
+    } catch (err) {
+      setMessage("ไม่สามารถเชือมต่อกับเซิร์ฟเวอร์ได้", error);
       setMessageType("error");
+    } finally {
+      SetstartProcessLoad(false);
     }
   };
   const confirmDelete = (postId) => {
@@ -277,7 +325,10 @@ export default function CheckFieldDetail() {
   };
 
   const handleDelete = async () => {
+    SetstartProcessLoad(true);
     try {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
       const res = await fetch(`${API_URL}/posts/delete/${postToDelete}`, {
         method: "DELETE",
         credentials: "include",
@@ -291,13 +342,15 @@ export default function CheckFieldDetail() {
         );
         setShowModal(false);
       } else {
-        setMessage("เกิดข้อผิดพลาดในการลบโพสต์");
+        setMessage("เกิดข้อผิดพลาดในการลบโพสต์" || error);
         setMessageType("error");
       }
     } catch (error) {
       console.error("Delete error:", error);
-      setMessage("ลบโพสต์ไม่สำเร็จ");
+      setMessage("ไม่สามารถเชือมต่อกับเซิร์ฟเวอร์ได้", error);
       setMessageType("error");
+    } finally {
+      SetstartProcessLoad(false);
     }
   };
 
@@ -306,27 +359,37 @@ export default function CheckFieldDetail() {
       const timer = setTimeout(() => {
         setMessage("");
         setMessageType("");
-      }, 3500);
+      }, 3000);
 
       return () => clearTimeout(timer);
     }
   }, [message]);
 
-  if (!fieldData)
+  if (dataLoading)
     return (
       <div className="load">
-        <span className="spinner"></span> กำลังโหลด...
+        <span className="spinner"></span>
       </div>
     );
 
   return (
     <>
+      {message && (
+        <div className={`message-box ${messageType}`}>
+          <p>{message}</p>
+        </div>
+      )}
+      {dataLoading && (
+        <div className="loading-data">
+          <div className="loading-data-spinner"></div>
+        </div>
+      )}
       {selectedImage && (
         <div className="lightbox-overlay" onClick={handleCloseLightbox}>
           <img src={selectedImage} alt="Zoomed" className="lightbox-image" />
         </div>
       )}
-      {fieldData?.img_field ? (
+      {fieldData?.img_field.length ? (
         <div className="image-container-profile">
           <div className="head-title-profile">
             <strong> {fieldData?.field_name}</strong>
@@ -341,14 +404,17 @@ export default function CheckFieldDetail() {
           </div>
         </div>
       ) : (
-        <p>ไม่มีรูปสนามกีฬา</p>
+        <div>
+          <div className="image-container-profile">
+            {dataLoading && (
+              <div className="loading-data">
+                <div className="loading-data-spinner"></div>
+              </div>
+            )}
+          </div>
+        </div>
       )}
       <div className="field-detail-container-profile">
-        {message && (
-          <div className={`message-box ${messageType}`}>
-            <p>{message}</p>
-          </div>
-        )}
         <div className="undercontainer-proflie">
           <h1 className="sub-fields-profile">สนามย่อย</h1>
           <div className="sub-fields-container-profile">
@@ -387,12 +453,24 @@ export default function CheckFieldDetail() {
                 </div>
               ))
             ) : (
-              <p>ไม่มีสนามย่อย</p>
+              <div className="sub-fields-container-profile">
+                {" "}
+                {dataLoading && (
+                  <div className="loading-data">
+                    <div className="loading-data-spinner"></div>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
         <div className="post-profile">
           <h1>โพสต์</h1>
+          {dataLoading && (
+            <div className="loading-data">
+              <div className="loading-data-spinner"></div>
+            </div>
+          )}
           {canPost && (
             <Post
               fieldId={fieldId}
@@ -460,6 +538,11 @@ export default function CheckFieldDetail() {
                   >
                     ยกเลิก
                   </button>
+                  {startProcessLoad && (
+                    <div className="loading-overlay">
+                      <div className="loading-spinner"></div>
+                    </div>
+                  )}
                 </form>
               ) : (
                 <>
@@ -581,6 +664,11 @@ export default function CheckFieldDetail() {
         <aside className="aside">
           <div className="field-info-profile">
             <h1>รายละเอียดสนาม</h1>
+            {dataLoading && (
+              <div className="loading-data">
+                <div className="loading-data-spinner"></div>
+              </div>
+            )}
             <p>
               <strong>ที่อยู่:</strong> {fieldData?.address}
             </p>
@@ -597,19 +685,23 @@ export default function CheckFieldDetail() {
             <p>
               <strong>วันที่เปิดสนาม</strong>
             </p>
-            {fieldData.open_days &&
+            {fieldData?.open_days?.length > 0 ? (
               fieldData.open_days.map((day, index) => (
                 <div className="opendays" key={index}>
-                  {daysInThai[day] || day} {/* Translate day to Thai */}
+                  {daysInThai[day] || day}
                 </div>
-              ))}
+              ))
+            ) : (
+              <div>ไม่มีข้อมูลวันเปิดสนาม</div>
+            )}
 
             <p>
               <strong>เวลาเปิด-ปิด:</strong> {fieldData?.open_hours} -{" "}
               {fieldData?.close_hours}
             </p>
             <p>
-              <strong>ยกเลิกการจองได้ก่อน: </strong>{fieldData?.cancel_hours} ชม.
+              <strong>ยกเลิกการจองได้ก่อน: </strong>
+              {fieldData?.cancel_hours} ชม.
             </p>
             <p>
               <strong>ค่ามัดจำ:</strong> {fieldData?.price_deposit} บาท
@@ -626,8 +718,14 @@ export default function CheckFieldDetail() {
             <p>
               <strong>รายละเอียดสนาม:</strong>
             </p>
-            <p className="detail-profile">{fieldData?.field_description}</p>
+            <div className="detail-profile">{fieldData?.field_description}</div>
+
             <h1 className="fac-profile">สิ่งอำนวยความสะดวก</h1>
+            {dataLoading && (
+              <div className="loading-data">
+                <div className="loading-data-spinner"></div>
+              </div>
+            )}
             <div className="field-facilities-profile">
               {facilities.length === 0 ? (
                 <p>ยังไม่มีสิ่งอำนวยความสะดวกสำหรับสนามนี้</p>
@@ -647,6 +745,35 @@ export default function CheckFieldDetail() {
                 </div>
               )}
             </div>
+            <div className="reviwe-head-profile">
+              <h1>คะแนนรีวิวสนามกีฬา</h1>
+              <select id="review-score" className="filter-profile">
+                <option value="5">ทั้งหมด</option>
+                <option value="5" >★★★★★</option>
+                <option value="4">★★★★☆</option>
+                <option value="3">★★★☆☆</option>
+                <option value="2">★★☆☆☆</option>
+                <option value="1">★☆☆☆☆</option>
+              </select>
+            </div>
+            <div className="reviwe-container-profile">
+              <div className="review-box-profile">
+                <div className="star-profile">★★★★★</div>
+                <p>
+                  สนามสะอาดดีครับ คนไม่เยอะสนามสะอาดดีครับ
+                  คนไม่เยอะสนามสะอาดดีครับ คนไม่เยอะสนามสะอาดดีครับ
+                  คนไม่เยอะสนามสะอาดดีครับ คนไม่เยอะสนามสะอาดดีครับ คนไม่เยอะ
+                </p>
+              </div>
+              <div className="review-box-profile">
+                <div className="star-profile">★★★★☆</div>
+                <p>สนามโอเค แต่ไม่มีที่จอดรถ</p>
+              </div>
+              <div className="review-box-profile">
+                <div className="star-profile">★★★☆☆</div>
+                <p>สนามพอใช้ได้แต่ลื่นนิดหน่อย</p>
+              </div>
+            </div>
           </div>
         </aside>
       </div>
@@ -665,6 +792,11 @@ export default function CheckFieldDetail() {
                 ยกเลิก
               </button>
             </div>
+            {startProcessLoad && (
+              <div className="loading-overlay">
+                <div className="loading-spinner"></div>
+              </div>
+            )}
           </div>
         </div>
       )}

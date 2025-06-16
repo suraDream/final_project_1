@@ -10,6 +10,7 @@ export default function ConfirmResetPassword() {
   const [messageType, setMessageType] = useState("");
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
   const router = useRouter("");
+  const [startProcessLoad, SetstartProcessLoad] = useState(false);
 
   useEffect(() => {
     const expiresAt = JSON.parse(sessionStorage.getItem("expiresAt"));
@@ -69,8 +70,9 @@ export default function ConfirmResetPassword() {
       setMessageType("error");
       return;
     }
-
+    SetstartProcessLoad(true);
     try {
+      await new Promise((resolve) => setTimeout(resolve, 200));
       const response = await fetch(
         `${API_URL}/users/${user.user_id}/change-password-reset`,
         {
@@ -103,6 +105,8 @@ export default function ConfirmResetPassword() {
       setMessage("เกิดข้อผิดพลาด", err);
       setMessageType("error");
       console.error(err);
+    } finally {
+      SetstartProcessLoad(false);
     }
   };
   useEffect(() => {
@@ -116,17 +120,25 @@ export default function ConfirmResetPassword() {
     }
   }, [message]);
 
+  // if (startProcessLoad)
+  //   return (
+  //     <div className="loading-overlay">
+  //       <div className="loading-spinner"></div>
+  //     </div>
+  //   );
+
   return (
     <div>
+      {message && (
+        <div className={`message-box ${messageType}`}>
+          <p>{message}</p>
+        </div>
+      )}
       <div className="confirm-reset-password-container">
-        {message && (
-          <div className={`message-box ${messageType}`}>
-            <p>{message}</p>
-          </div>
-        )}
         <div className="confirm-reset-password-head-titel">
           <h1>เปลี่ยนรหัสผ่าน</h1>
         </div>
+
         <form
           action={handlePasswordChange}
           className="confirm-reset-password-form"
@@ -152,6 +164,11 @@ export default function ConfirmResetPassword() {
           <div className="btn-confirm-reset-password">
             <button type="submit">ยืนยัน</button>
           </div>
+          {startProcessLoad && (
+            <div className="loading-overlay">
+              <div className="loading-spinner"></div>
+            </div>
+          )}
         </form>
       </div>
     </div>

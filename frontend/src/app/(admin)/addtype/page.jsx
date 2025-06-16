@@ -19,12 +19,14 @@ export default function RegisterFieldForm() {
   const [showNewSportInput, setShowNewSportInput] = useState(false); // ฟอร์มสำหรับเพิ่มประเภทกีฬาใหม่
   const [newSport, setNewSport] = useState(""); // ชื่อประเภทกีฬาที่จะเพิ่ม
   const { user, isLoading } = useAuth();
+  const [startProcessLoad, SetstartProcessLoad] = useState(false);
+  const [dataLoading, setDataLoading] = useState(false);
 
   useEffect(() => {
     if (isLoading) return;
 
-    if(!user){
-      router.replace("/login")
+    if (!user) {
+      router.replace("/login");
     }
 
     if (user?.status !== "ตรวจสอบแล้ว") {
@@ -36,114 +38,226 @@ export default function RegisterFieldForm() {
     }
   }, [user, isLoading, router]);
 
-  // โหลดประเภทกีฬา
   useEffect(() => {
-    fetch(`${API_URL}/sports_types`, {
-      credentials: "include",
-    })
-      .then((res) => res.json())
-      .then((data) => setSports(data))
-      .catch((error) => console.error("Error fetching sports:", error));
+    const fetchSports = async () => {
+      setDataLoading(true);
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        const res = await fetch(`${API_URL}/sports_types`, {
+          credentials: "include",
+        });
+
+        if (!res.ok) {
+          throw new Error("ไม่สามารถโหลดประเภทกีฬาได้");
+        }
+
+        const data = await res.json();
+        setSports(data);
+      } catch (err) {
+        console.error("Error fetching sports:", err);
+        setMessage("ไม่สามารถเชือมต่อกับเซิร์ฟเวอร์ได้", err);
+        setMessageType("error");
+        setError(err.message || "เกิดข้อผิดพลาด");
+      } finally {
+        setDataLoading(false);
+      }
+    };
+
+    fetchSports();
   }, []);
 
   // ฟังก์ชันเพิ่มประเภทกีฬาใหม่
   const addType = async () => {
     if (!newSport.trim()) return;
+    SetstartProcessLoad(true);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      const res = await fetch(`${API_URL}/sports_types/add`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ sport_name: newSport }),
+      });
 
-    const res = await fetch(`${API_URL}/sports_types/add`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify({ sport_name: newSport }),
-    });
+      const data = await res.json();
 
-    const data = await res.json();
+      if (data.error) {
+        setMessage(data.error);
+        setMessageType("error");
+        return;
+      }
 
-    if (data.error) {
-      setMessage(data.error);
+      setSports([...sports, data]); // เพิ่มประเภทกีฬาใหม่ใน state
+      setNewSport(""); // รีเซ็ตชื่อประเภทกีฬา
+      setShowNewSportInput(false); // ซ่อนฟอร์มการเพิ่ม
+      setMessage("เพิ่มประเภทกีฬาสำเร็จ");
+      setMessageType("success");
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setMessage("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้", err);
       setMessageType("error");
-      return;
+    } finally {
+      SetstartProcessLoad(false);
     }
-
-    setSports([...sports, data]); // เพิ่มประเภทกีฬาใหม่ใน state
-    setNewSport(""); // รีเซ็ตชื่อประเภทกีฬา
-    setShowNewSportInput(false); // ซ่อนฟอร์มการเพิ่ม
   };
 
   // ฟังก์ชันลบประเภทกีฬา
   const deleteSportType = async () => {
     if (!SportTypeToDelete) return;
-    const res = await fetch(
-      `${API_URL}/sports_types/delete/${SportTypeToDelete}`,
-      {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
+    SetstartProcessLoad(true);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      const res = await fetch(
+        `${API_URL}/sports_types/delete/${SportTypeToDelete}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        }
+      );
+
+      const data = await res.json();
+
+      if (data.error) {
+        console.error("Error:", data.error);
+        setMessage(data.error);
+        setMessageType("error");
+        return;
       }
-    );
-
-    const data = await res.json();
-
-    if (data.error) {
-      console.error("Error:", data.error);
-      return;
+      setSports(sports.filter((sport) => sport.sport_id !== SportTypeToDelete)); // ลบประเภทกีฬาจาก state
+      setShowConfirmModal(false); // ซ่อนโมดอล
+      setMessage("ลบประเภทกีฬาสำเร็จ");
+      setMessageType("success");
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setMessage("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้", err);
+      setMessageType("error");
+    } finally {
+      SetstartProcessLoad(false);
     }
-
-    setSports(sports.filter((sport) => sport.sport_id !== SportTypeToDelete)); // ลบประเภทกีฬาจาก state
-    setShowConfirmModal(false); // ซ่อนโมดอล
   };
 
   // ฟังก์ชันแก้ไขชื่อประเภทกีฬา
   const editSportType = async () => {
     if (!newSportName.trim()) return;
-    const res = await fetch(
-      `${API_URL}/sports_types/update/${editSport.sport_id}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ sport_name: newSportName }),
+    SetstartProcessLoad(true);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      const res = await fetch(
+        `${API_URL}/sports_types/update/${editSport.sport_id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({ sport_name: newSportName }),
+        }
+      );
+
+      const data = await res.json();
+
+      if (data.error) {
+        setMessage(data.error); // แสดงข้อผิดพลาดหากชื่อซ้ำ
+        setMessageType("error");
+        return;
       }
-    );
 
-    const data = await res.json();
-
-    if (data.error) {
-      setMessage(data.error); // แสดงข้อผิดพลาดหากชื่อซ้ำ
+      setSports(
+        sports.map((sport) =>
+          sport.sport_id === editSport.sport_id
+            ? { ...sport, sport_name: newSportName }
+            : sport
+        )
+      );
+      setEditSport(null); // รีเซ็ตการแก้ไข
+      setNewSportName(""); // รีเซ็ตชื่อใหม่
+      setShowEditModal(false); // ปิดโมดอลแก้ไข
+      setMessage("แก้ไขประเภทกีฬาสำเร็จ");
+      setMessageType("success");
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setMessage("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้");
       setMessageType("error");
-      return;
+    } finally {
+      SetstartProcessLoad(false);
     }
-
-    setSports(
-      sports.map((sport) =>
-        sport.sport_id === editSport.sport_id
-          ? { ...sport, sport_name: newSportName }
-          : sport
-      )
-    );
-    setEditSport(null); // รีเซ็ตการแก้ไข
-    setNewSportName(""); // รีเซ็ตชื่อใหม่
-    setShowEditModal(false); // ปิดโมดอลแก้ไข
   };
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => {
+        setMessage("");
+        setMessageType("");
+      }, 1000);
 
-  if (isLoading)
-    return (
-      <div className="load">
-        <span className="spinner"></span> กำลังโหลด...
-      </div>
-    );
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
+
+  // if (isLoading)
+  //   return (
+  //     <div className="load">
+  //       <span className="spinner"></span>
+  //     </div>
+  //   );
 
   return (
     <div>
+      {message && (
+        <div className={`message-box ${messageType}`}>
+          <p>{message}</p>
+        </div>
+      )}
       <div className="fac-container-admin">
         <div className="input-group-admin">
           <label>ประเภทกีฬาทั้งหมด</label>
+
+          <div className="addsportcon-admin">
+            {!showNewSportInput ? (
+              <button
+                className="addsport-admin"
+                type="button"
+                onClick={() => setShowNewSportInput(true)}
+              >
+                + เพิ่มประเภทกีฬาใหม่
+              </button>
+            ) : (
+              <div className="add-sport-form">
+                <input
+                  type="text"
+                  maxLength={50}
+                  placeholder="ชื่อประเภทกีฬา"
+                  value={newSport}
+                  onChange={(e) => setNewSport(e.target.value)}
+                />
+                <div className="form-actions-admin">
+                  <button
+                    className="savebtn-admin"
+                    type="button"
+                    onClick={addType}
+                  >
+                    บันทึก
+                  </button>
+                  <button
+                    className="cancelbtn-admin"
+                    type="button"
+                    onClick={() => setShowNewSportInput(false)}
+                  >
+                    ยกเลิก
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+          {dataLoading && (
+            <div className="loading-data">
+              <div className="loading-data-spinner"></div>
+            </div>
+          )}
         </div>
         <div className="typecon-admin">
           {sports.length > 0 ? (
@@ -156,7 +270,7 @@ export default function RegisterFieldForm() {
                   onClick={() => {
                     setEditSport(sport);
                     setNewSportName(sport.sport_name);
-                    setShowEditModal(true); 
+                    setShowEditModal(true);
                   }}
                 >
                   แก้ไข
@@ -174,7 +288,7 @@ export default function RegisterFieldForm() {
               </div>
             ))
           ) : (
-            <p>ไม่มีข้อมูล</p>
+            <p className="no-sport-type"></p>
           )}
         </div>
 
@@ -222,43 +336,9 @@ export default function RegisterFieldForm() {
           </div>
         )}
 
-        <div className="addsportcon-admin">
-          {!showNewSportInput ? (
-            <button
-              className="addsport-admin"
-              type="button"
-              onClick={() => setShowNewSportInput(true)}
-            >
-              + เพิ่มประเภทกีฬาใหม่
-            </button>
-          ) : (
-            <div className="add-sport-form">
-              <input
-                type="text"
-                maxLength={50}
-                placeholder="ชื่อประเภทกีฬา"
-                value={newSport}
-                onChange={(e) => setNewSport(e.target.value)}
-              />
-              <div className="form-actions-admin">
-                <button className="savebtn-admin" type="button" onClick={addType}>
-                  บันทึก
-                </button>
-                <button
-                  className="cancelbtn-admin"
-                  type="button"
-                  onClick={() => setShowNewSportInput(false)}
-                >
-                  ยกเลิก
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {message && (
-          <div className={`message-box ${messageType}`}>
-            <p>{message}</p>
+        {startProcessLoad && (
+          <div className="loading-overlay">
+            <div className="loading-spinner"></div>
           </div>
         )}
       </div>

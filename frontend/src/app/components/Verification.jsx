@@ -12,10 +12,11 @@ export default function Verification() {
   const [timer, setTimer] = useState(60); // เริ่มต้นจาก 60 วินาที
   const [canRequestOTP, setCanRequestOTP] = useState(true); // ใช้สำหรับการอนุญาตให้ผู้ใช้ขอ OTP ใหม่
   const router = useRouter("");
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, setUser } = useAuth();
+  const [startProcessLoad, SetstartProcessLoad] = useState(false);
 
   useEffect(() => {
-    if (isLoading) return; 
+    if (isLoading) return;
 
     if (!user) {
       router.replace("/login");
@@ -25,7 +26,6 @@ export default function Verification() {
     if (user?.status === "ตรวจสอบแล้ว") {
       router.replace("/");
     }
-
   }, [user, isLoading, router]);
 
   const userId = user?.user_id;
@@ -45,8 +45,9 @@ export default function Verification() {
 
   const noSave = async (e) => {
     e.preventDefault();
-
+    SetstartProcessLoad(true);
     try {
+      await new Promise((resolve) => setTimeout(resolve, 200));
       const res = await fetch(`${API_URL}/register/verify/${userId}`, {
         method: "POST",
         headers: {
@@ -61,8 +62,8 @@ export default function Verification() {
         setMessage("ยืนยัน E-mail สำเร็จ");
         setMessageType("success");
         setTimeout(() => {
-          router.replace("/");
-        }, 1500);
+          window.location.replace("/");
+        }, 3000);
       } else {
         setMessage(result.message);
         setMessageType("error");
@@ -70,6 +71,8 @@ export default function Verification() {
     } catch (error) {
       setMessage("เกิดข้อผิดพลาดระหว่างการยืนยัน", error);
       setMessageType("error");
+    } finally {
+      SetstartProcessLoad(false);
     }
   };
 
@@ -81,10 +84,10 @@ export default function Verification() {
       setMessageType("success");
       return;
     }
-    setCanRequestOTP(false);
-    setTimer(60);
 
+    SetstartProcessLoad(true);
     try {
+      await new Promise((resolve) => setTimeout(resolve, 200));
       const res = await fetch(`${API_URL}/register/new-otp/${userId}`, {
         method: "PUT",
         headers: {
@@ -99,6 +102,8 @@ export default function Verification() {
       if (res.ok) {
         setMessage(`OTP ใหม่ถูกส่งไปยัง ${userEmail}`);
         setMessageType("success");
+        setCanRequestOTP(false);
+        setTimer(60);
       } else {
         console.error(result.message);
         setMessage(result.message || "เกิดข้อผิดพลาดระหว่างการส่งข้อมูล");
@@ -108,6 +113,8 @@ export default function Verification() {
       console.error(error);
       setMessage("เกิดข้อผิดพลาดในการขอ OTP");
       setMessageType("error");
+    } finally {
+      SetstartProcessLoad(false);
     }
   };
 
@@ -122,16 +129,30 @@ export default function Verification() {
     }
   }, [message]);
 
+  // if (startProcessLoad)
+  //   return (
+  //     <div className="loading-overlay">
+  //       <div className="loading-spinner"></div>
+  //     </div>
+  //   );
+
+  if (isLoading)
+    return (
+      <div className="load">
+        <span className="spinner"></span>
+      </div>
+    );
+
   return (
     <>
-      <div className="verification-container">
       {message && (
         <div className={`message-box ${messageType}`}>
           <p>{message}</p>
         </div>
       )}
+      <div className="verification-container">
         <div className="head-titel">
-          <h1>ยืนยันบัญชี</h1>
+          <h1>ยืนยันบัญชีของคุณก่อนใช้บริการ</h1>
         </div>
         <form onSubmit={noSave}>
           <div className="input-verify">
@@ -156,10 +177,13 @@ export default function Verification() {
             <p> (OTP มีเวลา 5 นาที ถ้าหมดต้องกดขอใหม่) </p>
           </div>
           <div className="btn-submit-verify">
-            <button type="submit">
-              ยืนยัน
-            </button>
+            <button type="submit">ยืนยัน</button>
           </div>
+          {startProcessLoad && (
+            <div className="loading-overlay">
+              <div className="loading-spinner"></div>
+            </div>
+          )}
         </form>
       </div>
     </>

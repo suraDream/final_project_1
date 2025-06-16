@@ -35,6 +35,9 @@ app.use('/uploads/images/field-profile', express.static(path.join(__dirname, 'up
 app.use('/uploads/images/posts', express.static(path.join(__dirname, 'uploads/images/posts')));
 app.use('/uploads/images/slip', express.static(path.join(__dirname, 'uploads/images/slip')));
 app.use('/uploads/documents', express.static(path.join(__dirname, 'uploads/documents')));
+
+
+
 app.use(cookieParser());
 
 const registerRoute = require("./routers/register");
@@ -48,8 +51,7 @@ const myfieldRoute = require("./routers/myfield");
 const profile = require("./routers/profile");
 const posts = require("./routers/posts");
 const booking = require("./routers/booking")(io);
-
-
+const reviews = require("./routers/reviews");
 
 app.get("/", (req, res) => {
   res.send("Welcome to the API");
@@ -66,6 +68,7 @@ app.use("/myfield", myfieldRoute);
 app.use("/profile", profile);
 app.use("/posts", posts);
 app.use("/booking",booking)
+app.use("/reviews",reviews)
 io.on("connection", (socket) => {
   console.log(" Client connected:", socket.id);
 

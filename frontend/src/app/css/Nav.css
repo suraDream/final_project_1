@@ -1,10 +1,10 @@
-@import url("https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap");
+/* @import url("https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap"); */
 :root {
   --text-color: #03045e;
   --active-color: #0014c7;
 }
 
-* {
+/* * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
@@ -17,7 +17,7 @@ body {
   background-position: center;
   background-repeat: no-repeat;
   background-attachment: fixed;
-}
+} */
 
 nav {
   z-index: 10;
@@ -52,13 +52,13 @@ nav {
   padding-bottom: 3px;
 }
 
-ul {
+nav ul {
   display: flex;
   gap: 20px;
   list-style: none;
 }
 
-ul li a {
+nav ul li a {
   text-decoration: none;
   color: var(--text-color);
   font-size: 20px;
@@ -77,26 +77,26 @@ ul li a {
   transition: width 0.3s ease-in-out;
 }
 
-ul li a::before {
+nav ul li a::before {
   top: -5px;
 }
 
-ul li a::after {
+nav ul li a::after {
   bottom: -5px;
 }
 
-ul li a:hover::after,
-ul li a:hover::before {
+nav ul li a:hover::after,
+nav ul li a:hover::before {
   width: 100%;
 }
 
-ul li a.active::before,
-ul li a.active::after {
+nav ul li a.active::before,
+nav ul li a.active::after {
   width: 100%;
   background-color: var(--text-color);
 }
 
-ul li a.active {
+nav ul li a.active {
   color: var(--active-color);
 }
 
@@ -151,10 +151,12 @@ ul li a.active {
 }
 
 .user-profile {
+  width: auto;
   position: relative;
   cursor: pointer;
   display: flex;
   align-items: center;
+  justify-self: center;
   gap: 5px;
   padding: 8px 12px;
   background: #ffffff;
@@ -170,7 +172,7 @@ ul li a.active {
 .user-name {
   font-size: 16px;
   max-width: 100%;
-  width: 50px;
+  width: auto;
   text-align: center;
   display: flex;
   justify-content: center;
@@ -182,7 +184,7 @@ ul li a.active {
   position: absolute;
   top: 100%;
   margin-top: 5px;
-  transform: translateX(-50%);
+  transform: translateX(-45%);
   background: white;
   border-radius: 18px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -229,6 +231,8 @@ ul li a.active {
 
 .login,
 .register {
+  height: 40px;
+  width: 120px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -295,13 +299,13 @@ ul li a.active {
     padding-bottom: 3px;
   }
 
-  ul {
+  nav ul {
     display: flex;
     gap: 20px;
     list-style: none;
   }
 
-  ul li a {
+  nav ul li a {
     text-decoration: none;
     color: var(--text-color);
     font-size: 20px;
@@ -320,26 +324,26 @@ ul li a.active {
     transition: width 0.3s ease-in-out;
   }
 
-  ul li a::before {
+  nav ul li a::before {
     top: -5px;
   }
 
-  ul li a::after {
+  nav ul li a::after {
     bottom: -5px;
   }
 
-  ul li a:hover::after,
-  ul li a:hover::before {
+  nav ul li a:hover::after,
+  nav ul li a:hover::before {
     width: 100%;
   }
 
-  ul li a.active::before,
-  ul li a.active::after {
+  nav ul li a.active::before,
+  nav ul li a.active::after {
     width: 100%;
     background-color: var(--text-color);
   }
 
-  ul li a.active {
+  nav ul li a.active {
     color: var(--active-color);
   }
 
@@ -467,14 +471,9 @@ ul li a.active {
     width: 150px;
   }
 }
-@media screen and (max-width: 980px) {
-  .search-box.active {
-    width: 130px;
-  }
-}
 
 /* Media Queries for responsiveness */
-@media screen and (max-width: 960px) {
+@media screen and (max-width: 1000px) {
   nav {
     z-index: 10;
     position: fixed;
@@ -508,13 +507,13 @@ ul li a.active {
     padding-bottom: 3px;
   }
 
-  ul {
+  nav ul {
     display: flex;
     gap: 20px;
     list-style: none;
   }
 
-  ul li a {
+  nav ul li a {
     text-decoration: none;
     color: var(--text-color);
     position: relative;
@@ -532,26 +531,26 @@ ul li a.active {
     transition: width 0.3s ease-in-out;
   }
 
-  ul li a::before {
+  nav ul li a::before {
     top: -5px;
   }
 
-  ul li a::after {
+  nav ul li a::after {
     bottom: -5px;
   }
 
-  ul li a:hover::after,
-  ul li a:hover::before {
+  nav ul li a:hover::after,
+  nav ul li a:hover::before {
     width: 100%;
   }
 
-  ul li a.active::before,
-  ul li a.active::after {
+  nav ul li a.active::before,
+  nav ul li a.active::after {
     width: 100%;
     background-color: var(--text-color);
   }
 
-  ul li a.active {
+  nav ul li a.active {
     color: var(--active-color);
   }
 
@@ -665,7 +664,7 @@ ul li a.active {
   }
 }
 
-@media screen and (max-width: 882px) {
+@media screen and (max-width: 980px) {
   nav {
     padding: 0 20px 0 20px;
   }
@@ -694,30 +693,30 @@ ul li a.active {
     transition: width 0.3s ease-in-out;
   }
 
-  ul li a::before {
+  nav ul li a::before {
     top: -5px;
   }
 
-  ul li a::after {
+  nav ul li a::after {
     bottom: -5px;
   }
 
-  ul li a:hover::after,
-  ul li a:hover::before {
+  nav ul li a:hover::after,
+  nav ul li a:hover::before {
     width: 100%;
   }
 
-  ul li a.active::before,
-  ul li a.active::after {
+  nav ul li a.active::before,
+  nav ul li a.active::after {
     width: 100%;
     background-color: var(--text-color);
   }
 
-  ul li a.active {
+  nav ul li a.active {
     color: var(--active-color);
   }
 
-  ul.active {
+  nav ul.active {
     display: flex;
   }
 
@@ -740,10 +739,14 @@ ul li a.active {
     position: absolute;
     top: 100%;
     margin-top: 5px;
-    transform: translateX(-75%);
+    transform: translateX(-40%);
     width: 280px;
     padding: 5px 20px;
     z-index: 999;
+  }
+  .user-profile {
+    width: 300px;
+    justify-content: center;
   }
 
   .dropdown ul {
@@ -791,9 +794,33 @@ ul li a.active {
   .search-box.active {
     width: 200px;
   }
+  .login,
+  .register {
+    width: 150px;
+  }
 }
 
-@media screen and (max-width: 570px) {
+@media screen and (max-width: 670px) {
+  .login,
+  .register {
+    width: 90px;
+  }
+  .dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    margin-top: 5px;
+    transform: translateX(-60%);
+    width: 280px;
+    padding: 5px 20px;
+    z-index: 999;
+  }
+  .user-profile {
+    width: 220px;
+  }
+}
+
+@media screen and (max-width: 590px) {
   nav {
     flex-direction: row;
     padding: 0 20px 0 20px;
@@ -805,14 +832,14 @@ ul li a.active {
     margin: 0px;
   }
 
-  ul {
+  nav ul {
     display: none;
     flex-direction: column;
     gap: 10px;
     width: 100%;
   }
 
-  ul.active {
+  nav ul.active {
     display: flex;
     top: 60px;
   }
@@ -840,7 +867,7 @@ ul li a.active {
   }
 
   .user-profile {
-    width: 100%;
+    /* width: 100%; */
     justify-content: center;
   }
 
@@ -863,14 +890,14 @@ ul li a.active {
     margin: 0px;
   }
 
-  ul {
+  nav ul {
     display: none;
     flex-direction: column;
     gap: 10px;
     width: 100%;
   }
 
-  ul.active {
+  nav ul.active {
     display: flex;
     top: 60px;
   }
@@ -898,7 +925,7 @@ ul li a.active {
   }
 
   .user-profile {
-    width: 100%;
+    /* width: 100%; */
     justify-content: center;
   }
 
@@ -909,6 +936,22 @@ ul li a.active {
   }
 }
 
+@media screen and (max-width: 390px) {
+  .user-profile {
+    width: 100%;
+    justify-content: center;
+  }
+    .dropdown {
+    transform: translateX(-77%);
+    display: none;
+    position: absolute;
+    top: 100%;
+    margin-top: 5px;
+    width: 220px;
+    padding: 5px 20px;
+    z-index: 999;
+  }
+}
 @media screen and (max-width: 350px) {
   nav {
     flex-direction: row;
@@ -920,14 +963,14 @@ ul li a.active {
     margin: 0px;
   }
 
-  ul {
+  nav ul {
     display: none;
     flex-direction: column;
     gap: 10px;
     width: 100%;
   }
 
-  ul.active {
+  nav ul.active {
     display: flex;
     top: 60px;
   }
@@ -955,7 +998,7 @@ ul li a.active {
   }
 
   .user-profile {
-    width: 100%;
+    /* width: 100%; */
     justify-content: center;
   }
 
@@ -978,14 +1021,14 @@ ul li a.active {
     margin: 0px;
   }
 
-  ul {
+  nav ul {
     display: none;
     flex-direction: column;
     gap: 10px;
     width: 100%;
   }
 
-  ul.active {
+  nav ul.active {
     display: flex;
     top: 110px;
   }

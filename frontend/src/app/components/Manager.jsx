@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import "@/app/css/manager.css";
 import { useAuth } from "@/app/contexts/AuthContext";
+import { data } from "autoprefixer";
 
 export default function AdminManager() {
   const [allowFields, setAllowFields] = useState([]);
@@ -19,6 +20,8 @@ export default function AdminManager() {
   const [fieldIdToDelete, setFieldIdToDelete] = useState(null); // เก็บ ID ของสนามที่ต้องการลบ
   const [userIdToDelete, setUserIdToDelete] = useState(null); // เก็บ ID ของผู้ใช้ที่ต้องการลบ
   const { user, isLoading } = useAuth();
+  const [startProcessLoad, SetstartProcessLoad] = useState(false);
+  const [dataLoading, setDataLoading] = useState(false);
 
   useEffect(() => {
     if (isLoading) return;
@@ -37,20 +40,39 @@ export default function AdminManager() {
   }, [user, isLoading, router]);
 
   useEffect(() => {
-    if (user?.role === "admin") {
-      fetch(`${API_URL}/users`, {
-        credentials: "include",
-      })
-        .then((response) => {
-          if (response.status === 401) {
-            router.replace("/login");
-            return;
-          }
-          return response.json();
-        })
-        .then((data) => setUsers(data))
-        .catch((error) => console.error("Error fetching users:", error));
-    }
+    setDataLoading(true);
+    const fetchUsers = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      if (user?.role !== "admin") return;
+      setDataLoading(true);
+      try {
+        const response = await fetch(`${API_URL}/users`, {
+          credentials: "include",
+        });
+
+        if (response.status === 401) {
+          setTimeout(() => {
+            router.replace("/");
+          }, 2000);
+          return;
+        }
+
+        if (!response.ok) {
+          throw new Error("เกิดข้อผิดพลาดในการโหลดข้อมูลผู้ใช้");
+        }
+
+        const data = await response.json();
+        setUsers(data);
+      } catch (error) {
+        console.error("เกิดข้อผิดพลาดในการโหลดข้อมูลผู้ใช้", error);
+        setMessage(error.message || "เกิดข้อผิดพลาด");
+        setMessageType("error");
+      } finally {
+        setDataLoading(false);
+      }
+    };
+
+    fetchUsers();
   }, [user]);
 
   useEffect(() => {
@@ -96,6 +118,11 @@ export default function AdminManager() {
           <button className="cancelbtn-user" onClick={onClose}>
             ยกเลิก
           </button>
+          {startProcessLoad && (
+            <div className="loading-overlay">
+              <div className="loading-spinner"></div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -119,13 +146,6 @@ export default function AdminManager() {
     setShowDeleteUserModal(false); // ปิดโมดอลลบผู้ใช้
   };
 
-  if (isLoading)
-    return (
-      <div className="load">
-        <span className="spinner"></span> กำลังโหลด...
-      </div>
-    );
-
   const isEmailDuplicate = (email) => {
     return users.some(
       (user) => user.email === email && user.user_id !== selectedUser?.user_id
@@ -133,7 +153,9 @@ export default function AdminManager() {
   };
 
   const handleDelete = async (id) => {
+    SetstartProcessLoad(true);
     try {
+      await new Promise((resolve) => setTimeout(resolve, 200));
       const response = await fetch(`${API_URL}/users/${id}`, {
         method: "DELETE",
         headers: {
@@ -155,6 +177,7 @@ export default function AdminManager() {
       setMessageType("error");
     } finally {
       closeDeleteModal(); // ปิดโมดอลหลังจากการลบเสร็จ
+      SetstartProcessLoad(false);
     }
   };
 
@@ -191,8 +214,9 @@ export default function AdminManager() {
       setEmailError("อีเมลนี้มีการใช้งานแล้ว");
       return;
     }
-
+    SetstartProcessLoad(true);
     try {
+      await new Promise((resolve) => setTimeout(resolve, 200));
       const response = await fetch(`${API_URL}/users/${selectedUser.user_id}`, {
         method: "PUT",
         headers: {
@@ -218,6 +242,8 @@ export default function AdminManager() {
     } catch (error) {
       setMessage(`${error.message}`);
       setMessageType("error");
+    } finally {
+      SetstartProcessLoad(false);
     }
   };
 
@@ -230,16 +256,28 @@ export default function AdminManager() {
     setEmailError("");
   };
 
+  // if (isLoading)
+  //   return (
+  //     <div className="load">
+  //       <span className="spinner"></span>
+  //     </div>
+  //   );
+
   return (
     <>
+      {message && (
+        <div className={`message-box ${messageType}`}>
+          <p>{message}</p>
+        </div>
+      )}
       <div className="admin-manager-container">
-        {message && (
-          <div className={`message-box ${messageType}`}>
-            <p>{message}</p>
-          </div>
-        )}
         <h2 className="Title">รายชื่อผู้ใช้งาน</h2>
         <h3 className="Head">ผู้ดูแลระบบ</h3>
+        {dataLoading && (
+          <div className="loading-data">
+            <div className="loading-data-spinner"></div>
+          </div>
+        )}
         <table className="manager-table">
           <thead>
             <tr>
@@ -263,6 +301,11 @@ export default function AdminManager() {
 
         {/* ตารางสำหรับลูกค้า */}
         <h3 className="Head">ผู้ใช้ทั้งหมด</h3>
+        {dataLoading && (
+          <div className="loading-data">
+            <div className="loading-data-spinner"></div>
+          </div>
+        )}
         <table className="manager-table-user">
           <thead>
             <tr>
@@ -343,7 +386,7 @@ export default function AdminManager() {
                     })
                   }
                 />
-                <label>อีเมล:</label>
+                {/* <label>อีเมล:</label>
                 <input
                   type="email"
                   value={selectedUser.email}
@@ -352,7 +395,7 @@ export default function AdminManager() {
                   }
                 />
                 {emailError && <p style={{ color: "red" }}>{emailError}</p>}{" "}
-                {/* แสดงข้อความ error */}
+                แสดงข้อความ error */}
                 <div className="modal-buttons">
                   <button type="submit" className="save-btn-manager">
                     บันทึก
@@ -365,6 +408,11 @@ export default function AdminManager() {
                     ยกเลิก
                   </button>
                 </div>
+                {startProcessLoad && (
+                  <div className="loading-overlay">
+                    <div className="loading-spinner"></div>
+                  </div>
+                )}
               </form>
             </div>
           </div>

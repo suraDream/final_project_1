@@ -107,13 +107,13 @@ router.post("/register", upload.fields([{ name: "documents" }, { name: "img_fiel
         [field_id, facId, selectedFacilities[facId]]
       );
     }
-    
+     // ดึงข้อมูลผู้ใช้ (รวมถึง user_email)
      const userData = await pool.query("SELECT * FROM users WHERE user_id = $1", [user_id]);
 
- 
-     const userEmail = userData.rows[0].email; 
+     // สมมุติว่าในตาราง users มีคอลัมน์ชื่อ user_email
+     const userEmail = userData.rows[0].email; // << ใช้ค่านี้ส่งอีเมล
 
-   
+     // ส่งอีเมล
      try {
        const resultEmail = await resend.emails.send({
          from: process.env.Sender_Email,

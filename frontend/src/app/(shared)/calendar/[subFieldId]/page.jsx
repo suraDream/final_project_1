@@ -7,12 +7,12 @@ import { useAuth } from "@/app/contexts/AuthContext";
 
 export default function MyCalendar() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
-  const [date, setDate] = useState(null); 
+  const [date, setDate] = useState(null);
   const router = useRouter();
   const [opendays, setOenDays] = useState([]);
   const [fieldData, setFieldData] = useState([]);
   const { subFieldId } = useParams();
-  const [isClient, setIsClient] = useState(false);
+  const [isClient, setIsClient] = useState(true);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
   const { user, isLoading } = useAuth();
@@ -32,7 +32,6 @@ export default function MyCalendar() {
     if (user?.status !== "ตรวจสอบแล้ว") {
       router.replace("/verification");
     }
-
   }, [user, isLoading, router]);
 
   useEffect(() => {
@@ -55,9 +54,8 @@ export default function MyCalendar() {
 
   useEffect(() => {
     setDate(null);
-    if (!subFieldId) {
-      return;
-    }
+    if (!subFieldId) return;
+
     const daysNumbers = {
       Sun: 0,
       Mon: 1,
@@ -67,45 +65,54 @@ export default function MyCalendar() {
       Fri: 5,
       Sat: 6,
     };
-    // เซ็ตวันที่ใน client-side หลังจากโหลด
 
-    const fetchData = async () =>
-      await fetch(`${API_URL}/field/open-days/${subFieldId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application",
-        },
-        credentials: "include",
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.error) {
-            console.error("ไม่พบข้อมูลวันเปิดสนาม");
-          } else {
-            if (data[0] && data[0].open_days) {
-              const mapDaysToNum = data[0].open_days.map(
-                (day) => daysNumbers[day]
-              );
-              const selectedSubField =
-                data[0].sub_fields.find(
-                  (subField) => subField.sub_field_id === parseInt(subFieldId)
-                ) || "ไม่พบข้อมูล";
-
-              setOenDays(mapDaysToNum);
-              setFieldData(selectedSubField);
-              console.log("ข้อมูลสนาม", data);
-              console.log("ข้อมูลสนามย่อย", selectedSubField);
-              console.log("วันที่เปืดสนาม", mapDaysToNum);
-            } else {
-              setMessage("ไม่สามารถดึงข้อมูลได้");
-              setMessageType("error");
-            }
-          }
-        })
-        .catch((error) => {
-          router.replace("/");
-          console.error("Error Fetching", error);
+    const fetchData = async () => {
+      try {
+        const res = await fetch(`${API_URL}/field/open-days/${subFieldId}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
         });
+
+        const data = await res.json();
+
+        if (data.error) {
+          console.error("ไม่พบข้อมูลวันเปิดสนาม");
+          setMessage("ไม่พบข้อมูลวันเปิดสนาม");
+          setMessageType("error");
+          return;
+        }
+
+        if (data[0] && data[0].open_days) {
+          const mapDaysToNum = data[0].open_days.map((day) => daysNumbers[day]);
+
+          const selectedSubField =
+            data[0].sub_fields.find(
+              (subField) => subField.sub_field_id === parseInt(subFieldId)
+            ) || "ไม่พบข้อมูล";
+
+          setOenDays(mapDaysToNum);
+          setFieldData(selectedSubField);
+
+          console.log("ข้อมูลสนาม", data);
+          console.log("ข้อมูลสนามย่อย", selectedSubField);
+          console.log("วันที่เปิดสนาม", mapDaysToNum);
+        } else {
+          setMessage("ไม่สามารถดึงข้อมูลวันเปิดสนามได้");
+          setMessageType("error");
+        }
+      } catch (error) {
+        console.error("เกิดข้อผิดพลาดในการโหลดข้อมูล:", error);
+        setMessage("เกิดข้อผิดพลาดในการโหลดข้อมูล");
+        setMessageType("error");
+        router.replace("/");
+      } finally {
+        setIsClient(false);
+      }
+    };
+
     fetchData();
   }, [subFieldId]);
 
@@ -147,10 +154,9 @@ export default function MyCalendar() {
         setMessageType("error");
         return;
       }
-      
       const day = date.getDay();
       if (opendays.includes(day)) {
-        router.push(`/booking/${subFieldId}`); 
+        router.push(`/booking/${subFieldId}`);
       } else {
         setMessage("ไม่สามารถเลือกวันนี้ได้");
         setMessageType("error");
@@ -187,15 +193,21 @@ export default function MyCalendar() {
     }
   }, [message]);
 
-  if (!isClient) return <div>Loading...</div>;
+  if (isClient)
+    return (
+      <div className="load">
+        <span className="spinner"></span>
+      </div>
+    );
+
   return (
     <div>
       <div className="sub-field-detail-container-calendar">
-      {message && (
-        <div className={`message-box ${messageType}`}>
-          <p>{message}</p>
-        </div>
-      )}
+        {message && (
+          <div className={`message-box ${messageType}`}>
+            <p>{message}</p>
+          </div>
+        )}
         {fieldData !== "ไม่พบข้อมูล" ? (
           <div className="detail-calendar">
             <p className="sub-name">
@@ -213,9 +225,7 @@ export default function MyCalendar() {
         )}
       </div>
       <div className="select-day">
-        <p>
-          วันที่: {date ? formatDateToThai(date) : "ยังไม่ได้เลือกวันที่"}
-        </p>
+        <p>วันที่: {date ? formatDateToThai(date) : "ยังไม่ได้เลือกวันที่"}</p>
         <div>**สามารถจองล่วงหน้าได้ไม่เกิน 7 วัน</div>
       </div>
       <div className="calendar-container">

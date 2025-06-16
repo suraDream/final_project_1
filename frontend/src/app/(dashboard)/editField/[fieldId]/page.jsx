@@ -51,6 +51,8 @@ export default function CheckFieldDetail() {
   const [showDeleteAddOnModal, setShowDeleteAddOnModal] = useState(false);
   const [selectedAddOn, setSelectedAddOn] = useState(null);
   const { user, isLoading } = useAuth();
+  const [dataLoading, setDataLoading] = useState(true);
+  const [startProcessLoad, SetstartProcessLoad] = useState(false);
 
   useEffect(() => {
     if (isLoading) return;
@@ -77,25 +79,38 @@ export default function CheckFieldDetail() {
 
   useEffect(() => {
     if (!fieldId) return;
-    fetch(`${API_URL}/field/${fieldId}`, {
-      method: "GET", // ใช้ method GET ในการดึงข้อมูล
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-    })
-      .then((res) => res.json())
-      .then((data) => {
+    const fetchFieldData = async () => {
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        const res = await fetch(`${API_URL}/field/${fieldId}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        });
+
+        const data = await res.json();
+
         if (data.error) {
           setMessage("ไม่พบข้อมูลสนามกีฬา");
           setMessageType("error");
-          router.push("/"); // กลับไปหน้าหลักถ้าเกิดข้อผิดพลาด
-        } else {
-          setField(data);
-          setSubFields(data.sub_fields || []);
+          router.push("/");
+          return;
         }
-      })
-      .catch((error) => console.error("Error fetching field data:", error));
+
+        setField(data);
+        setSubFields(data.sub_fields || []);
+      } catch (error) {
+        console.error("Error fetching field data:", error);
+        setMessage("เกิดข้อผิดพลาดในการโหลดข้อมูลสนามกีฬา");
+        setMessageType("error");
+      } finally {
+        setDataLoading(false);
+      }
+    };
+
+    fetchFieldData();
   }, [fieldId, router]);
 
   useEffect(() => {
@@ -111,12 +126,19 @@ export default function CheckFieldDetail() {
 
         const data = await response.json();
         if (response.ok) {
-          setSportsCategories(data); // Populate the sports categories state
+          setSportsCategories(data);
+          setDataLoading(false);
         } else {
           console.error("Error fetching sports categories:", data.error);
+          setMessage(data.error);
+          setMessageType("error");
         }
       } catch (error) {
         console.error("Error fetching sports categories:", error);
+        setMessage("ไม่สามารถเชือมต่อกับเซิร์ฟเวอร์ได้", error);
+        setMessageType("error");
+      } finally {
+        setDataLoading(false);
       }
     };
 
@@ -124,12 +146,28 @@ export default function CheckFieldDetail() {
   }, []);
 
   useEffect(() => {
-    fetch(`${API_URL}/facilities`, {
-      credentials: "include",
-    })
-      .then((res) => res.json())
-      .then((data) => setAllFacilities(data))
-      .catch((error) => console.error("Error fetching facilities:", error));
+    const fetchFacilities = async () => {
+      try {
+        const response = await fetch(`${API_URL}/facilities`, {
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          throw new Error("ไม่สามารถโหลดข้อมูลสิ่งอำนวยความสะดวกได้");
+        }
+
+        const data = await response.json();
+        setAllFacilities(data);
+      } catch (error) {
+        console.error("Error fetching facilities:", error);
+        setMessage("เกิดข้อผิดพลาดในการโหลดข้อมูล", error);
+        setMessageType("error");
+      } finally {
+        setDataLoading(false);
+      }
+    };
+
+    fetchFacilities();
   }, []);
 
   //  ฟังก์ชันเลือก Checkbox สิ่งอำนวยความสะดวก
@@ -166,6 +204,7 @@ export default function CheckFieldDetail() {
         return;
       }
     }
+    SetstartProcessLoad(true);
     try {
       const res = await fetch(`${API_URL}/field/facilities/${fieldId}`, {
         method: "POST",
@@ -192,6 +231,8 @@ export default function CheckFieldDetail() {
     } catch (err) {
       setMessage("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้");
       setMessageType("error");
+    } finally {
+      SetstartProcessLoad(false);
     }
   };
   const handleConfirmDelete = (field_id, field_fac_id) => {
@@ -200,7 +241,7 @@ export default function CheckFieldDetail() {
   };
   const handleDeleteFacility = async () => {
     const { field_id, field_fac_id } = selectedFacility;
-
+    SetstartProcessLoad(true);
     try {
       const res = await fetch(
         `${API_URL}/field/facilities/${field_id}/${field_fac_id}`,
@@ -223,31 +264,42 @@ export default function CheckFieldDetail() {
         setMessageType("error");
       }
     } catch (err) {
-      setMessage("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้");
+      setMessage("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้", err);
       setMessageType("error");
     } finally {
-      setShowModal(false);
+      SetstartProcessLoad(false);
     }
   };
 
   const addNewFacility = async () => {
     if (!newFacility.trim()) return;
-    const res = await fetch(`${API_URL}/facilities/add`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ fac_name: newFacility }),
-    });
+    SetstartProcessLoad(true);
+    try {
+      const res = await fetch(`${API_URL}/facilities/add`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ fac_name: newFacility }),
+      });
 
-    const data = await res.json();
-    if (data.error) {
-      setMessage(data.error);
+      const data = await res.json();
+      if (data.error) {
+        setMessage(data.error);
+        setMessageType("error");
+        return;
+      }
+      setAllFacilities((prev) => [...prev, data]);
+      SetstartProcessLoad(false);
+      setNewFacility("");
+      setMessage("เพิ่มสิ่งอำนวยความสะดวกสำเร็จ");
+      setMessageType("success");
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setMessage("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้");
       setMessageType("error");
-      return;
+    } finally {
+      SetstartProcessLoad(false);
     }
-    setAllFacilities((prev) => [...prev, data]);
-    setNewFacility("");
-    setShowNewFacilityInput(false);
   };
 
   useEffect(() => {
@@ -263,6 +315,10 @@ export default function CheckFieldDetail() {
         setFacilities(data);
       } catch (err) {
         console.error(err);
+        setMessage("ไม่สามารถเชือมต่อกับเซิร์ฟเวอร์ได้", err);
+        setMessageType("error");
+      } finally {
+        setDataLoading(false);
       }
     };
 
@@ -280,6 +336,7 @@ export default function CheckFieldDetail() {
       setMessageType("error");
       return;
     }
+    SetstartProcessLoad(true);
     try {
       const response = await fetch(
         `${API_URL}/field/supfiled/${sub_field_id}`,
@@ -315,13 +372,15 @@ export default function CheckFieldDetail() {
         );
         cancelEditing();
       } else {
-        setMessage("เกิดข้อผิดพลาดในการอัปเดตข้อมูลสนาม");
+        setMessage("เกิดข้อผิดพลาดในการอัปเดตข้อมูลสนาม", response.error);
         setMessageType("error");
       }
     } catch (error) {
       console.error("Error saving sub-field:", error);
-      setMessage(error);
+      setMessage("ไม่สามารถเชือมต่อกับเซิร์ฟเวอร์ได้", error);
       setMessageType("error");
+    } finally {
+      SetstartProcessLoad(false);
     }
   };
 
@@ -410,6 +469,7 @@ export default function CheckFieldDetail() {
   };
 
   const saveImageField = async () => {
+    SetstartProcessLoad(true);
     try {
       if (!selectedFile) {
         setMessage("กรุณาเลือกไฟล์ก่อนอัปโหลด");
@@ -419,7 +479,6 @@ export default function CheckFieldDetail() {
 
       const formData = new FormData();
       formData.append("img_field", selectedFile);
-
       const response = await fetch(`${API_URL}/field/${fieldId}/upload-image`, {
         method: "POST",
         credentials: "include",
@@ -440,12 +499,15 @@ export default function CheckFieldDetail() {
       }
     } catch (error) {
       console.error("Error saving image field:", error);
-      setMessage("ไม่สามารถบันทึกข้อมูลได้");
+      setMessage("ไม่สามารถเชือมต่อกับเซิร์ฟเวอร์ได้", error);
       setMessageType("error");
+    } finally {
+      SetstartProcessLoad(false);
     }
   };
 
   const saveDocumentField = async () => {
+    SetstartProcessLoad(true);
     try {
       if (!selectedFile || selectedFile.length === 0) {
         setMessage("กรุณาเลือกไฟล์เอกสารก่อนอัปโหลด");
@@ -484,12 +546,46 @@ export default function CheckFieldDetail() {
       }
     } catch (error) {
       console.error("Error saving document field:", error);
-      setMessage("ไม่สามารถบันทึกข้อมูลได้");
+      setMessage("ไม่สามารถเชือมต่อกับเซิร์ฟเวอร์ได้", error);
       setMessageType("error");
+    } finally {
+      SetstartProcessLoad(false);
     }
   };
 
+  const isEmptyValue = (value) => {
+    if (value === null || value === undefined) return true;
+
+    if (typeof value === "string") {
+      return value.trim() === "";
+    }
+
+    if (typeof value === "number") {
+      return false; // ยอมให้เลข 0 ผ่านได้
+    }
+
+    if (value instanceof File) {
+      return value.size === 0; // รูปแต่ไม่มีเนื้อหาก็ถือว่าว่าง
+    }
+
+    if (Array.isArray(value)) {
+      return value.length === 0;
+    }
+
+    if (typeof value === "object") {
+      return Object.keys(value).length === 0;
+    }
+
+    return false;
+  };
+
   const saveField = async (fieldName) => {
+    if (isEmptyValue(updatedValue)) {
+      setMessage("ห้ามปล่อยค่าว่าง หรือ ลบออกทั้งหมด");
+      setMessageType("error");
+      return;
+    }
+    SetstartProcessLoad(true);
     try {
       const response = await fetch(`${API_URL}/field/edit/${fieldId}`, {
         method: "PUT",
@@ -518,8 +614,10 @@ export default function CheckFieldDetail() {
       }
     } catch (error) {
       console.error("Error saving field:", error);
-      setMessage("ไม่สามารถบันทึกข้อมูลได้");
+      setMessage("ไม่สามารถเชือมต่อกับเซิร์ฟเวอร์ได้", error);
       setMessageType("error");
+    } finally {
+      SetstartProcessLoad(false);
     }
   };
 
@@ -530,7 +628,7 @@ export default function CheckFieldDetail() {
       setMessageType("error");
       return;
     }
-
+    SetstartProcessLoad(true);
     try {
       const response = await fetch(`${API_URL}/field/subfield/${fieldId}`, {
         method: "POST",
@@ -560,8 +658,10 @@ export default function CheckFieldDetail() {
       setMessageType("success");
     } catch (error) {
       console.error("Error: ", error);
-      setMessage("ไม่สามารถเพิ่มสนามย่อยได้");
+      setMessage("ไม่สามารถเชือมต่อกับเซิร์ฟเวอร์ได้", error);
       setMessageType("error");
+    } finally {
+      SetstartProcessLoad(false);
     }
   };
 
@@ -589,6 +689,7 @@ export default function CheckFieldDetail() {
       setMessageType("error");
       return;
     }
+    SetstartProcessLoad(true);
     try {
       const response = await fetch(
         `${API_URL}/field/delete/subfield/${sub_field_id}`,
@@ -614,12 +715,15 @@ export default function CheckFieldDetail() {
       }
     } catch (error) {
       console.error("Error deleting sub-field:", error);
-      setMessage("Error deleting sub-field");
+      setMessage("ไม่สามารถเชือมต่อกับเซิร์ฟเวอร์ได้", error);
       setMessageType("error");
+    } finally {
+      SetstartProcessLoad(false);
     }
   };
 
   const addAddOn = async (subFieldId, content, price) => {
+    SetstartProcessLoad(true);
     try {
       const res = await fetch(`${API_URL}/field/addon`, {
         method: "POST",
@@ -653,8 +757,10 @@ export default function CheckFieldDetail() {
       }
     } catch (err) {
       console.error("ผิดพลาดขณะเพิ่ม Add-on:", err);
-      setMessage("err", err);
+      setMessage("ไม่สามารถเชือมต่อกับเซิร์ฟเวอร์ได้", err);
       setMessageType("error");
+    } finally {
+      SetstartProcessLoad(false);
     }
   };
   const confirmDeleteAddOn = async () => {
@@ -667,6 +773,7 @@ export default function CheckFieldDetail() {
   };
 
   const deleteAddOn = async (add_on_id) => {
+    SetstartProcessLoad(true);
     try {
       const response = await fetch(
         `${API_URL}/field/delete/addon/${add_on_id}`,
@@ -696,10 +803,15 @@ export default function CheckFieldDetail() {
       }
     } catch (error) {
       console.error("Error deleting add-on:", error);
+      setMessage("ไม่สามารถเชือมต่อกับเซิร์ฟเวอร์ได้", error);
+      setMessageType("error");
+    } finally {
+      SetstartProcessLoad(false);
     }
   };
 
   const saveAddon = async () => {
+    SetstartProcessLoad(true);
     try {
       const response = await fetch(
         `${API_URL}/field/add_on/${editingAddon.addOnId}`,
@@ -741,6 +853,10 @@ export default function CheckFieldDetail() {
       }
     } catch (error) {
       console.error("Error saving add-on:", error);
+      setMessage("ไม่สามารถเชือมต่อกับเซิร์ฟเวอร์ได้", error);
+      setMessageType("error");
+    } finally {
+      SetstartProcessLoad(false);
     }
   };
 
@@ -755,6 +871,7 @@ export default function CheckFieldDetail() {
   };
 
   const upDateStatus = async () => {
+    SetstartProcessLoad(true);
     try {
       const res = await fetch(
         `${API_URL}/field/update-status/${field.field_id}`,
@@ -786,6 +903,8 @@ export default function CheckFieldDetail() {
       console.error("Error:", err);
       setMessage(err.message);
       setMessageType("error");
+    } finally {
+      SetstartProcessLoad(false);
     }
   };
 
@@ -800,15 +919,27 @@ export default function CheckFieldDetail() {
     }
   }, [message]);
 
+  if (dataLoading)
+    return (
+      <div className="load">
+        <span className="spinner"></span>
+      </div>
+    );
+
   return (
     <>
+      {message && (
+        <div className={`message-box ${messageType}`}>
+          <p>{message}</p>
+        </div>
+      )}
       <div className="editfield-container">
-        {message && (
-          <div className={`message-box ${messageType}`}>
-            <p>{message}</p>
+        <h1>รายละเอียดสนามกีฬา</h1>
+        {startProcessLoad && (
+          <div className="loading-overlay">
+            <div className="loading-spinner"></div>
           </div>
         )}
-        <h1>รายละเอียดสนามกีฬา</h1>
         <div className="field-details-editfield">
           <div className="input-group-editfield">
             <label>ชื่อสนาม: </label>
@@ -999,11 +1130,17 @@ export default function CheckFieldDetail() {
             {editingField === "cancel_hours" ? (
               <>
                 <input
-                  min="0"
-                  type="number"
+                  type="text"
                   value={updatedValue}
-                  onChange={(e) => setUpdatedValue(Math.abs(e.target.value))}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (/^\d{0,2}$/.test(val)) {
+                      setUpdatedValue(val);
+                    }
+                  }}
+                  placeholder="ใส่ได้ไม่เกิน 99 ชม."
                 />
+
                 <button
                   className="savebtn-editfield"
                   onClick={() => saveField("cancel_hours")}
@@ -1147,9 +1284,15 @@ export default function CheckFieldDetail() {
                 <input
                   type="text"
                   value={updatedValue}
-                  onChange={(e) => setUpdatedValue(e.target.value)}
-                  maxLength={13}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (/^\d{0,13}$/.test(val)) {
+                      setUpdatedValue(val);
+                    }
+                  }}
+                  placeholder="ใส่เลขบัญชีไม่เกิน 13 หลัก"
                 />
+
                 <button
                   className="savebtn-editfield"
                   onClick={() => saveField("number_bank")}
@@ -1762,6 +1905,11 @@ export default function CheckFieldDetail() {
           <div className="modal-overlay-editfield">
             <div className="modal-editfield">
               <h2>ยืนยันการลบ</h2>
+              {startProcessLoad && (
+                <div className="loading-overlay">
+                  <div className="loading-spinner"></div>
+                </div>
+              )}
               <p>คุณแน่ใจหรือไม่ว่าต้องการลบสิ่งอำนวยความสะดวกนี้</p>
               <div className="modal-actions-editfield">
                 <button

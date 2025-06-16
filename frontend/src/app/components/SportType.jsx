@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import "@/app/css/HomePage.css";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 export default function HomePage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -9,48 +10,89 @@ export default function HomePage() {
   const [selectedSport, setSelectedSport] = useState("");
   const [approvedFields, setApprovedFields] = useState([]);
   const [selectedSportName, setSelectedSportName] = useState("");
+  const [message, setMessage] = useState(""); // State for messages
+  const [messageType, setMessageType] = useState(""); // State for message type (error, success)
   const [sportsCategories, setSportsCategories] = useState([]);
+  const [dataLoading, setDataLoading] = useState(true);
+  const { user, isLoading } = useAuth();
 
   useEffect(() => {
+    if (isLoading) return;
 
-    fetch(`${API_URL}/sports_types/preview/type`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => res.json())
-      .then((data) => {
+    if (user) {
+      if (user?.status !== "ตรวจสอบแล้ว") {
+        router.push("/verification");
+      }
+    }
+  }, [user, isLoading, , router]);
+
+  useEffect(() => {
+    const fetchSportsCategories = async () => {
+      try {
+        const res = await fetch(`${API_URL}/sports_types/preview/type`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+
+        const data = await res.json();
+
         if (data.error) {
+          console.error("เกิดข้อผิดพลาด:", data.error);
+          setMessage(data.error);
+          setMessageType("error");
         } else {
-          setSportsCategories(data); 
+          setSportsCategories(data);
         }
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error("Error fetching sports categories:", error);
-      });
+        setMessage("ไม่สามารถเชือมต่อกับเซิร์ฟเวอร์ได้", error);
+        setMessageType("error");
+      } finally {
+        setDataLoading(false);
+      }
+    };
+
+    fetchSportsCategories();
   }, []);
 
   useEffect(() => {
-    const queryParams = selectedSport ? `?sport_id=${selectedSport}` : ""; 
+    const fetchApprovedFields = async () => {
+      try {
+        const queryParams = selectedSport ? `?sport_id=${selectedSport}` : "";
 
-    fetch(`${API_URL}/sports_types/preview${queryParams}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => res.json())
-      .then((data) => {
+        const res = await fetch(
+          `${API_URL}/sports_types/preview${queryParams}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        const data = await res.json();
+
         if (data.error) {
+          console.error("เกิดข้อผิดพลาด:", data.error);
+          setMessage(data.error);
+          setMessageType("error");
         } else {
           setApprovedFields(data);
+          console.log('approvefield',data)
         }
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error("Error fetching approved fields:", error);
-      });
-  }, [selectedSport]); 
+        setMessage("ไม่สามารถเชือมต่อกับเซิร์ฟเวอร์ได้", error);
+        setMessageType("error");
+      } finally {
+        setDataLoading(false);
+      }
+    };
+
+    fetchApprovedFields();
+  }, [selectedSport]);
 
   const convertToThaiDays = (days) => {
     if (!days) return "";
@@ -82,28 +124,24 @@ export default function HomePage() {
     );
     setSelectedSportName(sport ? sport.sport_name : "");
   };
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => {
+        setMessage("");
+        setMessageType("");
+      }, 3500);
 
- 
-const groupedFields = approvedFields.reduce((acc, curr) => {
-  const existing = acc.find((item) => item.field_id === curr.field_id);
-
-  if (existing) {
-    if (!existing.sport_names.includes(curr.sport_name)) {
-      existing.sport_names.push(curr.sport_name);
+      return () => clearTimeout(timer);
     }
-  } else {
-    acc.push({
-      ...curr,
-      sport_names: [curr.sport_name],
-    });
-  }
-
-  return acc;
-}, []);
-
+  }, [message]);
 
   return (
     <>
+      {message && (
+        <div className={`message-box ${messageType}`}>
+          <p>{message}</p>
+        </div>
+      )}
       <div className="container-home">
         <div className="section-title-container">
           <h2 className="section-title-home">สนามที่แนะนำ</h2>
@@ -120,52 +158,61 @@ const groupedFields = approvedFields.reduce((acc, curr) => {
             ))}
           </select>
         </div>
-
-        <div className="grid-home">
-      {groupedFields.map((field) => (
-  <div
-    key={field.field_id}
-    className="card-home"
-    onClick={() => router.push(`/profile/${field.field_id}`)}
-  >
-    <img
-      src={
-        field.img_field
-          ? `${API_URL}/${field.img_field}`
-          : "https://via.placeholder.com/300x200"
-      }
-      alt={field.field_name}
-      className="card-img-home"
-    />
-    <div className="card-body-home">
-      <h3>{field.field_name}</h3>
-      <div className="firsttime-home">
-        <p className="filedname">
-          <span className="first-label-time">เปิดเวลา: </span>
-          {field.open_hours} น. - {field.close_hours} น.
-        </p>
-      </div>
-      <div className="firstopen-home">
-        <p>
-          <span className="first-label-time">วันทำการ: </span>
-          {convertToThaiDays(field.open_days)}
-        </p>
-      </div>
-      <div className="firstopen-home">
-        <p>
-          <span className="first-label-time">กีฬา: </span>
-          {field.sport_names.join(", ")}
-        </p>
-      </div>
-    </div>
-  </div>
-))}
-          {approvedFields.length === 0 && (
-            <div className="no-fields-message">
-              ยังไม่มีสนาม <strong>{selectedSportName}</strong> สำหรับกีฬานี้
-            </div>
-          )}
-        </div>
+        {dataLoading ? (
+          <div className="loading-data">
+            <div className="loading-data-spinner"></div>
+          </div>
+        ) : approvedFields.length > 0 ? (
+          <div className="grid-home">
+            {approvedFields.map((field, index) => (
+              <div
+                key={`${field.field_id}-${index}`}
+                className="card-home"
+                onClick={() => router.push(`/profile/${field.field_id}`)}
+              >
+                <img
+                  src={
+                    field.img_field
+                      ? `${API_URL}/${field.img_field}`
+                      : "https://via.placeholder.com/300x200"
+                  }
+                  alt={field.field_name}
+                  className="card-img-home"
+                />
+                <div className="card-body-home">
+                  <h3>{field.field_name}</h3>
+                  <div className="firsttime-home">
+                    <p className="filedname">
+                      <span className="first-label-time">เปิดเวลา: </span>
+                      {field.open_hours} น. - {field.close_hours} น.
+                    </p>
+                  </div>
+                  <div className="firstopen-home">
+                    <p>
+                      <span className="first-label-time">วันทำการ: </span>
+                      {convertToThaiDays(field.open_days)}
+                    </p>
+                  </div>
+                  <div className="firstopen-home">
+                    <p>
+                      <span className="first-label-time">กีฬา: </span>
+                      {field.sport_names?.join(" / ")}
+                    </p>
+                  </div>
+                  <div className="reviwe-container-home">
+                    <strong className="reviwe-star-home">
+    
+                      รีวิว ★★★★★</strong>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="no-fields-message">
+            ยังไม่มีสนาม <strong>{selectedSportName}</strong> สำหรับกีฬานี้
+          </div>
+        )}
       </div>
     </>
   );

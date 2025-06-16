@@ -7,6 +7,7 @@ import Link from "next/link";
 
 export default function Register() {
   const { user, isLoading } = useAuth();
+  const [startProcessLoad, SetstartProcessLoad] = useState(false);
 
   useEffect(() => {
     if (isLoading) return;
@@ -169,7 +170,9 @@ export default function Register() {
     }
 
     if (!newErrors.user_name && !newErrors.email) {
+      SetstartProcessLoad(true);
       try {
+        await new Promise((resolve) => setTimeout(resolve, 200));
         const response = await Promise.all([
           fetch(
             `${API_URL}/register/check-duplicate?field=user_name&value=${formData.user_name}`
@@ -195,6 +198,8 @@ export default function Register() {
         console.error("Error checking duplicates:", error);
         newErrors.serverError =
           "เกิดข้อผิดพลาดระหว่างการตรวจสอบอีเมล/ชื่อผู้ใช้";
+      } finally {
+        SetstartProcessLoad(false);
       }
     }
 
@@ -203,8 +208,9 @@ export default function Register() {
     if (Object.keys(newErrors).length > 0) {
       return;
     }
-
+    SetstartProcessLoad(true);
     try {
+      await new Promise((resolve) => setTimeout(resolve, 200));
       const response = await fetch(`${API_URL}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -217,10 +223,10 @@ export default function Register() {
         return;
       }
 
-      setSuccessMessage("ลงทะเบียนสำเร็จ");
+      setSuccessMessage("ลงทะเบียนบัญชีสำเร็จ");
       setTimeout(() => {
-        router.replace("/login");
-      }, 1000);
+        router.push("/login");
+      }, 3000);
 
       setFormData({
         user_name: "",
@@ -242,8 +248,17 @@ export default function Register() {
       });
     } catch (error) {
       setErrors({ serverError: "เกิดข้อผิดพลาดระหว่างการลงทะเบียน" });
+    } finally {
+      SetstartProcessLoad(false);
     }
   };
+
+  // if (startProcessLoad)
+  //   return (
+  //     <div className="loading-overlay">
+  //       <div className="loading-spinner"></div>
+  //     </div>
+  //   );
 
   return (
     <div className="register-container">
@@ -359,17 +374,21 @@ export default function Register() {
         <button className="register-button" type="submit">
           ลงทะเบียน
         </button>
-        <div className="login-title">
-          <Link href="/login" className="login-link">
-            หรือคุณมีบัญชีอยู่แล้ว Login เลย
-          </Link>
-        </div>
-
+        {startProcessLoad && (
+          <div className="loading-overlay">
+            <div className="loading-spinner"></div>
+          </div>
+        )}
         {successMessage && (
           <div className="success-message">
             <i className="fas fa-check-circle"></i> {successMessage}
           </div>
         )}
+        <div className="login-title">
+          <Link href="/login" className="login-link">
+            หรือคุณมีบัญชีอยู่แล้ว Login เลย
+          </Link>
+        </div>
 
         {errors.serverError && (
           <p className="error-message">

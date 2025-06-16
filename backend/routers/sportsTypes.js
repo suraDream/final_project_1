@@ -103,20 +103,23 @@ router.get("/preview", async (req, res) => {
 
   try {
     const query = `
-      SELECT DISTINCT
-        field.field_id,
-        field.field_name,
-        field.img_field,
-        field.open_hours,
-        field.close_hours,
-        field.open_days,
-        sports_types.sport_name
-      FROM field
-      INNER JOIN sub_field ON field.field_id = sub_field.field_id
-      INNER JOIN sports_types ON sub_field.sport_id = sports_types.sport_id
-      WHERE field.status = 'ผ่านการอนุมัติ'
-      ${sportId ? `AND sports_types.sport_id = ${sportId}` : ''}  -- Filter by sport_id if provided
-      ORDER BY field.field_id ASC LIMIT 100;
+          SELECT 
+            field.field_id,
+            field.field_name,
+            field.img_field,
+            field.open_hours,
+            field.close_hours,
+            field.open_days,
+            
+            ARRAY_AGG(DISTINCT sports_types.sport_name) AS sport_names
+          FROM field
+          INNER JOIN sub_field ON field.field_id = sub_field.field_id
+          INNER JOIN sports_types ON sub_field.sport_id = sports_types.sport_id
+          WHERE field.status = 'ผ่านการอนุมัติ'
+          ${sportId ? `AND sports_types.sport_id = ${sportId}` : ""}
+          GROUP BY field.field_id, field.field_name, field.img_field, field.open_hours, field.close_hours, field.open_days
+          ORDER BY field.field_id DESC
+          LIMIT 100;
     `;
 
     const result = await pool.query(query);

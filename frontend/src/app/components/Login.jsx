@@ -1,6 +1,6 @@
 "use client";
-import { useRouter,useSearchParams } from "next/navigation";
-import React, { useState, useEffect, } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import React, { useState, useEffect } from "react";
 import "@/app/css/login.css";
 import { useAuth } from "@/app/contexts/AuthContext";
 import Link from "next/link";
@@ -15,16 +15,15 @@ export default function Login() {
   const [message, setMessage] = useState({ text: "", type: "" });
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
+  const [startProcessLoad, SetstartProcessLoad] = useState(false);
   const searchParams = useSearchParams();
-const rawRedirect = searchParams.get("redirectTo");
-const redirectTo = rawRedirect && rawRedirect.startsWith("/bookingDetail")
-  ? rawRedirect
-  : "/";
+  const redirect = searchParams.get("redirect") || "/";
 
-
-
-
-
+  useEffect(() => {
+    if (!isLoading && user) {
+      router.replace(redirect);
+    }
+  }, [user, isLoading, redirect]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -33,8 +32,9 @@ const redirectTo = rawRedirect && rawRedirect.startsWith("/bookingDetail")
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    SetstartProcessLoad(true);
     try {
+      await new Promise((resolve) => setTimeout(resolve, 500));
       const response = await fetch(`${API_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -54,25 +54,18 @@ const redirectTo = rawRedirect && rawRedirect.startsWith("/bookingDetail")
       });
 
       if (res.ok) {
+        setMessage({ text: "เข้าสู่ระบบสำเร็จ", type: "success" });
         const userData = await res.json();
         setUser(userData);
-        console.log("userData:", userData);
-        console.log("redirectTo:", redirectTo);
-        await new Promise((resolve) => setTimeout(resolve, 500));
-
-        if (userData?.status !== "ตรวจสอบแล้ว") {
-          router.replace("/verification");
-        } else {
-          router.push(redirectTo);
-        }
+        router.push("/");
       }
     } catch (error) {
       console.error("Error:", error);
       setMessage({ text: "เกิดข้อผิดพลาดระหว่างเข้าสู่ระบบ", type: "error" });
+    } finally {
+      SetstartProcessLoad(false);
     }
   };
-
-  
 
   return (
     <div className="login-container">
@@ -109,9 +102,14 @@ const redirectTo = rawRedirect && rawRedirect.startsWith("/bookingDetail")
             </button>
           </div>
         </div>
-        <button className="login-button" type="submit">
-          Login
+        <button
+          className="login-button"
+          type="submit"
+          disabled={startProcessLoad}
+        >
+          {startProcessLoad ? "กำลังเข้าสู่ระบบ..." : "Login"}
         </button>
+
         <div className="reset-password">
           <Link href="/resetPassword" className="reset-link">
             ลืมรหัสผ่าน

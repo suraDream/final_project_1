@@ -5,6 +5,7 @@
 .admin-manager-container {
   width: 90%;
   max-width: 1200px;
+  min-height: 700px;
   margin: 100px auto;
   padding: 20px;
   background: #ffffff;
@@ -12,33 +13,10 @@
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.load {
-  font-size: 2rem;
-  color: #555;
-  text-align: center;
-  padding: 3rem;
-  width: 100%;
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: fixed;
-  top: 0;
-  left: 0;
-  background-color: rgba(255, 255, 255, 0.8);
-  z-index: 9999;
-  animation: fadeIn 1s ease-in-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.user-container-mannager {
+  background-color: #084fac;
+  max-height: 700px;
+  overflow-y: auto;
 }
 
 .Title {
@@ -236,42 +214,6 @@
 .cancelbtn-user {
   background-color: #dc3545;
   color: white;
-}
-
-.admin-manager-container .message-box {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: white;
-  border: 2px solid #ccc;
-  padding: 20px 30px;
-  z-index: 1000;
-  border-radius: 8px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-}
-
-.admin-manager-container .message-box.error {
-  display: flex;
-  align-items: center;
-  background-color: #ffd4cc;
-}
-.admin-manager-container .message-box.error p {
-  color: #d90429;
-  font-size: 14px;
-}
-
-.admin-manager-container .message-box.success {
-  background-color: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
-  font-size: 14px;
-  display: flex;
-}
-
-.admin-manager-container .message-box.success p {
-  color: #155724;
-  font-size: 14px;
 }
 
 /* /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// */
