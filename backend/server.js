@@ -52,6 +52,7 @@ const profile = require("./routers/profile");
 const posts = require("./routers/posts");
 const booking = require("./routers/booking")(io);
 const reviews = require("./routers/reviews");
+const statistics = require("./routers/statistics");
 
 app.get("/", (req, res) => {
   res.send("Welcome to the API");
@@ -69,6 +70,7 @@ app.use("/profile", profile);
 app.use("/posts", posts);
 app.use("/booking",booking)
 app.use("/reviews",reviews)
+app.use("/statistics",statistics)
 io.on("connection", (socket) => {
   console.log(" Client connected:", socket.id);
 

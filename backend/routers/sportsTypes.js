@@ -110,7 +110,6 @@ router.get("/preview", async (req, res) => {
             field.open_hours,
             field.close_hours,
             field.open_days,
-            
             ARRAY_AGG(DISTINCT sports_types.sport_name) AS sport_names
           FROM field
           INNER JOIN sub_field ON field.field_id = sub_field.field_id

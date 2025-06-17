@@ -38,7 +38,8 @@ export default function CheckFieldDetail() {
   const router = useRouter();
   const [dataLoading, setDataLoading] = useState(true);
   const [startProcessLoad, SetstartProcessLoad] = useState(false);
-
+  const [reviewData,setReviewData] = useState([])
+  const [selectedRating, setSelectedRating] = useState("ทั้งหมด")
   useEffect(() => {
     if (isLoading) return;
 
@@ -185,6 +186,22 @@ export default function CheckFieldDetail() {
 
     fetchFacilities();
   }, [fieldId]);
+
+  useEffect(()=>{
+    const fetchReviews = async () =>{
+      try{
+      const res = await fetch(`${API_URL}/reviews/rating/${fieldId}`)
+      const data = await res.json();
+      if(data.success){
+        console.log('reviewsData',data.data)
+        setReviewData(data.data)
+      }
+    } catch (error) {
+      console.error("Error fetching review:", error);
+    }
+  };
+  fetchReviews();
+  },[fieldId])
 
   const daysInThai = {
     Mon: "จันทร์",
@@ -371,6 +388,15 @@ export default function CheckFieldDetail() {
         <span className="spinner"></span>
       </div>
     );
+
+const handleFilterChange = (e) => {
+  setSelectedRating(e.target.value);
+};
+
+const filteredReviews = reviewData.filter((review) => {
+  if (selectedRating === "ทั้งหมด") return true;
+  return review.rating === parseInt(selectedRating);
+});
 
   return (
     <>
@@ -745,35 +771,49 @@ export default function CheckFieldDetail() {
                 </div>
               )}
             </div>
-            <div className="reviwe-head-profile">
-              <h1>คะแนนรีวิวสนามกีฬา</h1>
-              <select id="review-score" className="filter-profile">
-                <option value="5">ทั้งหมด</option>
-                <option value="5" >★★★★★</option>
-                <option value="4">★★★★☆</option>
-                <option value="3">★★★☆☆</option>
-                <option value="2">★★☆☆☆</option>
-                <option value="1">★☆☆☆☆</option>
-              </select>
-            </div>
-            <div className="reviwe-container-profile">
-              <div className="review-box-profile">
-                <div className="star-profile">★★★★★</div>
-                <p>
-                  สนามสะอาดดีครับ คนไม่เยอะสนามสะอาดดีครับ
-                  คนไม่เยอะสนามสะอาดดีครับ คนไม่เยอะสนามสะอาดดีครับ
-                  คนไม่เยอะสนามสะอาดดีครับ คนไม่เยอะสนามสะอาดดีครับ คนไม่เยอะ
-                </p>
-              </div>
-              <div className="review-box-profile">
-                <div className="star-profile">★★★★☆</div>
-                <p>สนามโอเค แต่ไม่มีที่จอดรถ</p>
-              </div>
-              <div className="review-box-profile">
-                <div className="star-profile">★★★☆☆</div>
-                <p>สนามพอใช้ได้แต่ลื่นนิดหน่อย</p>
-              </div>
-            </div>
+        <select
+  id="review-score"
+  className="filter-profile"
+  onChange={handleFilterChange}
+  value={selectedRating}
+>
+  <option value="ทั้งหมด">ทั้งหมด</option>
+  <option value="5">★★★★★</option>
+  <option value="4">★★★★☆</option>
+  <option value="3">★★★☆☆</option>
+  <option value="2">★★☆☆☆</option>
+  <option value="1">★☆☆☆☆</option>
+</select>
+
+     {filteredReviews.map((review, index) => (
+  <div className="reviwe-container-profile" key={review.review_id || index}>
+    <div className="review-box-profile">
+          <p>
+      คะแนน:
+      {[1, 2, 3, 4, 5].map((num) => (
+        <span
+          key={num}
+          style={{
+            color: num <= review.rating ? "#facc15" : "#ccc",
+            fontSize: "20px",
+          }}
+        >
+          ★
+        </span>
+      ))}
+    </p>
+    </div>
+    <div>
+      <p><strong>ชื่อ {review.first_name
+} {review.last_name}</strong></p>
+      <p>{review.comment}</p>
+    </div>
+  </div>
+))}
+
+
+
+
           </div>
         </aside>
       </div>

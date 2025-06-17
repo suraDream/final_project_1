@@ -44,7 +44,11 @@ router.get("/rating/:field_id", async (req, res) => {
   const { field_id } = req.params;
   try {
     const result = await pool.query(
-      "SELECT * FROM reviews WHERE field_id = $1",
+      `SELECT u.first_name, u.last_name, r.*
+FROM reviews r
+INNER JOIN users u ON r.user_id = u.user_id
+WHERE r.field_id = $1
+`,
       [field_id]
     );
     res.json({ success: true, data: result.rows });
