@@ -80,7 +80,7 @@ export default function HomePage() {
           setMessageType("error");
         } else {
           setApprovedFields(data);
-          console.log('approvefield',data)
+          console.log("approvefield", data);
         }
       } catch (error) {
         console.error("Error fetching approved fields:", error);
@@ -201,8 +201,34 @@ export default function HomePage() {
                   </div>
                   <div className="reviwe-container-home">
                     <strong className="reviwe-star-home">
-    
-                      รีวิว ★★★★★</strong>
+                      <p>คะแนนรีวิว {field.avg_rating}</p>
+                      {[1, 2, 3, 4, 5].map((num) => {
+                        // ถ้า avg_rating มีเศษทศนิยม >= 0.8 ให้ปัดขึ้นเป็นเต็มดาว
+                        const roundedRating =
+                          Math.floor(field.avg_rating) +
+                          (field.avg_rating % 1 >= 0.8 ? 1 : 0);
+
+                        const isFull = num <= roundedRating;
+                        // ถ้าไม่เต็ม ให้เช็คว่าควรเป็นดาวครึ่งดวงมั้ย (ตอนนี้เงื่อนไขนี้จะเกิดขึ้นแค่กรณีเศษ < 0.8)
+                        const isHalf =
+                          !isFull &&
+                          num - 0.5 <= field.avg_rating &&
+                          field.avg_rating % 1 < 0.8;
+
+                        return (
+                          <span
+                            key={num}
+                            style={{
+                              color: "#facc15",
+                              fontSize: "20px",
+                              marginRight: "2px",
+                            }}
+                          >
+                            {isFull ? "★" : isHalf ? "⯨" : "☆"}
+                          </span>
+                        );
+                      })}
+                    </strong>
                   </div>
                 </div>
               </div>
