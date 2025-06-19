@@ -80,7 +80,7 @@ if (filters.status) queryParams.append("status", filters.status);
 
         await new Promise((resolve) => setTimeout(resolve, 200));
         const res = await fetch(
-          `${API_URL}/booking/my-orders/${fieldId}?${queryParams.toString()}`,
+          `${API_URL}/statistics/${fieldId}?${queryParams.toString()}`,
           {
             credentials: "include",
           }
@@ -339,49 +339,60 @@ if (filters.status) queryParams.append("status", filters.status);
             </div>
           </div>
         ) : booking.length > 0 ? (
-           <table className="manager-table-user">
-                  <thead>
-                    <tr>
-                  <th>ชื่อผู้จอง</th>
-                  <th>วันที่จอง</th>
-                  <th>สนาม</th>
-                  <th>สนามย่อย</th>
-                  <th>เวลา</th>
-                  <th>กิจกรรม</th>
-                  <th>มัดจำ</th>
-                  <th>ราคารวมสุทธิ</th>
-                  </tr>
-                  </thead>
-          
-            {booking.map((item, index) => (
-              <tr key={index} className="booking-card">
-               
-                  <td>
-                    {item.first_name} {item.last_name}
-   
-                  </td>
-                  <td>{formatDate(item.start_date)}</td>
-                  <td>{item.field_name}</td>
-                  <td>{item.sub_field_name}</td>
-                  <td>{item.start_time} - {item.end_time}</td>
-                  <td>{item.activity}</td>
-                  <td>{item.price_deposit}</td>
-                  <td>{item.total_price}</td>
+<table className="manager-table-user">
+  <thead>
+    <tr>
+      <th>ชื่อผู้จอง</th>
+      <th>วันที่จอง</th>
+      <th>สนาม</th>
+      <th>สนามย่อย</th>
+      <th>เวลา</th>
+      <th>กิจกรรม</th>
+      <th>มัดจำ</th>
+      <th>ราคารวมสุทธิ</th>
+      <th>สิ่งอำนวยความสะดวก</th>
+      <th>คะแนนรีวิว</th>
+      <th>คอมเมนต์</th>
+    </tr>
+  </thead>
+<tbody>
+  {booking.map((item, index) => (
+    <tr key={index} className="booking-card">
+      <td>{item.first_name} {item.last_name}</td>
+      <td>{formatDate(item.start_date)}</td>
+      <td>{item.field_name}</td>
+      <td>{item.sub_field_name}</td>
+      <td>{item.start_time} - {item.end_time}</td>
+      <td>{item.activity}</td>
+      <td>{item.price_deposit}</td>
+      <td>{item.total_price}</td>
+<td>
+  {Array.isArray(item.facilities) && item.facilities.length > 0
+    ? item.facilities.map((fac, i) => (
+        <span key={i}>
+          {fac.fac_name} 
+          {i < item.facilities.length - 1 ? ", " : ""}
+        </span>
+      ))
+    : "ไมมี"}
+</td>
+<td>{item.status !== 'complete'
+  ? "ยังไม่มีรีวิว"
+  : item.rating != null ? item.rating : "ไม่มีรีวิว"}</td>
+<td>{item.status !== 'complete'
+  ? "ยังไม่มีคอมเมนต์"
+  : item.comment != null ? item.commentg : "ไม่มีรีวิว"}</td>
 
-             
-                 
-                <button
-                  className="detail-button"
-                  onClick={() =>
-                    router.push(`/bookingDetail/${item.booking_id}`)
-                  }
-                >
-                  ดูรายละเอียด
-                </button>
-              </tr>
-            ))}
-         
-           </table>
+
+<td>{item.status}</td>
+
+    </tr>
+  ))}
+</tbody>
+
+</table>
+
+
         ) : (
           <h1 className="booking-list">ไม่พบคำสั่งจอง</h1>
         )}

@@ -660,13 +660,13 @@ WHERE b.field_id = $1
   b.selected_slots,
   p.deposit_slip,
   p.total_slip,
-  facs.facilities  -- ✅ เพิ่มตรงนี้
+  facs.facilities  -- 
 FROM bookings b
 LEFT JOIN field f ON b.field_id = f.field_id
 LEFT JOIN sub_field sf ON b.sub_field_id = sf.sub_field_id
 LEFT JOIN users u ON u.user_id = b.user_id
 
--- ✅ JOIN ข้อมูลการชำระเงินล่าสุด
+--  JOIN ข้อมูลการชำระเงินล่าสุด
 LEFT JOIN LATERAL (
   SELECT deposit_slip, total_slip
   FROM payment
@@ -675,7 +675,7 @@ LEFT JOIN LATERAL (
   LIMIT 1
 ) p ON true
 
--- ✅ JOIN facilities แบบ LATERAL
+-- JOIN facilities แบบ LATERAL
 LEFT JOIN LATERAL (
   SELECT COALESCE(json_agg(jsonb_build_object(
     'field_fac_id', bf.field_fac_id,
