@@ -10,6 +10,7 @@ export default function Statistics() {
   const { user, isLoading } = useAuth();
   const [booking, setMybooking] = useState([]);
   const [filters, setFilters] = useState({
+    bookingDate:"",
     startDate: "",
     endDate: "",
     status: "",
@@ -23,6 +24,7 @@ export default function Statistics() {
   const [messageType, setMessageType] = useState(""); // State for message type (error, success)
   const [fieldName, setFieldName] = useState(""); // เพิ่ม state สำหรับชื่อสนาม
   const [dataLoading, setDataLoading] = useState(true);
+  const [useDateRange, setUseDateRange] = useState(false);
 
   useEffect(() => {
     if (isLoading) return;
@@ -70,11 +72,12 @@ export default function Statistics() {
       if (!fieldId) return;
       try {
         // แก้ไขการส่ง parameters
-        const queryParams = new URLSearchParams();
-        if (filters.startDate)
-          queryParams.append("startDate", filters.startDate);
-        if (filters.endDate) queryParams.append("endDate", filters.endDate);
-        if (filters.status) queryParams.append("status", filters.status);
+           const queryParams = new URLSearchParams();
+if (filters.bookingDate) queryParams.append("bookingDate", filters.bookingDate);
+if (filters.startDate) queryParams.append("startDate", filters.startDate);
+if (filters.endDate) queryParams.append("endDate", filters.endDate);
+if (filters.status) queryParams.append("status", filters.status);
+
         await new Promise((resolve) => setTimeout(resolve, 200));
         const res = await fetch(
           `${API_URL}/booking/my-orders/${fieldId}?${queryParams.toString()}`,
@@ -197,33 +200,66 @@ export default function Statistics() {
         <h1>รายการจองสนาม {fieldName}</h1>
         <div className="filters">
           <div className="date-range-filter">
-            <label>
-              วันที่เริ่ม:
-              {(filters.startDate || filters.endDate) && (
-                <>{filters.startDate && formatDate(filters.startDate)}</>
-              )}
-              <input
-                type="date"
-                name="startDate"
-                value={filters.startDate}
-                onChange={handleFilterChange}
-              />
-            </label>
+          
+          <button
+      type="button"
+      onClick={() => {
+        setUseDateRange((prev) => !prev);
+        // เคลียร์ค่าที่ไม่ได้ใช้
+        setFilters((prev) => ({
+          ...prev,
+          bookingDate: useDateRange ? prev.bookingDate : "",
+          startDate: useDateRange ? "" : prev.startDate,
+          endDate: useDateRange ? "" : prev.endDate,
+        }));
+      }}
+      style={{ marginBottom: "10px" }}
+    >
+      {useDateRange ? "กลับไปใช้วันที่จอง" : "ใช้ช่วงวันที่แทน"}
+    </button>  
+        {!useDateRange && (
+      <label>
+        วันที่จอง:
+        {filters.bookingDate && <>{formatDate(filters.bookingDate)}</>}
+        <input
+          type="date"
+          name="bookingDate"
+          value={filters.bookingDate}
+          onChange={handleFilterChange}
+        />
+      </label>
+    )}
 
-            <label>
-              ถึงวันที่:
-              {(filters.startDate || filters.endDate) && (
-                <>{filters.endDate && formatDate(filters.endDate)}</>
-              )}
-              <input
-                type="date"
-                name="endDate"
-                value={filters.endDate}
-                onChange={handleFilterChange}
-                min={filters.startDate} // ป้องกันเลือกวันที่สิ้นสุดก่อนวันที่เริ่มต้น
-              />
-            </label>
+    {useDateRange && (
+      <>
+        <label>
+          วันที่เริ่ม:
+          {filters.startDate && <>{formatDate(filters.startDate)}</>}
+          <input
+            type="date"
+            name="startDate"
+            value={filters.startDate}
+            onChange={handleFilterChange}
+          />
+        </label>
+
+        <label>
+          ถึงวันที่:
+          {filters.endDate && <>{formatDate(filters.endDate)}</>}
+          <input
+            type="date"
+            name="endDate"
+            value={filters.endDate}
+            onChange={handleFilterChange}
+            min={filters.startDate}
+          />
+        </label>
+      </>
+    )}
+
           </div>
+
+          
 
           <label>
             สถานะ:
@@ -303,87 +339,37 @@ export default function Statistics() {
             </div>
           </div>
         ) : booking.length > 0 ? (
-          <ul className="booking-list">
+           <table className="manager-table-user">
+                  <thead>
+                    <tr>
+                  <th>ชื่อผู้จอง</th>
+                  <th>วันที่จอง</th>
+                  <th>สนาม</th>
+                  <th>สนามย่อย</th>
+                  <th>เวลา</th>
+                  <th>กิจกรรม</th>
+                  <th>มัดจำ</th>
+                  <th>ราคารวมสุทธิ</th>
+                  </tr>
+                  </thead>
+          
             {booking.map((item, index) => (
-              <li key={index} className="booking-card">
-                <div className="booking-detail">
-                  <p>
-                    <strong>ชื่อผู้จอง: </strong>
+              <tr key={index} className="booking-card">
+               
+                  <td>
                     {item.first_name} {item.last_name}
-                  </p>
-                  <p>
-                    <strong>วันที่จอง: </strong>
-                    {formatDate(item.start_date)}
-                  </p>
-                  <p>
-                    <strong>สนาม: </strong>
-                    {item.field_name}
-                  </p>
-                  <p>
-                    <strong>สนามย่อย: </strong>
-                    {item.sub_field_name}
-                  </p>
-                  <div className="hours-container-my-order">
-                    <div className="total-hours-order">
-                      <p>
-                        <strong> เวลา: </strong>
-                        {item.start_time} - {item.end_time}
-                      </p>
-                      <p>
-                        <strong> สามารถยกเลิกก่อนเวลาเริ่ม: </strong>
-                        {item.cancel_hours} ชม.
-                      </p>
-                    </div>
-                    <div className="total-date-order">
-                      <p>
-                        ยกเลิกได้ถึง <strong>วันที่:</strong>{" "}
-                        {formatDate(item.start_date)} <br />
-                        <strong> ** เวลา:</strong>{" "}
-                        {getCancelDeadlineTime(
-                          item.start_date,
-                          item.start_time,
-                          item.cancel_hours
-                        )}{" "}
-                        น. **
-                      </p>
-                    </div>
-                  </div>
-                  <div className="price-container-my-order">
-                    <strong>{item.activity}</strong>
-                    <div className="price-deposit-order">
-                      <p>
-                        <strong>มัดจำ: </strong>
-                        {item.price_deposit} บาท
-                      </p>
-                    </div>
-                    <div>
-                      <p>
-                        <strong>ราคาหลังหักค่ามัดจำ: </strong>
-                        {item.total_remaining} บาท
-                      </p>
-                    </div>
-                    <div className="total-remaining-order">
-                      <p>
-                        <strong>ราคารวมสุทธิ: </strong>
-                        {item.total_price} บาท
-                      </p>
-                    </div>
-                  </div>
-                  <p>
-                    <strong>สถานะ:</strong>{" "}
-                    <span className={`status-text-detail ${item.status}`}>
-                      {item.status === "pending"
-                        ? "รอตรวจสอบ"
-                        : item.status === "approved"
-                        ? "อนุมัติแล้ว"
-                        : item.status === "rejected"
-                        ? "ไม่อนุมัติ"
-                        : item.status === "complete"
-                        ? "เสร็จสมบูรณ์"
-                        : "ไม่ทราบสถานะ"}
-                    </span>
-                  </p>
-                </div>
+   
+                  </td>
+                  <td>{formatDate(item.start_date)}</td>
+                  <td>{item.field_name}</td>
+                  <td>{item.sub_field_name}</td>
+                  <td>{item.start_time} - {item.end_time}</td>
+                  <td>{item.activity}</td>
+                  <td>{item.price_deposit}</td>
+                  <td>{item.total_price}</td>
+
+             
+                 
                 <button
                   className="detail-button"
                   onClick={() =>
@@ -392,9 +378,10 @@ export default function Statistics() {
                 >
                   ดูรายละเอียด
                 </button>
-              </li>
+              </tr>
             ))}
-          </ul>
+         
+           </table>
         ) : (
           <h1 className="booking-list">ไม่พบคำสั่งจอง</h1>
         )}

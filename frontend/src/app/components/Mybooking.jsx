@@ -81,6 +81,7 @@ export default function Mybooking() {
 
         if (data.success) {
           setMybooking(data.data);
+          console.log("Booking Data:", data.data);
           setUserName(data.user?.user_name || "");
           setUserInfo(
             `${data.user?.first_name || ""} ${data.user?.last_name || ""}`
@@ -157,6 +158,15 @@ export default function Mybooking() {
       return () => clearTimeout(timer);
     }
   }, [message]);
+
+    const getFacilityNetPrice = (item) => {
+    const totalFac = (item.facilities || []).reduce(
+      (sum, fac) => sum + (parseFloat(fac.fac_price) || 0),
+      0
+    );
+    return Math.abs(totalFac - (parseFloat(item.total_remaining) || 0));
+  };
+
 
   return (
     <>
@@ -250,17 +260,37 @@ export default function Mybooking() {
                   <div className="price-container-my-order">
                     <strong>{item.activity}</strong>
                     <div className="price-deposit-order">
-                      <p>
+                     <p>
                         <strong>มัดจำ: </strong>
                         {item.price_deposit} บาท
                       </p>
                     </div>
-                    <div>
-                      <p>
-                        <strong>ราคาหลังหักค่ามัดจำ: </strong>
-                        {item.total_remaining} บาท
-                      </p>
-                    </div>
+             
+
+{Array.isArray(item.facilities) && (
+  <div className="facility-container">
+    <strong>
+      ราคาลบมัดจำ:{" "}
+      {item.facilities.length > 0
+        ? getFacilityNetPrice(item)
+        : item.total_remaining} บาท
+    </strong>
+    <div>
+      <strong>สิ่งอำนวยความสะดวก:</strong>
+      {item.facilities.length > 0 ? (
+        <ul className="facility-list">
+          {item.facilities.map((fac, i) => (
+            <li key={i}>
+              {fac.fac_name} ({fac.fac_price} บาท)
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <span>ไม่มี</span>
+      )}
+    </div>
+  </div>
+)}
                     <div className="total-remaining-order">
                       <p>
                         <strong>ราคารวมสุทธิ: </strong>

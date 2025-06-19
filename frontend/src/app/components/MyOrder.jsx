@@ -185,6 +185,15 @@ export default function Myorder() {
     }
   }, [message]);
 
+  // ฟังก์ชันคำนวณราคาสิ่งอำนวยความสะดวกสุทธิ
+  const getFacilityNetPrice = (item) => {
+    const totalFac = (item.facilities || []).reduce(
+      (sum, fac) => sum + (parseFloat(fac.fac_price) || 0),
+      0
+    );
+    return Math.abs(totalFac - (parseFloat(item.total_remaining) || 0));
+  };
+
   return (
     <>
       {message && (
@@ -306,6 +315,8 @@ export default function Myorder() {
             {booking.map((item, index) => (
               <li key={index} className="booking-card">
                 <div className="booking-detail">
+                  
+                
                   <p>
                     <strong>ชื่อผู้จอง: </strong>
                     {item.first_name} {item.last_name}
@@ -355,12 +366,38 @@ export default function Myorder() {
                         {item.price_deposit} บาท
                       </p>
                     </div>
-                    <div>
-                      <p>
-                        <strong>ราคาหลังหักค่ามัดจำ: </strong>
-                        {item.total_remaining} บาท
-                      </p>
-                    </div>
+             
+
+{Array.isArray(item.facilities) && (
+  <div className="facility-container">
+    <strong>
+      ราคาลบมัดจำ:{" "}
+      {item.facilities.length > 0
+        ? getFacilityNetPrice(item)
+        : item.total_remaining} บาท
+    </strong>
+    <div>
+      <strong>สิ่งอำนวยความสะดวก:</strong>
+      {item.facilities.length > 0 ? (
+        <ul className="facility-list">
+          {item.facilities.map((fac, i) => (
+            <li key={i}>
+              {fac.fac_name} ({fac.fac_price} บาท)
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <span>ไม่มี</span>
+      )}
+    </div>
+  </div>
+)}
+
+
+
+
+
+
                     <div className="total-remaining-order">
                       <p>
                         <strong>ราคารวมสุทธิ: </strong>

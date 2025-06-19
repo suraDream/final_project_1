@@ -364,7 +364,7 @@ module.exports = function (io) {
     }
   );
 
-  router.get("/my-bookings/:user_id", authMiddleware, async (req, res) => {
+ router.get("/my-bookings/:user_id", authMiddleware, async (req, res) => {
     const { user_id } = req.params;
     const { date, status } = req.query;
 
@@ -384,7 +384,6 @@ module.exports = function (io) {
 
       const userInfo = userResult.rows[0];
 
-    
       let query = `
       SELECT 
         b.booking_id,
@@ -409,12 +408,21 @@ module.exports = function (io) {
         b.status,
         b.activity,
         b.selected_slots,
-        bf.fac_name AS facility_name,
-        bf.field_fac_id
+    
+
+        (
+  SELECT COALESCE(json_agg(jsonb_build_object(
+    'field_fac_id', bf.field_fac_id,
+    'fac_name', bf.fac_name,
+    'fac_price', ff.fac_price
+  )), '[]')
+  FROM booking_fac bf
+  LEFT JOIN field_facilities ff ON ff.field_fac_id = bf.field_fac_id
+  WHERE bf.booking_id = b.booking_id
+) AS facilities
       FROM bookings b
       LEFT JOIN field f ON b.field_id = f.field_id
       LEFT JOIN sub_field sf ON b.sub_field_id = sf.sub_field_id
-      LEFT JOIN booking_fac bf ON bf.booking_id = b.booking_id
       WHERE b.user_id = $1
     `;
 
@@ -463,7 +471,7 @@ module.exports = function (io) {
   router.get("/my-orders/:field_id", authMiddleware, async (req, res) => {
     const { field_id } = req.params;
     // แก้ไขรับ startDate และ endDate แทน date
-    const { startDate, endDate, status } = req.query;
+    const { startDate, endDate, status,bookingDate } = req.query;
     const user_id = req.user.user_id;
     const user_role = req.user.role;
 
@@ -498,26 +506,49 @@ module.exports = function (io) {
       }
 
       let query = `
-      SELECT 
-        b.booking_id, b.user_id, b.field_id,
-        u.first_name, u.last_name, u.email,
-        f.field_name, f.gps_location, f.price_deposit, f.cancel_hours,f.status AS field_status,
-        b.sub_field_id, sf.sub_field_name, sf.price,
-        b.booking_date, b.start_date, b.start_time, b.end_date, b.end_time,
-        b.total_hours, b.total_price, b.total_remaining,
-        b.pay_method, b.status, b.activity, b.selected_slots
-      FROM bookings b
-      LEFT JOIN field f ON b.field_id = f.field_id
-      LEFT JOIN sub_field sf ON b.sub_field_id = sf.sub_field_id
-      INNER JOIN users u ON u.user_id = b.user_id
-      WHERE b.field_id = $1
+SELECT 
+  b.booking_id, b.user_id, b.field_id,
+  u.first_name, u.last_name, u.email,
+  f.field_name, f.gps_location, f.price_deposit, f.cancel_hours, f.status AS field_status,
+  b.sub_field_id, sf.sub_field_name, sf.price AS sub_field_price,
+  b.booking_date, b.start_date, b.start_time, b.end_date, b.end_time,
+  b.total_hours, b.total_price, b.total_remaining,
+  b.pay_method, b.status, b.activity, b.selected_slots,
+
+  -- รวม facility เฉพาะของ booking นั้น
+(
+  SELECT COALESCE(json_agg(jsonb_build_object(
+    'field_fac_id', bf.field_fac_id,
+    'fac_name', bf.fac_name,
+    'fac_price', ff.fac_price
+  )), '[]')
+  FROM booking_fac bf
+  LEFT JOIN field_facilities ff ON ff.field_fac_id = bf.field_fac_id
+  WHERE bf.booking_id = b.booking_id
+) AS facilities
+
+
+FROM bookings b
+INNER JOIN users u ON u.user_id = b.user_id
+LEFT JOIN field f ON b.field_id = f.field_id
+LEFT JOIN sub_field sf ON b.sub_field_id = sf.sub_field_id
+
+WHERE b.field_id = $1
+
+
     `;
 
       let values = [field_id];
       let paramIndex = 2;
+      
 
+      if(bookingDate){
+        query += ` AND b.booking_date= $${paramIndex}`;
+        values.push(bookingDate);
+        paramIndex++
+      }
       // แก้ไขการกรองวันที่แบบช่วง
-      if (startDate && endDate) {
+       else if (startDate && endDate) {
         // กรองแบบช่วงวันที่
         query += ` AND b.start_date BETWEEN $${paramIndex} AND $${paramIndex + 1}`;
         values.push(startDate, endDate);
@@ -598,53 +629,67 @@ module.exports = function (io) {
         const result = await pool.query(
           `
   SELECT 
-    b.booking_id,
-    b.user_id,
-    b.field_id,
-    u.first_name,
-    u.last_name,
-    u.email,
-    f.field_name,
-    f.user_id AS field_user_id,
-    f.name_bank,
-    f.account_holder,
-    f.number_bank, 
-    f.gps_location,
-    f.price_deposit,
-    f.cancel_hours,
-    b.sub_field_id,
-    sf.sub_field_name,
-    sf.price,
-    b.booking_date,
-    b.start_date,
-    b.start_time,
-    b.end_date,
-    b.end_time,
-    b.total_hours,
-    b.total_price,
-    b.total_remaining,
-    b.pay_method,
-    b.status,
-    b.activity,
-    b.selected_slots,
-    bf.fac_name AS facility_name,
-    bf.field_fac_id,
-    p.deposit_slip,
-    p.total_slip
-  FROM bookings b
-  LEFT JOIN field f ON b.field_id = f.field_id
-  LEFT JOIN sub_field sf ON b.sub_field_id = sf.sub_field_id
-  LEFT JOIN booking_fac bf ON bf.booking_id = b.booking_id
-  LEFT JOIN users u ON u.user_id = b.user_id
-  LEFT JOIN LATERAL (
-    SELECT deposit_slip, total_slip
-    FROM payment
-    WHERE booking_id = b.booking_id
-    ORDER BY payment_id DESC
-    LIMIT 1
-  ) p ON true
-  WHERE b.booking_id = $1
-  LIMIT 1;
+  b.booking_id,
+  b.user_id,
+  b.field_id,
+  u.first_name,
+  u.last_name,
+  u.email,
+  f.field_name,
+  f.user_id AS field_user_id,
+  f.name_bank,
+  f.account_holder,
+  f.number_bank, 
+  f.gps_location,
+  f.price_deposit,
+  f.cancel_hours,
+  b.sub_field_id,
+  sf.sub_field_name,
+  sf.price,
+  b.booking_date,
+  b.start_date,
+  b.start_time,
+  b.end_date,
+  b.end_time,
+  b.total_hours,
+  b.total_price,
+  b.total_remaining,
+  b.pay_method,
+  b.status,
+  b.activity,
+  b.selected_slots,
+  p.deposit_slip,
+  p.total_slip,
+  facs.facilities  -- ✅ เพิ่มตรงนี้
+FROM bookings b
+LEFT JOIN field f ON b.field_id = f.field_id
+LEFT JOIN sub_field sf ON b.sub_field_id = sf.sub_field_id
+LEFT JOIN users u ON u.user_id = b.user_id
+
+-- ✅ JOIN ข้อมูลการชำระเงินล่าสุด
+LEFT JOIN LATERAL (
+  SELECT deposit_slip, total_slip
+  FROM payment
+  WHERE booking_id = b.booking_id
+  ORDER BY payment_id DESC
+  LIMIT 1
+) p ON true
+
+-- ✅ JOIN facilities แบบ LATERAL
+LEFT JOIN LATERAL (
+  SELECT COALESCE(json_agg(jsonb_build_object(
+    'field_fac_id', bf.field_fac_id,
+    'fac_name', bf.fac_name,
+    'fac_price', ff.fac_price
+  )), '[]') AS facilities
+  FROM booking_fac bf
+  LEFT JOIN field_facilities ff ON ff.field_fac_id = bf.field_fac_id
+  WHERE bf.booking_id = b.booking_id
+) facs ON true
+
+WHERE b.booking_id = $1
+LIMIT 1;
+
   `,
           [booking_id]
         );

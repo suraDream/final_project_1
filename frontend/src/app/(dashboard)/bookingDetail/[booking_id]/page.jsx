@@ -537,7 +537,13 @@ useEffect(() => {
 
 console.log("reviewData",reviewData)
 
-
+    const getFacilityNetPrice = (item) => {
+    const totalFac = (item.facilities || []).reduce(
+      (sum, fac) => sum + (parseFloat(fac.fac_price) || 0),
+      0
+    );
+    return Math.abs(totalFac - (parseFloat(item.total_remaining) || 0));
+  };
 
   return (
     <>
@@ -608,11 +614,30 @@ console.log("reviewData",reviewData)
                   {booking.total_remaining} บาท
                 </p>
               </div>
-              <div className="total-remaining-detail">
-                <p>
-                  <strong> ราคาสุทธิ:</strong> {booking.total_price} บาท
-                </p>
-              </div>
+            {Array.isArray(booking.facilities) && (
+  <div className="facility-container">
+    <strong>
+      ค่าชั่วโมงหลังหักมัดจำ:{" "}
+      {booking.facilities.length > 0
+        ? getFacilityNetPrice(booking)
+        : booking.total_remaining} บาท
+    </strong>
+    <div>
+      <strong>สิ่งอำนวยความสะดวก:</strong>
+      {booking.facilities.length > 0 ? (
+        <ul className="facility-list">
+          {booking.facilities.map((fac, i) => (
+            <li key={i}>
+              {fac.fac_name} ({fac.fac_price} บาท)
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <span>ไม่มี</span>
+      )}
+    </div>
+  </div>
+)}
               <div className="total-remaining-detail">
                 <p>
                   <strong> การชำระเงินที่เลือก:</strong> {booking.pay_method}
