@@ -31,17 +31,17 @@ export default function BookingDetail() {
   const [startProcessLoad, SetstartProcessLoad] = useState(false);
   const [canUploadslip, setCanUploadslip] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
-const [rating, setRating] = useState(0);
-const [comment, setComment] = useState("");
-const handleOpenReviewModal = () => setShowReviewModal(true);
-const handleCloseReviewModal = () => {
-  setShowReviewModal(false);
-  setRating(0);
-  setComment("");
-};
-const [reviewData,setReviewData] = useState([]);
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const handleOpenReviewModal = () => setShowReviewModal(true);
+  const handleCloseReviewModal = () => {
+    setShowReviewModal(false);
+    setRating(0);
+    setComment("");
+  };
+  const [reviewData, setReviewData] = useState([]);
 
-const [fieldId,setFieldId] = useState('')
+  const [fieldId, setFieldId] = useState("");
   useEffect(() => {
     if (isLoading || !booking_id) return;
 
@@ -104,7 +104,7 @@ const [fieldId,setFieldId] = useState('')
       const data = await res.json();
       if (data.success) {
         setMybooking(data.data);
-        setFieldId(data.data.field_id)
+        setFieldId(data.data.field_id);
         console.log(" Booking Data:", data.data);
         console.log(" field_id:", data.data.field_id);
       } else {
@@ -209,7 +209,7 @@ const [fieldId,setFieldId] = useState('')
               : status === "rejected"
               ? "ไม่อนุมัติ"
               : status === "complete"
-               ? "เสร็จสมบูรณ์"
+              ? "การจองสำเร็จ"
               : status
           }`
         );
@@ -244,7 +244,7 @@ const [fieldId,setFieldId] = useState('')
       case "pending":
         return { text: "รอตรวจสอบ", className: "status-pending" };
       case "complete":
-        return { text: "เสร็จสมบูรณ์", className: "status-pending" };
+        return { text: "การจองสำเร็จ", className: "status-complete" };
       default:
         return { text: "ไม่ทราบสถานะ", className: "status-unknown" };
     }
@@ -252,9 +252,6 @@ const [fieldId,setFieldId] = useState('')
 
   const StatusChangeModal = ({ newStatus, onConfirm, onClose }) => {
     const { text, className } = getStatusLabel(newStatus);
-
-
-
 
     return (
       <div className="modal-overlay-order-detail">
@@ -321,6 +318,11 @@ const [fieldId,setFieldId] = useState('')
           credentials: "include",
         }
       );
+
+      const cencle_time = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString();
+      console.log("Cancel Time:", cencle_time);
+
+     
 
       const data = await res.json();
 
@@ -473,6 +475,14 @@ const [fieldId,setFieldId] = useState('')
     }
   };
 
+  const getFacilityNetPrice = (item) => {
+    const totalFac = (item.facilities || []).reduce(
+      (sum, fac) => sum + (parseFloat(fac.fac_price) || 0),
+      0
+    );
+    return Math.abs(totalFac - (parseFloat(item.total_remaining) || 0));
+  };
+
   useEffect(() => {
     if (message) {
       const timer = setTimeout(() => {
@@ -484,66 +494,82 @@ const [fieldId,setFieldId] = useState('')
     }
   }, [message]);
 
-useEffect(() => {
-  const fetchData = async () => {
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await fetch(`${API_URL}/reviews/get/${booking_id}`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          setReviewData(data.data);
+        } else {
+          setMessage("เกิดข้อผิดพลาด: " + data.message);
+          setMessageType("error");
+        }
+      } catch (error) {
+        setMessage("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้", error);
+        setMessageType("error");
+        console.error("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้", error);
+      } finally {
+        setDataLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [booking_id, bookingId]);
+
+  const handleSubmitReview = async () => {
+    if (!rating || rating < 1) {
+      setMessage("กรุณาให้คะแนนการรีวิว");
+      setMessageType("error");
+      return;
+    }
+
+    if (!comment || comment.trim().length < 5) {
+      setMessage("กรุณาเขียนรีวิวอย่างน้อย 5 ตัวอักษร");
+      setMessageType("error");
+      return;
+    }
+    SetstartProcessLoad(true);
     try {
-      const res = await fetch(`${API_URL}/reviews/get/${booking_id}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      const res = await fetch(`${API_URL}/reviews/post`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          booking_id: booking.booking_id,
+          field_id: booking.field_id,
+          rating,
+          comment,
+          user_id: user?.user_id,
+        }),
+        credentials: "include",
       });
 
-      const data = await res.json(); 
+      const data = await res.json();
       if (data.success) {
-        console.log('data', data.data);
-        setReviewData(data.data);
+        setMessage("เขียนรีวิวสำเร็จ");
+        setMessageType("success");
+        handleCloseReviewModal();
+        fetchData();
       } else {
-        alert("เกิดข้อผิดพลาด: " + data.message);
+        setMessage("เกิดข้อผิดพลาด: " + data.message);
+        setMessageType("error");
       }
     } catch (error) {
-      console.error("Error fetching review:", error);
+      setMessage("เกิดข้อผิดพลาด: " + error);
+      setMessageType("error");
+      console.error("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้", error);
+    } finally {
+      SetstartProcessLoad(false);
     }
   };
 
-  fetchData(); 
-}, [booking_id,bookingId]);
-
-
- const handleSubmitReview = async () => {
-  try {
-    const res = await fetch(`${API_URL}/reviews/post`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        booking_id: booking.booking_id,
-        field_id: booking.field_id,
-        rating,
-        comment,
-        user_id: user?.user_id,
-      }),
-    });
-
-    const data = await res.json();
-    if (data.success) {
-      alert("รีวิวสำเร็จ!");
-      handleCloseReviewModal();
-      fetchData();
-    } else {
-      alert("เกิดข้อผิดพลาด: " + data.message);
-    }
-  } catch (error) {
-    console.error("Error submitting review:", error);
-  }
-};
-
-console.log("reviewData",reviewData)
-
-    const getFacilityNetPrice = (item) => {
-    const totalFac = (item.facilities || []).reduce(
-      (sum, fac) => sum + (parseFloat(fac.fac_price) || 0),
-      0
-    );
-    return Math.abs(totalFac - (parseFloat(item.total_remaining) || 0));
-  };
+  console.log("reviewData", reviewData);
 
   return (
     <>
@@ -565,7 +591,7 @@ console.log("reviewData",reviewData)
               {booking.last_name}
             </p>
             <p>
-              <strong>วันที่:</strong> {formatDate(booking.start_date)}
+              <strong>วันที่จอง:</strong> {formatDate(booking.start_date)}
             </p>
             <p>
               <strong>สนาม:</strong> {booking.field_name}
@@ -573,100 +599,233 @@ console.log("reviewData",reviewData)
             <p>
               <strong>สนามย่อย:</strong> {booking.sub_field_name}
             </p>
-            <div className="hours-container-order-detail">
-              <div className="total-hours-detail">
-                <p>
-                  <strong> เวลา:</strong> {booking.start_time} -{" "}
-                  {booking.end_time} น.
-                </p>
-                <p>
-                  <strong> ชั่วโมงรวม:</strong>{" "}
-                  {calTotalHours(booking.total_hours)}
-                </p>
+
+            <div className="hours-detail-box">
+              {/* เวลาที่จอง */}
+              <div className="line-item-hours-detail">
+                <span>เวลา:</span>
+                <span>
+                  {booking.start_time} - {booking.end_time} น.
+                </span>
+              </div>
+              <div className="line-item-hours-detail">
+                <span>ชั่วโมงรวม:</span>
+                <span>{calTotalHours(booking.total_hours)}</span>
               </div>
 
-              <div className="total-cancel-hours-detail">
-                <p>
-                  ยกเลิกได้ถึง <strong>วันที่:</strong>{" "}
-                  {formatDate(booking.start_date)} <br />
-                  <strong>** เวลา:</strong>{" "}
+              <hr className="divider-hours-detail" />
+
+              {/* ยกเลิกได้ถึง */}
+              <div className="line-item-hours-detail cancel-info">
+                <span>ยกเลิกได้ถึง:</span>
+                <span>
+                  {formatDate(booking.start_date)} เวลา:{" "}
                   {getCancelDeadlineTime(
                     booking.start_date,
                     booking.start_time,
                     booking.cancel_hours
                   )}{" "}
-                  น. **
-                </p>
+                  น.
+                </span>
               </div>
             </div>
-            <div className="hours-container-order-detail">
-              <p>
-                <strong>{booking.activity}</strong>
-              </p>
-              <div className="price-deposit-detail">
-                <p>
-                  <strong> มัดจำ:</strong> {booking.price_deposit} บาท
-                </p>
-              </div>
-      
-            {Array.isArray(booking.facilities) && (
-  <div className="facility-container">
-    <strong>
-      ค่าชั่วโมงหลังหักมัดจำ:{" "}
-      {booking.facilities.length > 0
-        ? getFacilityNetPrice(booking)
-        : booking.total_remaining} บาท
-    </strong>
-    <div>
-      <strong>สิ่งอำนวยความสะดวก:</strong>
-      {booking.facilities.length > 0 ? (
-        <ul className="facility-list">
-          {booking.facilities.map((fac, i) => (
-            <li key={i}>
-              {fac.fac_name} ({fac.fac_price} บาท)
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <span>ไม่มี</span>
-      )}
-    </div>
-  </div>
-)}
-              <div className="total-remaining-detail">
-                <p>
-                  <strong> การชำระเงินที่เลือก:</strong> {booking.pay_method}
-                </p>
-              </div>
-            </div>
-            <div className="deposit-slip-container-order-detail">
-              {/*กรณีมี deposit_slip */}
-              {booking.deposit_slip || booking.total_slip ? (
-                <div>
-                  {booking.deposit_slip ? (
-                    <>
-                      <strong>สลิปมัดจำ</strong>
-                      <img
-                        src={`${API_URL}/${booking.deposit_slip}`}
-                        alt="สลิปมัดจำ"
-                        className="deposit-slip-order-detail"
-                      />
-                    </>
-                  ) : (
-                    <p>ไม่มีสลิปมัดจำ</p>
-                  )}
 
-                  {booking.total_slip ? (
-                    <div>
-                      <strong>สลิปยอดที่โอนส่วนที่เหลือ</strong>
-                      <img
-                        src={`${API_URL}/${booking.total_slip}`}
-                        alt="สลิปยอดคคงเหลือ"
-                        className="deposit-slip-order-detail"
-                      />
-                    </div>
-                  ) : (
-                    booking?.user_id === user?.user_id && (
+            <div className="booking-detail-box">
+              <div className="line-item-detail">
+                <span className="all-price-detail">กิจกรรม:</span>
+                <span className="all-price-detail">{booking.activity}</span>
+              </div>
+
+              {/* สนาม */}
+              <div className="line-item-detail">
+                <span className="all-price-detail">ราคาสนาม:</span>
+                <span className="all-price-detail">
+                  {booking.total_price -
+                    booking.price_deposit -
+                    (booking.facilities?.reduce(
+                      (sum, f) => sum + f.fac_price,
+                      0
+                    ) || 0)}{" "}
+                  บาท
+                </span>
+              </div>
+
+              {/* สิ่งอำนวยความสะดวก */}
+              {Array.isArray(booking.facilities) && (
+                <>
+                  <div className="line-item-detail">
+                    <span className="all-price-detail">
+                      สิ่งอำนวยความสะดวก:
+                    </span>
+                    <span></span>
+                  </div>
+                  <ul className="facility-list-detail">
+                    {booking.facilities.map((fac, index) => (
+                      <li key={index}>
+                        {fac.fac_name} <span>{fac.fac_price} บาท</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="line-item-detail">
+                    <span className="all-price-detail">
+                      รวมราคาสิ่งอำนวยความสะดวก:
+                    </span>
+                    <span className="all-price-detail">
+                      {booking.facilities.reduce(
+                        (sum, f) => sum + f.fac_price,
+                        0
+                      )}{" "}
+                      บาท
+                    </span>
+                  </div>
+                </>
+              )}
+
+              <hr className="divider-detail" />
+
+              <div className="line-item-detail highlight">
+                <span className="total-remianing-detail">
+                  รวมที่ต้องจ่าย: (ยอดคงเหลือ)
+                </span>
+                <span>+{booking.total_remaining} บาท</span>
+              </div>
+
+              <div className="line-item-detail plus">
+                <span className="total-deposit-detail">มัดจำ:</span>
+                <span>+{booking.price_deposit} บาท</span>
+              </div>
+
+              <hr className="divider-detail" />
+
+              <div className="line-item-detail total">
+                <span>ราคาสุทธิ:</span>
+                <span>{booking.total_price} บาท</span>
+              </div>
+
+              <div className="line-item-detail payment-method">
+                <span>การชำระเงิน:</span>
+                <span>{booking.pay_method}</span>
+              </div>
+            </div>
+
+            {(() => {
+              const today = new Date();
+              const startDate = new Date(booking.start_date);
+
+              today.setHours(0, 0, 0, 0);
+              startDate.setHours(0, 0, 0, 0);
+
+              if (startDate >= today) {
+                return (
+                  <div className="deposit-slip-container-order-detail">
+                    {/*กรณีมี deposit_slip */}
+                    {booking.deposit_slip || booking.total_slip ? (
+                      <div>
+                        {booking.deposit_slip ? (
+                          <>
+                            <strong>สลิปมัดจำ</strong>
+                            <img
+                              src={`${API_URL}/${booking.deposit_slip}`}
+                              alt="สลิปมัดจำ"
+                              className="deposit-slip-order-detail"
+                            />
+                          </>
+                        ) : (
+                          <p>ไม่มีสลิปมัดจำ</p>
+                        )}
+
+                        {booking.total_slip ? (
+                          <div>
+                            <strong>สลิปยอดที่โอนส่วนที่เหลือ</strong>
+                            <img
+                              src={`${API_URL}/${booking.total_slip}`}
+                              alt="สลิปยอดคคงเหลือ"
+                              className="deposit-slip-order-detail"
+                            />
+                          </div>
+                        ) : (
+                          booking?.user_id === user?.user_id && (
+                            <div>
+                              <label className="file-label-order-detail">
+                                <input
+                                  type="file"
+                                  onChange={handleTotalSlip}
+                                  accept="image/*"
+                                  className="file-input-hidden-order-detail"
+                                />
+                                อัปโหลดสลิปยอดทั้งหมด
+                              </label>
+                              {imgPreviewTotal && (
+                                <div className="preview-container-order-detail">
+                                  <img
+                                    src={imgPreviewTotal}
+                                    alt="preview"
+                                    className="deposit-slip-order-detail"
+                                  />
+                                </div>
+                              )}
+                              <div className="confirm-upload-slip">
+                                <button onClick={uploadTotalSlip}>
+                                  อัพโหลด
+                                </button>
+                              </div>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    ) : booking?.price_deposit !== 0 ? (
+                      booking?.user_id === user?.user_id ? (
+                        <div>
+                          <p className="no-slip-message">
+                            ยังไม่ได้อัปโหลดสลิปมัดจำ
+                          </p>
+                          <p>จ่ายมัดจำ</p>
+                          <label className="file-label-order-detail">
+                            <input
+                              type="file"
+                              onChange={handleDepositSlip}
+                              accept="image/*"
+                              className="file-input-hidden-order-detail"
+                            />
+                            อัปโหลดสลิปมัดจำ
+                          </label>
+                          {imgPreviewDeposit && (
+                            <div className="preview-container-order-detail">
+                              <img
+                                src={imgPreviewDeposit}
+                                alt="preview"
+                                className="deposit-slip-order-detail"
+                              />
+                            </div>
+                          )}
+                          {/* <div className="total-remaining-detail">
+                            <p>
+                              <strong>ราคาสุทธิ:</strong> {booking.total_price}{" "}
+                              บาท
+                            </p>
+                          </div> */}
+                          <p>
+                            <strong>ชื่อเจ้าของบัญชี</strong>{" "}
+                            {booking.account_holder}
+                          </p>
+                          <p>
+                            <strong>ชื่อธนาคาร</strong> {booking.name_bank}
+                          </p>
+                          <p>
+                            <strong>เลขบัญชี</strong> {booking.number_bank}
+                          </p>
+                          {canUploadslip && (
+                            <div className="confirm-upload-slip">
+                              <button onClick={uploadSlip}>อัพโหลด</button>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="no-slip-message">ยังไม่ได้อัปโหลดสลิป</p>
+                      )
+                    ) : booking.pay_method === "โอนจ่าย" &&
+                      booking.total_price > 0 &&
+                      booking.user_id === user?.user_id ? (
                       <div>
                         <label className="file-label-order-detail">
                           <input
@@ -686,92 +845,21 @@ console.log("reviewData",reviewData)
                             />
                           </div>
                         )}
-                        <div className="confirm-upload-slip">
-                          <button onClick={uploadTotalSlip}>อัพโหลด</button>
-                        </div>
+                        {canUploadslip && (
+                          <div className="confirm-upload-slip">
+                            <button onClick={uploadTotalSlip}>อัพโหลด</button>
+                          </div>
+                        )}
                       </div>
-                    )
-                  )}
-                </div>
-              ) : booking?.price_deposit !== 0 ? (
-                booking?.user_id === user?.user_id ? (
-                  <div>
-                    <p className="no-slip-message">ยังไม่ได้อัปโหลดสลิปมัดจำ</p>
-                    <p>จ่ายมัดจำ</p>
-                    <label className="file-label-order-detail">
-                      <input
-                        type="file"
-                        onChange={handleDepositSlip}
-                        accept="image/*"
-                        className="file-input-hidden-order-detail"
-                      />
-                      อัปโหลดสลิปมัดจำ
-                    </label>
-                    {imgPreviewDeposit && (
-                      <div className="preview-container-order-detail">
-                        <img
-                          src={imgPreviewDeposit}
-                          alt="preview"
-                          className="deposit-slip-order-detail"
-                        />
-                      </div>
-                    )}
-
-                    <div className="total-remaining-detail">
-                      <p>
-                        <strong>ราคาสุทธิ:</strong> {booking.total_price} บาท
-                      </p>
-                    </div>
-                    <p>
-                      <strong>ชื่อเจ้าของบัญชี</strong> {booking.account_holder}
-                    </p>
-                    <p>
-                      <strong>ชื่อธนาคาร</strong> {booking.name_bank}
-                    </p>
-                    <p>
-                      <strong>เลขบัญชี</strong> {booking.number_bank}
-                    </p>
-                    {canUploadslip && (
-                      <div className="confirm-upload-slip">
-                        <button onClick={uploadSlip}>อัพโหลด</button>
-                      </div>
+                    ) : (
+                      <p className="no-slip-message">ไม่ต้องจ่ายค่ามัดจำ</p>
                     )}
                   </div>
-                ) : (
-                  <p className="no-slip-message">ยังไม่ได้อัปโหลดสลิป</p>
-                )
-              ) : booking.pay_method === "โอนจ่าย" &&
-                booking.total_price > 0 &&
-                booking.user_id === user?.user_id ? (
-                <div>
-                  <label className="file-label-order-detail">
-                    <input
-                      type="file"
-                      onChange={handleTotalSlip}
-                      accept="image/*"
-                      className="file-input-hidden-order-detail"
-                    />
-                    อัปโหลดสลิปยอดทั้งหมด
-                  </label>
-                  {imgPreviewTotal && (
-                    <div className="preview-container-order-detail">
-                      <img
-                        src={imgPreviewTotal}
-                        alt="preview"
-                        className="deposit-slip-order-detail"
-                      />
-                    </div>
-                  )}
-                  {canUploadslip && (
-                    <div className="confirm-upload-slip">
-                      <button onClick={uploadTotalSlip}>อัพโหลด</button>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <p className="no-slip-message">ไม่ต้องจ่ายค่ามัดจำ</p>
-              )}
-            </div>
+                );
+              }
+
+              return null;
+            })()}
 
             <p>
               <strong>สถานะการจอง:</strong>{" "}
@@ -783,82 +871,84 @@ console.log("reviewData",reviewData)
                   : booking.status === "rejected"
                   ? "ไม่อนุมัติ"
                   : booking.status === "complete"
-                  ? "เสร็จสมบูรณ์" 
-                  
+                  ? "การจองสำเร็จ"
                   : "ไม่ทราบสถานะ"}
               </span>
-
             </p>
-           
-{booking.status === "complete" &&
-  booking.user_id === user?.user_id &&
-  !reviewData && (
-    <button className="btn-review" onClick={handleOpenReviewModal}>
-      เขียนรีวิว
-    </button>
-)}
+            {booking.status === "complete" &&
+              booking.user_id === user?.user_id &&
+              !reviewData && (
+                <button
+                  className="btn-review-detail"
+                  onClick={handleOpenReviewModal}
+                >
+                  รีวิวการจองสนาม
+                </button>
+              )}
 
+            {showReviewModal && (
+              <div className="review-inline-wrapper-detail">
+                <h3 className="review-title-detail">ให้คะแนนการจองสนาม</h3>
 
-{showReviewModal && (
-  <div className="modal-overlay">
-    <div className="modal-content">
-      <h3>ให้คะแนนสนาม</h3>
+                <div className="stars-detail">
+                  {[1, 2, 3, 4, 5].map((num) => (
+                    <span
+                      key={num}
+                      onClick={() => setRating(num)}
+                      className={`star-detail ${num <= rating ? "active" : ""}`}
+                    >
+                      ★
+                    </span>
+                  ))}
+                </div>
 
-      <div className="stars">
-        {[1, 2, 3, 4, 5].map((num) => (
-          <span
-            key={num}
-            onClick={() => setRating(num)}
-            style={{
-              cursor: "pointer",
-              color: num <= rating ? "#facc15" : "#ccc",
-              fontSize: "24px",
-            }}
-          >
-            ★
-          </span>
-        ))}
-      </div>
+                <textarea
+                  maxLength={255}
+                  rows={4}
+                  placeholder="แสดงความคิดเห็น..."
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  className="review-textarea-detail"
+                />
 
-      <textarea
-        rows={4}
-        placeholder="แสดงความคิดเห็น..."
-        value={comment}
-        onChange={(e) => setComment(e.target.value)}
-        style={{ width: "100%", marginTop: "10px" }}
-      />
+                <div className="review-buttons-detail">
+                  <button
+                    onClick={handleSubmitReview}
+                    className="review-submit-btn"
+                  >
+                    โพสต์รีวิว
+                  </button>
+                  <button
+                    onClick={handleCloseReviewModal}
+                    className="review-cancel-btn"
+                  >
+                    ยกเลิก
+                  </button>
+                </div>
+              </div>
+            )}
 
-      <div style={{ marginTop: "15px" }}>
-        <button onClick={handleSubmitReview}>โพสต์รีวิว</button>
-        <button onClick={handleCloseReviewModal} style={{ marginLeft: "10px" }}>
-          ยกเลิก
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
-{reviewData && (
-  <div>
-    <p>
-      คะแนน:
-      {[1, 2, 3, 4, 5].map((num) => (
-        <span
-          key={num}
-          style={{
-            color: num <= reviewData.rating ? "#facc15" : "#ccc",
-            fontSize: "20px",
-          }}
-        >
-          ★
-        </span>
-      ))}
-    </p>
-    <p>ความคิดเห็น: {reviewData.comment}</p>
-  </div>
-)}
-
-
+            {reviewData && (
+              <div className="review-result-detail">
+                <strong className="score-detail">
+                  คะแนนการจอง:
+                  {[1, 2, 3, 4, 5].map((num) => (
+                    <span
+                      key={num}
+                      className={`star-detail ${
+                        num <= reviewData.rating ? "active" : ""
+                      }`}
+                    >
+                      ★
+                    </span>
+                  ))}
+                </strong>
+                <strong className="comment-detail">
+                  ความคิดเห็น:
+                  <p> {reviewData.comment}</p>
+                </strong>
+              </div>
+            )}
 
             {startProcessLoad && (
               <div className="loading-overlay">
@@ -878,38 +968,38 @@ console.log("reviewData",reviewData)
               ) {
                 return (
                   <div className="status-buttons-order-detail">
-                    {booking?.status !== "approved" && (
-                      <button
-                        className="approve-btn-order-detail"
-                        onClick={() => openConfirmModal("approved")}
-                      >
-                        อนุมัติ
-                      </button>
-                    )}
-                    {booking?.status !== "rejected" && (
-                      <button
-                        className="reject-btn-order-detail"
-                        onClick={() => openConfirmModal("rejected")}
-                      >
-                        ไม่อนุมัติ
-                      </button>
-                    )}
-
-                      {booking?.status !== "complete" && (
-                      <button
-                        className="reject-btn-order-detail"
-                        onClick={() => openConfirmModal("complete")}
-                      >
-                        เสร็จสมบูรณ์
-                      </button>
-                    )}
+                    {booking?.status !== "approved" &&
+                      booking?.status !== "complete" && (
+                        <button
+                          className="approve-btn-order-detail"
+                          onClick={() => openConfirmModal("approved")}
+                        >
+                          อนุมัติ
+                        </button>
+                      )}
+                    {booking?.status !== "rejected" &&
+                      booking?.status !== "complete" && (
+                        <button
+                          className="reject-btn-order-detail"
+                          onClick={() => openConfirmModal("rejected")}
+                        >
+                          ไม่อนุมัติ
+                        </button>
+                      )}
                   </div>
                 );
               }
 
               return null;
             })()}
-
+            {booking?.status === "approved" && (
+              <button
+                className="complete-btn-order-detail"
+                onClick={() => openConfirmModal("complete")}
+              >
+                การจองสำเร็จ
+              </button>
+            )}
             {(() => {
               const today = new Date();
               const startDate = new Date(booking.start_date);

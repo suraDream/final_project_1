@@ -22,6 +22,8 @@ export default function AdminManager() {
   const { user, isLoading } = useAuth();
   const [startProcessLoad, SetstartProcessLoad] = useState(false);
   const [dataLoading, setDataLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [roleFilter, setRoleFilter] = useState("all");
 
   useEffect(() => {
     if (isLoading) return;
@@ -74,6 +76,18 @@ export default function AdminManager() {
 
     fetchUsers();
   }, [user]);
+
+  const usersPerPage = 8;
+
+  const filteredUsers = users.filter((user) => {
+    if (roleFilter === "all")
+      return user.role === "customer" || user.role === "field_owner";
+    return user.role === roleFilter;
+  });
+
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
 
   useEffect(() => {
     if (message) {
@@ -281,8 +295,13 @@ export default function AdminManager() {
         <table className="manager-table">
           <thead>
             <tr>
+              <th>id</th>
               <th>ชื่อ</th>
               <th>อีเมล</th>
+              <th>สถานะบัญชี</th>
+              <th>บทบาท</th>
+              <th>แก้ไข</th>
+              <th>จัดการ</th>
             </tr>
           </thead>
           <tbody>
@@ -290,41 +309,7 @@ export default function AdminManager() {
               .filter((user) => user.role === "admin")
               .map((user) => (
                 <tr key={user.user_id}>
-                  <td>
-                    {user.first_name} - {user.last_name}
-                  </td>
-                  <td>{user.email}</td>
-                </tr>
-              ))}
-          </tbody>
-        </table>
-
-        {/* ตารางสำหรับลูกค้า */}
-        <h3 className="Head">ผู้ใช้ทั้งหมด</h3>
-        {dataLoading && (
-          <div className="loading-data">
-            <div className="loading-data-spinner"></div>
-          </div>
-        )}
-        <table className="manager-table-user">
-          <thead>
-            <tr>
-              <th>ชื่อ-สกุล</th>
-              <th>อีเมล</th>
-              <th>สถานะบัญชี</th>
-              <th>บทบาท</th>
-              <th>แก้ไขข้อมูล</th>
-              <th>จัดการ</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users
-              .filter(
-                (user) =>
-                  user.role === "customer" || user.role === "field_owner"
-              )
-              .map((user) => (
-                <tr key={user.user_id}>
+                  <td>{user.user_id}</td>
                   <td>
                     {user.first_name} - {user.last_name}
                   </td>
@@ -335,9 +320,12 @@ export default function AdminManager() {
                       ? "ลูกค้า"
                       : user.role === "field_owner"
                       ? "เจ้าของสนาม"
+                      : user.role === "admin"
+                      ? "ผู้ดูแลระบบ"
                       : user.role}
                   </td>
                   <td>
+                    {" "}
                     <button
                       className="edit-btn"
                       onClick={() => setSelectedUser(user)}
@@ -357,6 +345,90 @@ export default function AdminManager() {
               ))}
           </tbody>
         </table>
+
+        {/* ตารางสำหรับลูกค้า */}
+        <h3 className="Head">ผู้ใช้ทั้งหมด</h3>
+        <div className="filter-role-container">
+          <select
+            value={roleFilter}
+            onChange={(e) => {
+              setRoleFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+          >
+            <option value="all">ทั้งหมด</option>
+            <option value="customer">ลูกค้า</option>
+            <option value="field_owner">เจ้าของสนาม</option>
+          </select>
+        </div>
+
+        {dataLoading && (
+          <div className="loading-data">
+            <div className="loading-data-spinner"></div>
+          </div>
+        )}
+        <table className="manager-table-user">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>ชื่อ-สกุล</th>
+              <th>อีเมล</th>
+              <th>สถานะบัญชี</th>
+              <th>บทบาท</th>
+              <th>แก้ไขข้อมูล</th>
+              <th>จัดการ</th>
+            </tr>
+          </thead>
+          <tbody>
+            {currentUsers.map((user) => (
+              <tr key={user.user_id}>
+                <td>{user.user_id}</td>
+                <td>
+                  {user.first_name} - {user.last_name}
+                </td>
+                <td>{user.email}</td>
+                <td>{user.status}</td>
+                <td>
+                  {user.role === "customer"
+                    ? "ลูกค้า"
+                    : user.role === "field_owner"
+                    ? "เจ้าของสนาม"
+                    : user.role}
+                </td>
+                <td>
+                  <button
+                    className="edit-btn"
+                    onClick={() => setSelectedUser(user)}
+                  >
+                    แก้ไข
+                  </button>
+                </td>
+                <td>
+                  <button
+                    className="delete-btn"
+                    onClick={() => openDeleteUserModal(user.user_id)}
+                  >
+                    ลบ
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="pagination">
+          {Array.from(
+            { length: Math.ceil(filteredUsers.length / usersPerPage) },
+            (_, i) => (
+              <button
+                key={i}
+                className={currentPage === i + 1 ? "active" : ""}
+                onClick={() => setCurrentPage(i + 1)}
+              >
+                {i + 1}
+              </button>
+            )
+          )}
+        </div>
         {selectedUser && (
           <div className="modal-manager">
             <div className="modal-content-manager">
@@ -365,7 +437,7 @@ export default function AdminManager() {
                 <label>ชื่อ:</label>
                 <input
                   type="text"
-                  maxLength={100}
+                  maxLength={50}
                   value={selectedUser.first_name}
                   onChange={(e) =>
                     setSelectedUser({
@@ -377,7 +449,7 @@ export default function AdminManager() {
                 <label>นามสกุล:</label>
                 <input
                   type="text"
-                  maxLength={100}
+                  maxLength={50}
                   value={selectedUser.last_name}
                   onChange={(e) =>
                     setSelectedUser({
@@ -386,16 +458,45 @@ export default function AdminManager() {
                     })
                   }
                 />
-                {/* <label>อีเมล:</label>
+                <label>สถานะบัญชี:</label>
+                <select
+                  value={selectedUser.status}
+                  onChange={(e) =>
+                    setSelectedUser({
+                      ...selectedUser,
+                      status: e.target.value,
+                    })
+                  }
+                >
+                  <option value="รอยืนยัน">รอยืนยัน</option>
+                  <option value="ตรวจสอบแล้ว">ตรวจสอบแล้ว</option>
+                </select>
+                <label>บทบาท:</label>
+                <select
+                  value={selectedUser.role}
+                  onChange={(e) =>
+                    setSelectedUser({
+                      ...selectedUser,
+                      role: e.target.value,
+                    })
+                  }
+                >
+                  <option value="user">ลูกค้า</option>
+                  <option value="field_owner">เจ้าของสนาม</option>
+                  <option value="admin">ผู้ดูแลระบบ</option>
+                </select>
+
+                <label>อีเมล:</label>
                 <input
+                  readOnly
                   type="email"
                   value={selectedUser.email}
                   onChange={(e) =>
                     setSelectedUser({ ...selectedUser, email: e.target.value })
                   }
+                  style={{ cursor: "not-allowed" }}
                 />
-                {emailError && <p style={{ color: "red" }}>{emailError}</p>}{" "}
-                แสดงข้อความ error */}
+                {/* {emailError && <p style={{ color: "red" }}>{emailError}</p>}{" "} */}
                 <div className="modal-buttons">
                   <button type="submit" className="save-btn-manager">
                     บันทึก

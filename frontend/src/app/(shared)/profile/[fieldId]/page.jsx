@@ -38,8 +38,11 @@ export default function CheckFieldDetail() {
   const router = useRouter();
   const [dataLoading, setDataLoading] = useState(true);
   const [startProcessLoad, SetstartProcessLoad] = useState(false);
-  const [reviewData,setReviewData] = useState([])
-  const [selectedRating, setSelectedRating] = useState("ทั้งหมด")
+  const [reviewData, setReviewData] = useState([]);
+  const [selectedRating, setSelectedRating] = useState("ทั้งหมด");
+  const [currentPage, setCurrentPage] = useState(1);
+  const postPerPage = 5;
+
   useEffect(() => {
     if (isLoading) return;
 
@@ -68,7 +71,7 @@ export default function CheckFieldDetail() {
 
     const fetchFieldData = async () => {
       try {
-        localStorage.setItem("field_id", fieldId);
+        sessionStorage.setItem("field_id", fieldId);
 
         const res = await fetch(`${API_URL}/profile/${fieldId}`, {
           method: "GET",
@@ -91,11 +94,11 @@ export default function CheckFieldDetail() {
 
         setFieldData(data);
 
-        // เก็บข้อมูลใน localStorage
-        localStorage.setItem("account_holder", data.account_holder || "");
-        localStorage.setItem("name_bank", data.name_bank || "");
-        localStorage.setItem("number_bank", data.number_bank || "");
-        localStorage.setItem("field_name", data.field_name || "");
+        // เก็บข้อมูลใน sessionStorage
+        sessionStorage.setItem("account_holder", data.account_holder || "");
+        sessionStorage.setItem("name_bank", data.name_bank || "");
+        sessionStorage.setItem("number_bank", data.number_bank || "");
+        sessionStorage.setItem("field_name", data.field_name || "");
 
         // ตรวจสอบสิทธิ์การโพสต์
         const fieldOwnerId = data.user_id;
@@ -164,6 +167,10 @@ export default function CheckFieldDetail() {
     fetchPosts();
   }, [fieldId, router]);
 
+  const indexOfLast = currentPage * postPerPage;
+  const indexOfFirst = indexOfLast - postPerPage;
+  const currentPostProfile = postData.slice(indexOfFirst, indexOfLast);
+
   useEffect(() => {
     const fetchFacilities = async () => {
       try {
@@ -187,21 +194,23 @@ export default function CheckFieldDetail() {
     fetchFacilities();
   }, [fieldId]);
 
-  useEffect(()=>{
-    const fetchReviews = async () =>{
-      try{
-      const res = await fetch(`${API_URL}/reviews/rating/${fieldId}`)
-      const data = await res.json();
-      if(data.success){
-        console.log('reviewsData',data.data)
-        setReviewData(data.data)
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const res = await fetch(`${API_URL}/reviews/rating-previwe/${fieldId}`);
+        const data = await res.json();
+        if (data.success) {
+          console.log("reviewsData", data.data);
+          setReviewData(data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching review:", error);
+      } finally {
+        setDataLoading(false);
       }
-    } catch (error) {
-      console.error("Error fetching review:", error);
-    }
-  };
-  fetchReviews();
-  },[fieldId])
+    };
+    fetchReviews();
+  }, [fieldId]);
 
   const daysInThai = {
     Mon: "จันทร์",
@@ -389,14 +398,14 @@ export default function CheckFieldDetail() {
       </div>
     );
 
-const handleFilterChange = (e) => {
-  setSelectedRating(e.target.value);
-};
+  const handleFilterChange = (e) => {
+    setSelectedRating(e.target.value);
+  };
 
-const filteredReviews = reviewData.filter((review) => {
-  if (selectedRating === "ทั้งหมด") return true;
-  return review.rating === parseInt(selectedRating);
-});
+  const filteredReviews = reviewData.filter((review) => {
+    if (selectedRating === "ทั้งหมด") return true;
+    return review.rating === parseInt(selectedRating);
+  });
 
   return (
     <>
@@ -505,7 +514,7 @@ const filteredReviews = reviewData.filter((review) => {
               }}
             />
           )}
-          {postData.map((post) => (
+          {currentPostProfile.map((post) => (
             <div
               key={post.post_id}
               className="post-card-profile"
@@ -684,6 +693,20 @@ const filteredReviews = reviewData.filter((review) => {
               )}
             </div>
           ))}
+          <div className="pagination-post-profile">
+            {Array.from(
+              { length: Math.ceil(postData.length / postPerPage) },
+              (_, i) => (
+                <button
+                  key={i}
+                  className={currentPage === i + 1 ? "active" : ""}
+                  onClick={() => setCurrentPage(i + 1)}
+                >
+                  {i + 1}
+                </button>
+              )
+            )}
+          </div>
         </div>
 
         {/* ข้อมูลสนามย่อย (sub_fields) */}
@@ -753,67 +776,80 @@ const filteredReviews = reviewData.filter((review) => {
               </div>
             )}
             <div className="field-facilities-profile">
-              {facilities.length === 0 ? (
-                <p>ยังไม่มีสิ่งอำนวยความสะดวกสำหรับสนามนี้</p>
+              {Array.isArray(facilities) ? (
+                facilities.length === 0 ? (
+                  <p>ยังไม่มีสิ่งอำนวยความสะดวกสำหรับสนามนี้</p>
+                ) : (
+                  <div className="facbox-profile">
+                    {facilities.map((facility, index) => (
+                      <div
+                        className="facitem-profile"
+                        key={`${facility.fac_id}-${index}`}
+                      >
+                        <strong>{facility.fac_name}</strong>:{" "}
+                        <span>{facility.fac_price} บาท</span>
+                      </div>
+                    ))}
+                  </div>
+                )
               ) : (
-                <div className="facbox-profile">
-                  {facilities.map((facility, index) => (
-                    <div
-                      className="facitem-profile"
-                      key={`${facility.fac_id}-${index}`}
-                    >
-                      {" "}
-                      {/* Unique key using both fac_id and index */}
-                      <strong>{facility.fac_name}</strong>:{" "}
-                      <span>{facility.fac_price} บาท</span>
+                <p style={{ color: "gray" }}>
+                  ข้อมูลสิ่งอำนวยความสะดวกไม่ถูกต้อง
+                </p>
+              )}
+            </div>
+            <div className="reviwe-title-profile"></div>
+            <h1>รีวิวสนามกีฬา</h1>
+            <select
+              id="review-score"
+              className="filter-profile"
+              onChange={handleFilterChange}
+              value={selectedRating}
+            >
+              <option value="ทั้งหมด">ทั้งหมด</option>
+              <option value="5">★★★★★</option>
+              <option value="4">★★★★☆</option>
+              <option value="3">★★★☆☆</option>
+              <option value="2">★★☆☆☆</option>
+              <option value="1">★☆☆☆☆</option>
+            </select>
+
+            <div className="reviwe-container-profile">
+              {filteredReviews.length > 0 ? (
+                filteredReviews.map((review, index) => (
+                  <div
+                    className="reviwe-content-profile"
+                    key={review.review_id || index}
+                  >
+                    <div className="review-box-profile">
+                      <strong className="review-name-profile">
+                        {review.first_name} {review.last_name}
+                      </strong>
+                      <div className="review-stars-profile">
+                        {[1, 2, 3, 4, 5].map((num) => (
+                          <span
+                            key={num}
+                            className={`star-profile ${
+                              num <= review.rating ? "active" : ""
+                            }`}
+                          >
+                            ★
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  ))}
+                    <div className="detail-reviwe-profile">
+                      <p className="review-label">ความคิดเห็น</p>
+                      <p className="review-comment">{review.comment}</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="no-reviwe-content-profile">
+                  <div className="no-review-text">ยังไม่มีคะแนนการรีวิว</div>
                 </div>
               )}
             </div>
-        <select
-  id="review-score"
-  className="filter-profile"
-  onChange={handleFilterChange}
-  value={selectedRating}
->
-  <option value="ทั้งหมด">ทั้งหมด</option>
-  <option value="5">★★★★★</option>
-  <option value="4">★★★★☆</option>
-  <option value="3">★★★☆☆</option>
-  <option value="2">★★☆☆☆</option>
-  <option value="1">★☆☆☆☆</option>
-</select>
-
-     {filteredReviews.map((review, index) => (
-  <div className="reviwe-container-profile" key={review.review_id || index}>
-    <div className="review-box-profile">
-          <p>
-      คะแนน:
-      {[1, 2, 3, 4, 5].map((num) => (
-        <span
-          key={num}
-          style={{
-            color: num <= review.rating ? "#facc15" : "#ccc",
-            fontSize: "20px",
-          }}
-        >
-          ★
-        </span>
-      ))}
-    </p>
-    </div>
-    <div>
-      <p><strong>ชื่อ {review.first_name
-} {review.last_name}</strong></p>
-      <p>{review.comment}</p>
-    </div>
-  </div>
-))}
-
-
-
-
           </div>
         </aside>
       </div>

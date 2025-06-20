@@ -3,6 +3,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import "@/app/css/HomePage.css";
 import { useAuth } from "@/app/contexts/AuthContext";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faStar as solidStar,
+  faStarHalfAlt,
+} from "@fortawesome/free-solid-svg-icons";
+import { faStar as regularStar } from "@fortawesome/free-regular-svg-icons";
 
 export default function HomePage() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -15,6 +21,8 @@ export default function HomePage() {
   const [sportsCategories, setSportsCategories] = useState([]);
   const [dataLoading, setDataLoading] = useState(true);
   const { user, isLoading } = useAuth();
+  const [currentPage, setCurrentPage] = useState(1);
+  const fieldPerPage = 12;
 
   useEffect(() => {
     if (isLoading) return;
@@ -94,6 +102,10 @@ export default function HomePage() {
     fetchApprovedFields();
   }, [selectedSport]);
 
+  const indexOfLast = currentPage * fieldPerPage;
+  const indexOfFirst = indexOfLast - fieldPerPage;
+  const currentField = approvedFields.slice(indexOfFirst, indexOfLast);
+
   const convertToThaiDays = (days) => {
     if (!days) return "";
 
@@ -162,9 +174,9 @@ export default function HomePage() {
           <div className="loading-data">
             <div className="loading-data-spinner"></div>
           </div>
-        ) : approvedFields.length > 0 ? (
+        ) : currentField.length > 0 ? (
           <div className="grid-home">
-            {approvedFields.map((field, index) => (
+            {currentField.map((field, index) => (
               <div
                 key={`${field.field_id}-${index}`}
                 className="card-home"
@@ -181,6 +193,40 @@ export default function HomePage() {
                 />
                 <div className="card-body-home">
                   <h3>{field.field_name}</h3>
+                  <div className="reviwe-container-home">
+                    <strong className="reviwe-star-home">
+                      <p>คะแนนรีวิว {field.avg_rating}</p>
+                      {[1, 2, 3, 4, 5].map((num) => {
+                        const roundedRating =
+                          Math.floor(field.avg_rating) +
+                          (field.avg_rating % 1 >= 0.8 ? 1 : 0);
+
+                        const isFull = num <= roundedRating;
+                        const isHalf =
+                          !isFull &&
+                          num - 0.5 <= field.avg_rating &&
+                          field.avg_rating % 1 < 0.8;
+
+                        return (
+                          <FontAwesomeIcon
+                            key={num}
+                            icon={
+                              isFull
+                                ? solidStar
+                                : isHalf
+                                ? faStarHalfAlt
+                                : regularStar
+                            }
+                            style={{
+                              color: "#facc15",
+                              fontSize: "20px",
+                              marginRight: "4px",
+                            }}
+                          />
+                        );
+                      })}
+                    </strong>
+                  </div>
                   <div className="firsttime-home">
                     <p className="filedname">
                       <span className="first-label-time">เปิดเวลา: </span>
@@ -199,37 +245,6 @@ export default function HomePage() {
                       {field.sport_names?.join(" / ")}
                     </p>
                   </div>
-                  <div className="reviwe-container-home">
-                    <strong className="reviwe-star-home">
-                      <p>คะแนนรีวิว {field.avg_rating}</p>
-                      {[1, 2, 3, 4, 5].map((num) => {
-                        // ถ้า avg_rating มีเศษทศนิยม >= 0.8 ให้ปัดขึ้นเป็นเต็มดาว
-                        const roundedRating =
-                          Math.floor(field.avg_rating) +
-                          (field.avg_rating % 1 >= 0.8 ? 1 : 0);
-
-                        const isFull = num <= roundedRating;
-                        // ถ้าไม่เต็ม ให้เช็คว่าควรเป็นดาวครึ่งดวงมั้ย (ตอนนี้เงื่อนไขนี้จะเกิดขึ้นแค่กรณีเศษ < 0.8)
-                        const isHalf =
-                          !isFull &&
-                          num - 0.5 <= field.avg_rating &&
-                          field.avg_rating % 1 < 0.8;
-
-                        return (
-                          <span
-                            key={num}
-                            style={{
-                              color: "#facc15",
-                              fontSize: "20px",
-                              marginRight: "2px",
-                            }}
-                          >
-                            {isFull ? "★" : isHalf ? "⯨" : "☆"}
-                          </span>
-                        );
-                      })}
-                    </strong>
-                  </div>
                 </div>
               </div>
             ))}
@@ -239,6 +254,20 @@ export default function HomePage() {
             ยังไม่มีสนาม <strong>{selectedSportName}</strong> สำหรับกีฬานี้
           </div>
         )}
+        <div className="pagination-previwe-field-home">
+          {Array.from(
+            { length: Math.ceil(approvedFields.length / fieldPerPage) },
+            (_, i) => (
+              <button
+                key={i}
+                className={currentPage === i + 1 ? "active" : ""}
+                onClick={() => setCurrentPage(i + 1)}
+              >
+                {i + 1}
+              </button>
+            )
+          )}
+        </div>
       </div>
     </>
   );

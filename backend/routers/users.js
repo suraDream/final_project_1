@@ -39,7 +39,17 @@ router.get("/", authMiddleware, async (req, res) => {
       return res.status(403).json({ message: "คุณไม่มีสิทธิ์เข้าถึงหน้านี้!" });
     }
 
-    const result = await pool.query("SELECT user_id, user_name, first_name, last_name, email, role, status FROM users");
+    const result = await pool.query(`SELECT user_id, user_name, first_name, last_name, email, role, status
+            FROM users
+            ORDER BY 
+            CASE role
+              WHEN 'admin' THEN 1
+              WHEN 'customer' THEN 2
+              WHEN 'field_owner' THEN 3
+            ELSE 4
+            END,
+            user_id ASC;
+`)
     res.status(200).json(result.rows);
   } catch (error) {
     console.error("Error fetching manager data:", error);
@@ -50,7 +60,7 @@ router.get("/", authMiddleware, async (req, res) => {
 // แก้ไขข้อมูลผู้ใช้ (admin หรือเจ้าของเท่านั้น)
 router.put("/:id", authMiddleware, async (req, res) => {
   const { id } = req.params;
-  const { first_name, last_name, email, role } = req.body;
+  const { first_name, last_name, role, status } = req.body;
   const currentUser = req.user; 
 
   console.log("user_id ที่ส่งมา:", id);
@@ -63,8 +73,8 @@ router.put("/:id", authMiddleware, async (req, res) => {
     }
 
     await pool.query(
-      "UPDATE users SET first_name = $1, last_name = $2, email = $3, role = $4 WHERE user_id = $5",
-      [first_name, last_name, email, role, id]
+      "UPDATE users SET first_name = $1, last_name = $2, role = $3, status = $4 WHERE user_id = $5",
+      [first_name, last_name, role, status, id]
     );
 
     res.status(200).json({ message: "User updated successfully" });

@@ -9,12 +9,10 @@
   max-width: 1200px;
   margin: 100px auto;
   padding: 30px;
-  min-height: 600px;
-  max-height: 700px;
+  min-height: 400px;
   overflow-y: auto;
 }
 
-/* Form Group */
 .input-group-admin {
   align-items: center;
   display: flex;
@@ -29,7 +27,6 @@
   margin: 10px auto;
 }
 
-/* Facility Item */
 .factcon-admin,
 .typecon-admin {
   display: flex;
@@ -66,7 +63,6 @@
   margin-right: 10px;
 }
 
-/* Action Buttons */
 .fac-container-admin button {
   padding: 10px 20px;
   border: none;
@@ -121,7 +117,6 @@
   background-color: #0056b3;
 }
 
-/* Modal */
 .confirm-modal-type {
   z-index: 2;
   position: fixed;
@@ -172,7 +167,6 @@
   background-color: darkred;
 }
 
-/* Edit Form */
 .edit-form-fac {
   margin-top: 10px;
 }
@@ -216,8 +210,6 @@
   background-color: darkgray;
 }
 
-
-
 .add-facility-form-admin {
   justify-content: center;
   align-items: center;
@@ -245,6 +237,28 @@
   margin: 0 auto;
   font-weight: bold;
   text-align: center;
+}
+
+.pagination-facilities {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.pagination-facilities button {
+  padding: 6px 12px;
+  font-size: 14px;
+  background: #eee;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.pagination-facilities button.active {
+  background-color: var(--text-color);
+  color: white;
+  font-weight: bold;
 }
 
 /* Responsive Design //////////////////////////////////////////////////////////////////////////////////////*/

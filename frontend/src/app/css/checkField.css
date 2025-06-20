@@ -24,10 +24,11 @@
 }
 
 .detail-checkfield {
-  border: 2px solid rgba(122, 122, 122, 0.463);
   border-radius: 10px;
   max-height: 150px;
   overflow-y: auto;
+  background-color: #ffffff;
+  border: 1px solid #ddd;
 }
 
 .newstatus {
@@ -89,13 +90,13 @@ ul li {
 .document-container {
   height: 50px;
   margin: 15px;
+  display: flex;
   text-align: center;
   justify-content: center;
   align-items: center;
   margin-top: 0px;
   padding: 5px;
   border-radius: 8px;
-  border: #333 solid 2px;
 }
 
 .document-container:hover {
@@ -112,8 +113,10 @@ ul li {
   border-radius: 20px;
 }
 .document-link {
-  text-decoration: none;
+  background-color: #ffffff;
+  border: 1px solid #ddd;
   font-weight: bold;
+  text-align: center;
 }
 
 .document-link:hover {
@@ -125,7 +128,6 @@ ul li {
   max-height: 400px;
   overflow-y: auto;
   margin-top: 30px;
-  border: 2px solid rgba(122, 122, 122, 0.463);
   border-radius: 10px;
 }
 
@@ -135,6 +137,8 @@ ul li {
   margin-bottom: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: #ffffff;
+  border: 1px solid #ddd;
 }
 
 .sub-field-card-check-field h2 {
@@ -309,8 +313,9 @@ ul li {
   max-height: 200px;
   overflow-y: auto;
   margin-top: 15px;
-  border: 2px solid rgba(122, 122, 122, 0.463);
   border-radius: 10px;
+  background-color: #ffffff;
+  border: 1px solid #ddd;
 }
 .field-facilities-check-field h1 {
   margin: 0px 0px 5px 0px;

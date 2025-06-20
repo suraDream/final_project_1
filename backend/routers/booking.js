@@ -82,7 +82,7 @@ module.exports = function (io) {
               to: booking.email,
               subject: "ใกล้ถึงเวลาจองสนามแล้ว!",
               html: `
-                    <div style="font-family: 'Segoe UI', sans-serif; max-width: 600px; margin: auto; padding: 20px; background-color: #ffffff; border-radius: 8px; border: 1px solid #e5e7eb;">
+                    <div style="font-family: 'Kanit', sans-serif; max-width: 600px; margin: auto; padding: 20px; background-color: #ffffff; border-radius: 8px; border: 1px solid #e5e7eb;">
               <h2 style="color: #1f2937; margin-bottom: 16px;">แจ้งเตือนล่วงหน้า</h2>
               <p style="font-size: 16px; color: #111827;">
                 คุณมีการจองสนาม <strong>${booking.field_name}</strong>
@@ -105,7 +105,7 @@ module.exports = function (io) {
               to: booking.email,
               subject: "ถึงเวลาจองสนามแล้ว!",
               html: `
-                  <div style="font-family: 'Segoe UI', sans-serif; max-width: 600px; margin: auto; padding: 20px; background-color: #ffffff; border-radius: 8px; border: 1px solid #e5e7eb;">
+                  <div style="font-family: 'Kanit', sans-serif; max-width: 600px; margin: auto; padding: 20px; background-color: #ffffff; border-radius: 8px; border: 1px solid #e5e7eb;">
           <h2 style="color: #1f2937; margin-bottom: 16px;">ถึงเวลาเริ่มต้นการจองแล้ว</h2>
           <p style="font-size: 16px; color: #111827;">
             สนามที่จอง: <strong>${booking.field_name}</strong>
@@ -145,7 +145,7 @@ module.exports = function (io) {
               AND f.price_deposit > 0
               AND b.booking_id NOT IN (SELECT booking_id FROM payment)
               AND (
-                NOW() > b.updated_at + INTERVAL '2 minutes'
+                NOW() > b.updated_at + INTERVAL '60 minutes'
                 OR (
                   b.updated_at > (b.start_date || ' ' || b.start_time)::timestamp - INTERVAL '10 minutes'
                   AND NOW() >= (b.start_date || ' ' || b.start_time)::timestamp
@@ -223,8 +223,8 @@ module.exports = function (io) {
           !startTime ||
           !endTime ||
           !totalHours ||
-          !totalPrice ||
-          !payMethod ||
+          // !totalPrice ||
+          // !payMethod ||
           !selectedSlots ||
           totalRemaining === undefined ||
           !activity
@@ -364,7 +364,7 @@ module.exports = function (io) {
     }
   );
 
- router.get("/my-bookings/:user_id", authMiddleware, async (req, res) => {
+router.get("/my-bookings/:user_id", authMiddleware, async (req, res) => {
     const { user_id } = req.params;
     const { date, status } = req.query;
 
@@ -467,7 +467,6 @@ module.exports = function (io) {
     }
   });
 
-  // แก้ไข API Route สำหรับรองรับ Date Range Filter
   router.get("/my-orders/:field_id", authMiddleware, async (req, res) => {
     const { field_id } = req.params;
     // แก้ไขรับ startDate และ endDate แทน date
@@ -618,7 +617,7 @@ WHERE b.field_id = $1
     }
   });
 
-  router.get(
+router.get(
     "/bookings-detail/:booking_id",
     authMiddleware,
     async (req, res) => {
@@ -660,13 +659,13 @@ WHERE b.field_id = $1
   b.selected_slots,
   p.deposit_slip,
   p.total_slip,
-  facs.facilities  -- 
+  facs.facilities  -- ✅ เพิ่มตรงนี้
 FROM bookings b
 LEFT JOIN field f ON b.field_id = f.field_id
 LEFT JOIN sub_field sf ON b.sub_field_id = sf.sub_field_id
 LEFT JOIN users u ON u.user_id = b.user_id
 
---  JOIN ข้อมูลการชำระเงินล่าสุด
+-- ✅ JOIN ข้อมูลการชำระเงินล่าสุด
 LEFT JOIN LATERAL (
   SELECT deposit_slip, total_slip
   FROM payment
@@ -675,7 +674,7 @@ LEFT JOIN LATERAL (
   LIMIT 1
 ) p ON true
 
--- JOIN facilities แบบ LATERAL
+-- ✅ JOIN facilities แบบ LATERAL
 LEFT JOIN LATERAL (
   SELECT COALESCE(json_agg(jsonb_build_object(
     'field_fac_id', bf.field_fac_id,
@@ -781,7 +780,7 @@ LIMIT 1;
           if (booking_status === "approved") {
             subject = `การจองสนาม ${userInfo.field_name} ได้รับการอนุมัติแล้ว`;
             message = `
-         <div style="font-family: 'Segoe UI', sans-serif; max-width: 600px; margin: auto; padding: 20px; background-color: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+         <div style="font-family: 'Kanit', sans-serif; max-width: 600px; margin: auto; padding: 20px; background-color: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
   <h2 style="color: #1d4ed8; margin-bottom: 16px;">การจองของคุณได้รับการอนุมัติแล้ว!</h2>
 
   <p style="font-size: 16px; color: #111827;">
@@ -790,11 +789,11 @@ LIMIT 1;
 
   <div style="margin: 20px 0;">
     <a
-      href="http://localhost:3000//login?redirect=/bookingDetail/${booking_id}"
+      href="${process.env.FONT_END_URL}/login?redirect=/bookingDetail/${booking_id}"
       style="display: inline-block; background-color: #1d4ed8; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold;"
       target="_blank"
     >
-      ดูรายละเอียดการจอง
+      ดูรายละเอียดการจอง #${booking_id}
     </a>
   </div>
 
@@ -813,7 +812,7 @@ LIMIT 1;
           } else if (booking_status === "rejected") {
             subject = `การจองสนาม ${userInfo.field_name} ไม่ได้รับการอนุมัติ`;
             message = `
-   <div style="font-family: 'Segoe UI', sans-serif; max-width: 600px; margin: auto; padding: 20px; background-color: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+   <div style="font-family: 'Kanit', sans-serif; max-width: 600px; margin: auto; padding: 20px; background-color: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
   <h2 style="color: #1d4ed8; margin-bottom: 16px;">การจองของคุณไม่ได้รับการอนุมัติ!</h2>
 
   <p style="font-size: 16px; color: #111827;">
@@ -826,7 +825,7 @@ LIMIT 1;
       style="display: inline-block; background-color: #1d4ed8; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold;"
       target="_blank"
     >
-      ดูรายละเอียดการจอง
+      ดูรายละเอียดการจอง #${booking_id}
     </a>
   </div>
   <hr style="margin: 24px 0; border: none; border-top: 1px solid #e5e7eb;" />
@@ -874,13 +873,13 @@ LIMIT 1;
 
   router.delete(
     "/cancel-bookings/:booking_id",
-    authMiddleware,
+   
     async (req, res) => {
       const { booking_id } = req.params;
       const { cancel_time } = req.body;
 
       try {
-        // ✅ ตรวจ cancel_time
+      
         if (!cancel_time) {
           return res.status(400).json({
             status: 0,
@@ -899,7 +898,7 @@ LIMIT 1;
         console.log(` ยกเลิก booking_id = ${booking_id}`);
         console.log(` เวลาที่กดปุ่ม cancel: ${now.toISOString()}`);
 
-        // ✅ ดึงข้อมูลการจอง
+        
         const fieldDataResult = await pool.query(
           `
         SELECT f.cancel_hours, b.start_date, b.start_time, f.field_name
@@ -967,11 +966,11 @@ LIMIT 1;
             booking_id,
           });
         }
-        startDateTime.setHours(startDateTime.getHours() + 7); // ปรับเป็นเวลาไทย
-        console.log("startDateStr:", startDateStr); // ควรเป็น 2025-06-02
-        console.log("start_time:", start_time); // ควรเป็น 19:00:00
+        startDateTime.setHours(startDateTime.getHours() + 7); 
+        console.log("startDateStr:", startDateStr); 
+        console.log("start_time:", start_time); 
 
-        //  ถ้าไม่มีเวลายกเลิก → ยกเลิกได้ทันที
+        
         if (cancel_hours === null) {
           const paymentResult = await pool.query(
             `SELECT deposit_slip, total_slip FROM payment WHERE booking_id = $1`,
@@ -1190,58 +1189,78 @@ LIMIT 1;
           );
         }
 
-        
+        if (result.rows.length > 0) {
+          const data = await client.query(
+            `SELECT 
+              ub.first_name AS booker_first_name,
+              ub.last_name AS booker_last_name,
+              ub.email AS booker_email,
+              uf.email AS field_owner_email,
+              f.field_name, 
+              sf.sub_field_name,
+              b.booking_date,
+              b.start_time,
+              b.end_time  
+            FROM bookings b 
+            LEFT JOIN field f ON b.field_id = f.field_id
+            LEFT JOIN sub_field sf ON b.sub_field_id = sf.sub_field_id
+            LEFT JOIN users ub ON ub.user_id = b.user_id         -- ผู้จอง
+            LEFT JOIN users uf ON uf.user_id = f.user_id         -- เจ้าของสนาม
+            WHERE b.booking_id = $1`,
+            [bookingId]
+          );
 
-        if (result.rows.length>0){
-          const data = await client.query(`
-  SELECT 
-    ub.first_name AS booker_first_name,
-    ub.last_name AS booker_last_name,
-    ub.email AS booker_email,
-    uf.email AS field_owner_email,
-    f.field_name, 
-    sf.sub_field_name,
-    b.booking_date,
-    b.start_time,
-    b.end_time  
-  FROM bookings b 
-  LEFT JOIN field f ON b.field_id = f.field_id
-  LEFT JOIN sub_field sf ON b.sub_field_id = sf.sub_field_id
-  LEFT JOIN users ub ON ub.user_id = b.user_id         -- ผู้จอง
-  LEFT JOIN users uf ON uf.user_id = f.user_id         -- เจ้าของสนาม
-  WHERE b.booking_id = $1
-`, [bookingId]);
+          if (data.rows.length === 0) {
+            return res
+              .status(404)
+              .json({ success: false, message: "ไม่พบข้อมูลการจอง" });
+          }
+          const bookingData = data.rows[0];
+          console.log("bookingData:", bookingData);
 
- 
+          if (!bookingData.field_owner_email) {
+            console.error("ไม่พบอีเมลเจ้าของสนาม");
+          } else {
+            try {
+              const emailRes = await resend.emails.send({
+                from: process.env.Sender_Email,
+                to: bookingData.field_owner_email,
+                subject: "ตรวจสอบสลิปและอัปเดตสถานะการจองให้เสร็จสิ้น",
+                html: ` <div style="font-family: 'Kanit', sans-serif; max-width: 600px; margin: auto; padding: 20px; background-color: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+      <h2 style="color: #1d4ed8; margin-bottom: 16px;">มีการอัปโหลดสลิปใหม่!</h2>
 
-         if (data.rows.length === 0) {
-  return res.status(404).json({ success: false, message: "ไม่พบข้อมูลการจอง" });
-}
-const bookingData = data.rows[0];
-console.log("bookingData:", bookingData);
+      <p style="font-size: 16px; color: #111827;">
+        สำหรับสนาม <strong style="color: #0f172a;">${bookingData.field_name}</strong> ระบบได้รับสลิปใหม่แล้ว
+      </p>
 
-if (!bookingData.field_owner_email) {
-  console.error("ไม่พบอีเมลเจ้าของสนาม");
-} else {
-  try {
-    const emailRes = await resend.emails.send({
-      from: process.env.Sender_Email,
-      to: bookingData.field_owner_email,
-      subject: "ตรวจสอบสลิปและอัปเดตสถานะการจองให้เสร็จสิ้น",
-      html: `<div>มีการอัปโหลดสลิปใหม่สำหรับสนาม <strong>${bookingData.field_name}</strong><br/>
-      กรุณาตรวจสอบ <a href="http://localhost:3000/login?redirect=/bookingDetail/${bookingId}">คลิกที่นี่ ${bookingId} </a></div>`,
-    });
-    console.log("Email sent:", emailRes);
-  } catch (emailErr) {
-    console.error("Email send error:", emailErr);
-  }
-}
+      <div style="margin: 20px 0;">
+        <a
+          href="${process.env.FONT_END_URL}/login?redirect=/bookingDetail/${bookingId}"
+          style="display: inline-block; background-color: #1d4ed8; color: white; padding: 10px 20px; text-decoration: none; border-radius: 6px; font-weight: bold;"
+          target="_blank"
+        >
+          ตรวจสอบการจอง #${bookingId}
+        </a>
+      </div>
 
-              
+      <p style="font-size: 14px; color: #6b7280;">
+        กรุณาตรวจสอบและอัปเดตสถานะการจองให้เสร็จสิ้น
+      </p>
+
+      <hr style="margin: 24px 0; border: none; border-top: 1px solid #e5e7eb;" />
+
+      <p style="font-size: 12px; color: #9ca3af;">
+        หากคุณไม่ได้เป็นผู้ดำเนินการ กรุณาเพิกเฉยต่ออีเมลฉบับนี้
+      </p>
+    </div>`,
+              });
+              console.log("Email sent:", emailRes);
+            } catch (emailErr) {
+              console.error("Email send error:", emailErr);
+            }
+          }
         }
-        
-        
-        
+
         if (req.io) req.io.emit("slot_booked", { bookingId });
 
         res.json({

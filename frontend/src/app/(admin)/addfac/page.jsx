@@ -19,6 +19,8 @@ export default function RegisterFieldForm() {
   const { user, isLoading } = useAuth();
   const [startProcessLoad, SetstartProcessLoad] = useState(false);
   const [dataLoading, setDataLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const facilitiesPerPage = 12;
 
   useEffect(() => {
     if (isLoading) return;
@@ -65,6 +67,10 @@ export default function RegisterFieldForm() {
 
     fetchFacilities();
   }, []);
+
+  const indexOfLast = currentPage * facilitiesPerPage;
+  const indexOfFirst = indexOfLast - facilitiesPerPage;
+  const currentFacilities = facilities.slice(indexOfFirst, indexOfLast);
 
   const addNewFacility = async () => {
     if (!newFacility.trim()) return;
@@ -269,8 +275,8 @@ export default function RegisterFieldForm() {
           )}
         </div>
         <div className="factcon-admin">
-          {facilities.length > 0 ? (
-            facilities.map((fac) => (
+          {currentFacilities.length > 0 ? (
+            currentFacilities.map((fac) => (
               <div key={fac.fac_id} className="facility-item-admin">
                 <div className="input-group-checkbox-admin">
                   <label>{fac.fac_name}</label>
@@ -295,7 +301,21 @@ export default function RegisterFieldForm() {
               </div>
             ))
           ) : (
-            <p className="no-sport-type"></p>
+            <p className="no-sport-type">ไม่พบข้อมูล</p>
+          )}
+        </div>
+        <div className="pagination-facilities">
+          {Array.from(
+            { length: Math.ceil(facilities.length / facilitiesPerPage) },
+            (_, i) => (
+              <button
+                key={i}
+                className={currentPage === i + 1 ? "active" : ""}
+                onClick={() => setCurrentPage(i + 1)}
+              >
+                {i + 1}
+              </button>
+            )
           )}
         </div>
 

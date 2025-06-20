@@ -1444,9 +1444,9 @@ export default function CheckFieldDetail() {
           </div>
           <h1>สิ่งอำนวยความสะดวกในสนาม</h1>
           <div className="factcon-editfield">
-            {facilities.length === 0 ? (
+            {Array.isArray(facilities) && facilities.length === 0 ? (
               <p>ยังไม่มีสิ่งอำนวยความสะดวกสำหรับสนามนี้</p>
-            ) : (
+            ) : Array.isArray(facilities) && facilities.length > 0 ? (
               <div className="facbox-editfield">
                 {facilities.map((facility) => (
                   <div
@@ -1466,6 +1466,8 @@ export default function CheckFieldDetail() {
                   </div>
                 ))}
               </div>
+            ) : (
+              <p style={{ color: "gray" }}>ข้อมูลผิดพลาด</p>
             )}
           </div>
           <h1>สิ่งอำนวยความสะดวกทั้งหมด</h1>

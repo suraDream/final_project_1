@@ -202,12 +202,12 @@ export default function MyCalendar() {
 
   return (
     <div>
+      {message && (
+        <div className={`message-box ${messageType}`}>
+          <p>{message}</p>
+        </div>
+      )}
       <div className="sub-field-detail-container-calendar">
-        {message && (
-          <div className={`message-box ${messageType}`}>
-            <p>{message}</p>
-          </div>
-        )}
         {fieldData !== "ไม่พบข้อมูล" ? (
           <div className="detail-calendar">
             <p className="sub-name">

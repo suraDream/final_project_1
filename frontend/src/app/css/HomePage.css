@@ -21,7 +21,6 @@
   background-color: #ffd4cc;
 }
 
-
 .homepage {
   display: flex;
   flex-direction: column;
@@ -426,6 +425,32 @@
 
 .view-post-btn-home:hover {
   transform: scale(1.04);
+}
+
+.reviwe-container-home {
+  margin: 5px auto 20px auto;
+}
+
+.pagination-previwe-field-home {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.pagination-previwe-field-home button {
+  padding: 6px 12px;
+  font-size: 14px;
+  background: #eee;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.pagination-previwe-field-home button.active {
+  background-color: var(--text-color);
+  color: white;
+  font-weight: bold;
 }
 
 /* ///////////////////////////////////////////////////////////////////////////////////////////////////////////// */

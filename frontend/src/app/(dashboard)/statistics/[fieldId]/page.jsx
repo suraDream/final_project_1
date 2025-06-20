@@ -20,9 +20,9 @@ export default function Statistics() {
   const [bookingId, setBookingId] = useState("");
   const router = useRouter();
   const { fieldId } = useParams();
-  const [message, setMessage] = useState(""); // State for messages
-  const [messageType, setMessageType] = useState(""); // State for message type (error, success)
-  const [fieldName, setFieldName] = useState(""); // เพิ่ม state สำหรับชื่อสนาม
+  const [message, setMessage] = useState(""); 
+  const [messageType, setMessageType] = useState(""); 
+  const [fieldName, setFieldName] = useState(""); 
   const [dataLoading, setDataLoading] = useState(true);
   const [useDateRange, setUseDateRange] = useState(false);
 
@@ -71,7 +71,6 @@ export default function Statistics() {
     const fetchData = async () => {
       if (!fieldId) return;
       try {
-        // แก้ไขการส่ง parameters
            const queryParams = new URLSearchParams();
 if (filters.bookingDate) queryParams.append("bookingDate", filters.bookingDate);
 if (filters.startDate) queryParams.append("startDate", filters.startDate);
@@ -140,23 +139,6 @@ if (filters.status) queryParams.append("status", filters.status);
     });
   };
 
-  const getCancelDeadlineTime = (start_date, start_time, cancel_hours) => {
-    if (!start_date || !start_time || cancel_hours == null) return "-";
-
-    const cleanDate = start_date.includes("T")
-      ? start_date.split("T")[0]
-      : start_date;
-    const bookingDateTime = new Date(`${cleanDate}T${start_time}+07:00`);
-    if (isNaN(bookingDateTime.getTime())) return "-";
-
-    bookingDateTime.setHours(bookingDateTime.getHours() - cancel_hours);
-
-    return bookingDateTime.toLocaleTimeString("th-TH", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-  };
 
   // คำนวณสถิติจากข้อมูลที่ได้
   const calculateStats = () => {

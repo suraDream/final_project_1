@@ -179,6 +179,35 @@
   padding: 0.95rem;
 }
 
+  
+.pagination-myfield {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.pagination-myfield button {
+  padding: 6px 12px;
+  font-size: 14px;
+  background: #eee;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.pagination-myfield button.active {
+  background-color: var(--text-color);
+  color: white;
+  font-weight: bold;
+}
+
+.pagination-myfield button.active {
+  background-color: var(--text-color);
+  color: white;
+  font-weight: bold;
+}
+
 .modal-overlay-myfield {
   position: fixed;
   top: 0;

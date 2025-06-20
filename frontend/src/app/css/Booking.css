@@ -108,7 +108,13 @@
   border: 2px solid #2563eb;
   color: #1e3a8a;
 }
+
 .approved-slot {
+  background-color: #b31e1e;
+  color: #ffffff;
+  pointer-events: none;
+}
+.complete-slot {
   background-color: #b31e1e;
   color: #ffffff;
   pointer-events: none;

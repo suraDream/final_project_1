@@ -73,6 +73,150 @@
   border: none;
 }
 
+.complete-btn-order-detail {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 10px auto;
+  width: 200px;
+  padding: 0.6rem 1.2rem;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+  border: none;
+}
+
+.review-inline-wrapper-detail {
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 20px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.review-title-detail {
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+.stars-detail {
+  margin: 10px 0;
+}
+
+.star-detail {
+  cursor: pointer;
+  color: #ccc;
+  font-size: 24px;
+  margin-right: 5px;
+  transition: color 0.2s ease-in-out;
+}
+
+.star-detail.active {
+  color: #facc15;
+}
+
+.review-textarea-detail {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  resize: vertical;
+  font-size: 15px;
+  box-sizing: border-box;
+}
+
+.review-buttons-detail {
+  margin-top: 15px;
+  display: flex;
+  gap: 10px;
+}
+
+.review-submit-btn,
+.review-cancel-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn-review-detail {
+  margin: 10px auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  background-color: #e0e0e0;
+  color: #333;
+}
+
+.btn-review-detail:hover {
+  background-color: #dbd9d9;
+}
+
+.review-submit-btn {
+  background-color: var(--text-color);
+  color: white;
+}
+
+.review-submit-btn:hover {
+  background-color: #11157b;
+}
+
+.review-cancel-btn {
+  background-color: #e0e0e0;
+  color: #333;
+}
+
+.review-cancel-btn:hover {
+  background-color: #dbd9d9;
+}
+
+.review-result-detail {
+  margin-top: 20px;
+  background-color: #f9f9f9;
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+}
+
+.score-detail {
+  display: block;
+  font-size: 20px;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.star-detail {
+  font-size: 26px;
+  margin-left: 5px;
+  color: #ccc;
+  transition: color 0.3s;
+}
+
+.comment-detail {
+  display: block;
+  font-size: 20px;
+  color: #333;
+}
+
+.comment-detail p {
+  margin: 4px 0 0;
+  padding: 10px 15px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  font-size: 17px;
+  line-height: 1.6;
+  color: #333;
+}
+
 .approve-btn-order-detail {
   background-color: #28a745;
   color: white;
@@ -89,6 +233,14 @@
   background-color: #c82333;
 }
 
+.complete-btn-order-detail {
+  background-color: #28a745;
+  color: white;
+}
+.complete-btn-order-detail:hover {
+  background-color: #218838;
+}
+
 .cancel-booking-btn-order-detail {
   display: flex;
   align-items: center;
@@ -103,7 +255,7 @@
 
 .no-slip-message {
   font-weight: 500;
-  text-align: left;
+  text-align: center;
 }
 
 .status-text-order-detail {
@@ -115,6 +267,10 @@
 }
 
 .status-text-order-detail.approved {
+  color: #008000;
+}
+
+.status-text-order-detail.complete {
   color: #008000;
 }
 
@@ -142,7 +298,7 @@
   justify-content: center;
   margin-top: 1.5rem;
   padding: 1rem;
-  background-color: #fafafa;
+  background-color: #ffffff;
   border: 1px solid #ddd;
   border-radius: 12px;
 }
@@ -156,9 +312,133 @@
   justify-content: center;
   margin-top: 1.5rem;
   padding: 1rem;
-  background-color: #fafafa;
+  background-color: #ffffff;
   border: 1px solid #ddd;
   border-radius: 12px;
+}
+
+.hours-detail-box {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 1rem;
+  font-size: 0.95rem;
+  max-width: auto;
+  margin: 1rem auto;
+}
+
+.line-item-hours-detail {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.line-item-hours-detail.cancel-info {
+  font-size: 1rem;
+  color: #d84315;
+  margin-top: 0.5rem;
+  font-weight: 600;
+}
+
+.line-item-hours-detail.cancel-info span:last-child{
+  font-size: 1rem;
+  color: #d84315;
+  font-weight: 600;
+}
+
+.line-item-hours-detail span:last-child {
+  font-size: 1rem;
+  color: #2e7d32;
+  text-align: right;
+  max-width: 60%;
+  font-weight: 600;
+}
+
+
+.divider-hours-detail {
+  border: none;
+  border-top: 1px dashed #ccc;
+  margin: 10px 0;
+}
+
+/* --------------------------------- */
+.booking-detail-box {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 1rem;
+  font-size: 0.95rem;
+  max-width: auto;
+  margin: 1rem auto;
+}
+
+.line-item-detail {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.booking-detail-box ul.facility-list-detail {
+  list-style: none;
+  padding-left: 1rem;
+  margin: 0.5rem 0;
+}
+
+.booking-detail-box ul.facility-list-detail li {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.line-item-detail.plus span:last-child {
+  text-align: center;
+  font-weight: 600;
+  color: #d32f2f;
+  font-size: 1.3rem;
+}
+
+.total-deposit-detail {
+  font-size: 1.3rem;
+  text-align: center;
+  font-weight: 600;
+  color: #d32f2f;
+}
+
+.line-item-detail.total {
+  font-weight: 600;
+  font-size: 1.3rem;
+  color: #2e7d32;
+}
+
+.total-remianing-detail {
+  font-weight: 600;
+  font-size: 1.3rem;
+  color: var(--text-color);
+}
+
+.all-price-detail {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text-color);
+}
+
+.line-item-detail.highlight span:last-child {
+  font-weight: 600;
+  font-size: 1.3rem;
+  color: var(--text-color);
+}
+
+.divider-detail {
+  border: none;
+  border-top: 1px dashed #ccc;
+  margin: 10px 0;
+}
+
+.line-item-detail.payment-method span:last-child {
+  color: #555;
 }
 
 .deposit-slip-order-detail {
@@ -186,6 +466,11 @@
 }
 
 .status-text-order-detail.approved {
+  color: #155724;
+  background-color: #d4f4dd;
+}
+
+.status-text-order-detail.complete {
   color: #155724;
   background-color: #d4f4dd;
 }
@@ -238,32 +523,6 @@
   font-weight: 700;
   color: #2e7d32;
 }
-.total-hours-detail strong {
-  text-align: center;
-  font-size: 18px;
-  font-weight: 700;
-  color: #2e7d32;
-}
-
-.total-hours-detail p {
-  text-align: center;
-  font-size: 18px;
-  font-weight: 700;
-  color: #2e7d32;
-}
-
-.total-cancel-hours-detail strong {
-  text-align: center;
-  font-size: 18px;
-  font-weight: 700;
-  color: #d32f2f;
-}
-.total-cancel-hours-detail p {
-  text-align: center;
-  font-size: 18px;
-  font-weight: 700;
-  color: #d32f2f;
-}
 
 .confirm-upload-slip {
   margin-top: 10px;
@@ -298,6 +557,13 @@
   background-color: #d4f4dd;
 }
 .status-approved strong {
+  color: #155724;
+}
+
+.status-complete {
+  background-color: #d4f4dd;
+}
+.status-complete strong {
   color: #155724;
 }
 
@@ -394,6 +660,7 @@
 
   .approve-btn-order-detail,
   .reject-btn-order-detail,
+  .complete-btn-order-detail,
   .cancel-booking-btn-order-detail {
     width: 100%;
   }

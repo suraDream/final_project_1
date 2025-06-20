@@ -19,6 +19,8 @@ export default function MyFieldPage() {
   const [messageType, setMessageType] = useState("");
   const [dataLoading, setDataLoading] = useState(true);
   const [startProcessLoad, SetstartProcessLoad] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const fieldPerPage = 8;
 
   useEffect(() => {
     if (isLoading) return;
@@ -68,6 +70,10 @@ export default function MyFieldPage() {
 
     fetchMyFields();
   }, []);
+
+  const indexOfLast = currentPage * fieldPerPage;
+  const indexOfFirst = indexOfLast - fieldPerPage;
+  const currentField = myFields.slice(indexOfFirst, indexOfLast);
 
   useEffect(() => {
     try {
@@ -169,9 +175,9 @@ export default function MyFieldPage() {
           <div className="loading-data">
             <div className="loading-data-spinner"></div>
           </div>
-        ) : filteredFields.length > 0 ? (
+        ) : currentField.length > 0 ? (
           <div className="grid-myfield">
-            {filteredFields.map((field) => (
+            {currentField.map((field) => (
               <div key={field.field_id} className="card-myfield">
                 <img
                   onClick={() => router.push(`/profile/${field.field_id}`)}
@@ -236,6 +242,20 @@ export default function MyFieldPage() {
             ไม่มีสนามที่ตรงกับสถานะที่เลือก
           </p>
         )}
+        <div className="pagination-myfield">
+          {Array.from(
+            { length: Math.ceil(myFields.length / fieldPerPage) },
+            (_, i) => (
+              <button
+                key={i}
+                className={currentPage === i + 1 ? "active" : ""}
+                onClick={() => setCurrentPage(i + 1)}
+              >
+                {i + 1}
+              </button>
+            )
+          )}
+        </div>
 
         {showDeleteModal && (
           <div className="modal-overlay-myfield">

@@ -45,11 +45,11 @@ export default function Booking() {
   const [bookedSlots, setBookedSlots] = useState([]);
   const [isBooked, setIsBooked] = useState(false); // ใช้ติดตามว่าเกิดการจองหรือยัง
   const [subFieldData, setSubFieldData] = useState([]);
-  const field_id = localStorage.getItem("field_id");
-  const nameBank = localStorage.getItem("name_bank");
-  const numberBank = localStorage.getItem("number_bank");
-  const accountHolder = localStorage.getItem("account_holder");
-  const fieldName = localStorage.getItem("field_name");
+  const field_id = sessionStorage.getItem("field_id");
+  const nameBank = sessionStorage.getItem("name_bank");
+  const numberBank = sessionStorage.getItem("number_bank");
+  const accountHolder = sessionStorage.getItem("account_holder");
+  const fieldName = sessionStorage.getItem("field_name");
   const [showFacilities, setShowFacilities] = useState(false);
   const [depositSlip, setDepositSlip] = useState(null); // เก็บไฟล์
   const [imgPreview, setImgPreview] = useState(""); // เก็บ URL
@@ -461,8 +461,6 @@ export default function Booking() {
   };
 
   const handleCheckBox = (facId, facPrice, facName) => {
-    console.log("Selected Facilities before:", selectedFacilities);
-
     setSelectedFacilities((prev) => {
       const updatedFacilities = { ...prev };
       let newSumFac = sumFac;
@@ -472,14 +470,20 @@ export default function Booking() {
         newSumFac -= facPrice;
       } else {
         updatedFacilities[facId] = {
-          field_fac_id: facId, //  เปลี่ยนจาก facility_id → field_fac_id
-          fac_name: facName, //  เปลี่ยนจาก name → fac_name
+          field_fac_id: facId,
+          fac_name: facName,
           price: facPrice,
         };
         newSumFac += facPrice;
       }
 
+      // ✅ คำนวณราคาใหม่ทันที
+      const sum = newPrice * totalHours + newSumFac;
+      const remaining = sum - priceDeposit;
+      setTotalPrice(sum);
+      setTotalRemaining(remaining);
       setSumFac(newSumFac);
+
       return updatedFacilities;
     });
   };
@@ -539,17 +543,26 @@ export default function Booking() {
     const now = new Date();
     const bookingDateObj = new Date(bookingDateFormatted);
 
-    // เฉพาะกรณีวันนี้เท่านั้น (ไม่บล็อก slot ของวันอื่น)
     const isToday =
       now.toLocaleDateString("en-CA") ===
       bookingDateObj.toLocaleDateString("en-CA");
 
     if (!isToday) return false;
 
+    // เวลาของ slot
     const slotDateTime = new Date(bookingDateObj);
     slotDateTime.setHours(hour);
     slotDateTime.setMinutes(minute);
     slotDateTime.setSeconds(0);
+
+    // แยกเวลาเปิด/ปิดออกมา
+    const [openHour] = openHours.split(":").map(Number);
+    const [closeHour] = closeHours.split(":").map(Number);
+
+    // ถ้าสนามเปิดข้ามวัน และ slot นั้นมีเวลา < เวลาเปิด => ต้องเป็นของวันถัดไป
+    if (closeHour < openHour && hour < openHour) {
+      slotDateTime.setDate(slotDateTime.getDate() + 1);
+    }
 
     return now > slotDateTime;
   }
@@ -570,13 +583,16 @@ export default function Booking() {
     setTotalPrice(0);
     setTotalRemaining(0);
     setTotalHoursFormat(0);
+    setSumFac(0);
   }
 
   const handleConfirm = () => {
-    if (!payMethod) {
-      setMessage("กรุณาเลือกช่องทางการชำระเงิน");
-      setMessageType("error");
-      return;
+    if (totalPrice > 0) {
+      if (!payMethod) {
+        setMessage("กรุณาเลือกช่องทางการชำระเงิน");
+        setMessageType("error");
+        return;
+      }
     }
     //     if (priceDeposit > 0) {
     //   if (!depositSlip) {
@@ -602,6 +618,7 @@ export default function Booking() {
     setImgPreview("");
     setShowFacilities(false);
     setSelectedFacilities([]);
+    setSumFac(0);
   };
 
   const validateBeforeSubmit = () => {
@@ -685,6 +702,7 @@ export default function Booking() {
         setTotalRemaining(0);
         setShowFacilities(false);
         setTotalHoursFormat(0);
+        setSumFac(0);
       } else {
         const data = await response.json();
         if (data.success) {
@@ -713,6 +731,8 @@ export default function Booking() {
           setTotalRemaining(0);
           setShowFacilities(false);
           setTotalHoursFormat(0);
+          setSumFac(0);
+
           //router.replace("");
           // setTimeout(() => {
           //   router.replace("");
@@ -775,7 +795,7 @@ export default function Booking() {
     if (timeLeft <= 0 && isTimeoutRef.current) {
       clearInterval(timerRef.current);
       setCanBook(false);
-      localStorage.clear();
+      sessionStorage.clear();
       sessionStorage.clear();
       router.replace("/");
     }
@@ -787,8 +807,10 @@ export default function Booking() {
 
   function toggleSelectSlot(index) {
     if (selectedSlots.length === 0) {
-      setSelectedSlots([index]);
-      setSelectedSlotsArr([slots[index]]); // ดึงชื่อ slot จาก index
+      const newIndexes = [index];
+      const newSlotArr = [slots[index]];
+      setSelectedSlots(newIndexes);
+      setSelectedSlotsArr(newSlotArr);
       setCanBook(true);
     } else if (selectedSlots.length === 1) {
       const range = [selectedSlots[0], index].sort((a, b) => a - b);
@@ -802,8 +824,10 @@ export default function Booking() {
       setSelectedSlotsArr(allSlots);
       setCanBook(true);
     } else {
-      setSelectedSlots([index]);
-      setSelectedSlotsArr([slots[index]]);
+      const newIndexes = [index];
+      const newSlotArr = [slots[index]];
+      setSelectedSlots(newIndexes);
+      setSelectedSlotsArr(newSlotArr);
       setCanBook(true);
     }
   }
@@ -870,12 +894,14 @@ export default function Booking() {
                   index >= minIndex &&
                   index <= maxIndex;
 
-                const slotStatus = getSlotStatus(slot); // ใช้แทน isSlotBooked
+                const slotStatus = getSlotStatus(slot);
                 const isBooked = slotStatus !== null;
                 const isPast = isPastSlot(slot);
 
                 let slotClass = "slot-box-book";
                 if (slotStatus === "approved") slotClass += " approved-slot";
+                else if (slotStatus === "complete")
+                  slotClass += " complete-slot";
                 else if (slotStatus === "pending") slotClass += " pending-slot";
                 else if (isSelected) slotClass += " selected-slot";
 
@@ -1112,33 +1138,35 @@ export default function Booking() {
                     ยอดรวมสุทธิ: {totalPrice} บาท
                   </strong>
                 </div>
-                <div className="payment-method">
-                  <div className="radio-group-book">
-                    <label>
-                      <input
-                        type="radio"
-                        value="โอนจ่าย"
-                        checked={payMethod === "โอนจ่าย"}
-                        onChange={handleRadioChange}
-                      />
-                      โอนจ่าย
-                    </label>
-                    <label>
-                      <input
-                        type="radio"
-                        value="เงินสด"
-                        checked={payMethod === "เงินสด"}
-                        onChange={handleRadioChange}
-                      />
-                      เงินสด
-                    </label>
-                  </div>
-                  {startProcessLoad && (
-                    <div className="loading-overlay">
-                      <div className="loading-spinner"></div>
+                {totalPrice > 0 && (
+                  <div className="payment-method">
+                    <div className="radio-group-book">
+                      <label>
+                        <input
+                          type="radio"
+                          value="โอนจ่าย"
+                          checked={payMethod === "โอนจ่าย"}
+                          onChange={handleRadioChange}
+                        />
+                        โอนจ่าย
+                      </label>
+                      <label>
+                        <input
+                          type="radio"
+                          value="เงินสด"
+                          checked={payMethod === "เงินสด"}
+                          onChange={handleRadioChange}
+                        />
+                        เงินสด
+                      </label>
                     </div>
-                  )}
-                </div>
+                    {startProcessLoad && (
+                      <div className="loading-overlay">
+                        <div className="loading-spinner"></div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="modal-buttons-confirmbooking">
                 <button

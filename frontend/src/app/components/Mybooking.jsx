@@ -81,7 +81,6 @@ export default function Mybooking() {
 
         if (data.success) {
           setMybooking(data.data);
-          console.log("Booking Data:", data.data);
           setUserName(data.user?.user_name || "");
           setUserInfo(
             `${data.user?.first_name || ""} ${data.user?.last_name || ""}`
@@ -148,6 +147,14 @@ export default function Mybooking() {
     });
   };
 
+  const getFacilityNetPrice = (item) => {
+    const totalFac = (item.facilities || []).reduce(
+      (sum, fac) => sum + (parseFloat(fac.fac_price) || 0),
+      0
+    );
+    return Math.abs(totalFac - (parseFloat(item.total_remaining) || 0));
+  };
+
   useEffect(() => {
     if (message) {
       const timer = setTimeout(() => {
@@ -158,15 +165,6 @@ export default function Mybooking() {
       return () => clearTimeout(timer);
     }
   }, [message]);
-
-    const getFacilityNetPrice = (item) => {
-    const totalFac = (item.facilities || []).reduce(
-      (sum, fac) => sum + (parseFloat(fac.fac_price) || 0),
-      0
-    );
-    return Math.abs(totalFac - (parseFloat(item.total_remaining) || 0));
-  };
-
 
   return (
     <>
@@ -200,6 +198,7 @@ export default function Mybooking() {
               <option value="pending">รอตรวจสอบ</option>
               <option value="approved">อนุมัติแล้ว</option>
               <option value="rejected">ไม่อนุมัติ</option>
+              <option value="complete">การจองสำเร็จ</option>
             </select>
           </label>
         </div>
@@ -230,7 +229,6 @@ export default function Mybooking() {
                     <strong>สนามย่อย: </strong>
                     {item.sub_field_name}
                   </p>
-
                   <div className="hours-container-my-order">
                     <div className="total-hours-order">
                       <p>
@@ -241,6 +239,7 @@ export default function Mybooking() {
                         <strong> สามารถยกเลิกก่อนเวลาเริ่ม: </strong>
                         {item.cancel_hours} ชม.
                       </p>
+                      <hr className="divider-order" />
                     </div>
                     <div className="total-date-order">
                       <p>
@@ -251,51 +250,71 @@ export default function Mybooking() {
                           item.start_date,
                           item.start_time,
                           item.cancel_hours
-                        )}{" "}
-                        น. **
+                        )}{"ก่อนเวลาเริ่ม**}"}
+                        
                       </p>
                     </div>
                   </div>
 
-                  <div className="price-container-my-order">
-                    <strong>{item.activity}</strong>
-                    <div className="price-deposit-order">
-                     <p>
-                        <strong>มัดจำ: </strong>
-                        {item.price_deposit} บาท
-                      </p>
+                  <div className="compact-price-box-order">
+                    {/* กิจกรรม */}
+                    <div className="line-item-order">
+                      <span>กิจกรรม:</span>
+                      <span>{item.activity}</span>
                     </div>
-             
 
-{Array.isArray(item.facilities) && (
-  <div className="facility-container">
-    <strong>
-      ราคาลบมัดจำ:{" "}
-      {item.facilities.length > 0
-        ? getFacilityNetPrice(item)
-        : item.total_remaining} บาท
-    </strong>
-    <div>
-      <strong>สิ่งอำนวยความสะดวก:</strong>
-      {item.facilities.length > 0 ? (
-        <ul className="facility-list">
-          {item.facilities.map((fac, i) => (
-            <li key={i}>
-              {fac.fac_name} ({fac.fac_price} บาท)
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <span>ไม่มี</span>
-      )}
-    </div>
-  </div>
-)}
-                    <div className="total-remaining-order">
-                      <p>
-                        <strong>ราคารวมสุทธิ: </strong>
-                        {item.total_price} บาท
-                      </p>
+                    {/* สนาม */}
+                    <div className="line-item-order">
+                      <span>ราคาสนาม:</span>
+                      <span>
+                        {item.total_price -
+                          (item.facilities?.reduce(
+                            (sum, f) => sum + f.fac_price,
+                            0
+                          ) || 0)}{" "}
+                        บาท
+                      </span>
+                    </div>
+
+                    {/* สิ่งอำนวยความสะดวก */}
+                    {Array.isArray(item.facilities) &&
+                      item.facilities.length > 0 && (
+                        <div className="line-item-order">
+                          <span>ราคาสิ่งอำนวยความสะดวก:</span>
+                          <span>
+                            {item.facilities.reduce(
+                              (sum, f) => sum + f.fac_price,
+                              0
+                            )}{" "}
+                            บาท
+                          </span>
+                        </div>
+                      )}
+
+                    <hr className="divider-order" />
+
+                    {/* รวมที่ต้องจ่าย (ไม่รวมมัดจำ) */}
+                    <div className="line-item-order remaining">
+                      <span className="total-remaining-order">
+                        รวมที่ต้องจ่าย(ยอดคงเหลือ):
+                      </span>
+                      <span className="total-remaining-order">
+                        +{item.total_remaining} บาท
+                      </span>
+                    </div>
+
+                    {/* มัดจำ */}
+                    <div className="line-item-order plus">
+                      <span className="total_deposit-order">มัดจำ:</span>
+                      <span>{item.price_deposit} บาท</span>
+                    </div>
+
+                    <hr className="divider-order" />
+
+                    {/* สุทธิทั้งหมด */}
+                    <div className="line-item-order total">
+                      <span>สุทธิ:</span>
+                      <span>{item.total_price} บาท</span>
                     </div>
                   </div>
 
@@ -309,7 +328,7 @@ export default function Mybooking() {
                         : item.status === "rejected"
                         ? "ไม่อนุมัติ"
                         : item.status === "complete"
-                        ? "เสร็จสมบูรณ์"
+                        ? "การจองสำเร็จ"
                         : "ไม่ทราบสถานะ"}
                     </span>
                   </p>
@@ -318,7 +337,7 @@ export default function Mybooking() {
                 <button
                   className="detail-button"
                   onClick={() =>
-                    router.push(`/bookingDetail/${item.booking_id}`)
+                    window.open(`/bookingDetail/${item.booking_id}`, "_blank")
                   }
                 >
                   ดูรายละเอียด

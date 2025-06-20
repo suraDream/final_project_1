@@ -94,23 +94,71 @@
   justify-content: center;
   margin-top: 0.5rem;
   padding: 0.6rem;
-  background-color: #fafafa;
+  background-color: #ffffff;
   border: 1px solid #ddd;
   border-radius: 12px;
 }
 
-.price-container-my-order {
-  margin-bottom: 0.5rem;
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  margin-top: 0.5rem;
-  padding: 0.6rem;
-  background-color: #fafafa;
+.compact-price-box-order {
+  min-height: 220px;
+  max-height: 220px;
+  overflow-y: auto;
+  font-size: 0.95rem;
+  background: #fff;
   border: 1px solid #ddd;
-  border-radius: 12px;
+  border-radius: 10px;
+  padding: 1rem;
+  max-width: 320px;
+  margin: 1rem auto;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.line-item-order {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.line-item-order.plus span:last-child {
+  text-align: center;
+  font-weight: 600;
+  color: #d32f2f;
+}
+
+.line-item-order.remaining span:last-child {
+  font-weight: 500;
+  color: #333;
+}
+
+.line-item-order.total {
+  text-align: center;
+  font-weight: 600;
+  color: #2e7d32;
+  font-size: 1.05rem;
+}
+
+.total_deposit-order {
+  text-align: center;
+  font-weight: 600;
+  color: #d32f2f;
+}
+
+.remaining {
+  text-align: center;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.total-remaining-order {
+  text-align: center;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.divider-order {
+  border: none;
+  border-top: 1px dashed #bbb;
+  margin: 8px 0;
 }
 
 .detail-button {
@@ -159,21 +207,6 @@
   margin-top: 0.5rem;
 }
 
-.status-text-detail.pending {
-  background-color: #fff4ce;
-  color: #eec50f;
-}
-
-.status-text-detail.approved {
-  background-color: #d4f4dd;
-  color: #157f3b;
-}
-
-.status-text-detail.rejected {
-  background-color: #fddede;
-  color: #c0392b;
-}
-
 .total-date-order strong {
   text-align: center;
   font-weight: 700;
@@ -181,18 +214,6 @@
 }
 
 .total-date-order p {
-  text-align: center;
-  font-weight: 700;
-  color: #d32f2f;
-}
-
-.price-deposit-order strong {
-  text-align: center;
-  font-weight: 700;
-  color: #d32f2f;
-}
-
-.price-deposit-order p {
   text-align: center;
   font-weight: 700;
   color: #d32f2f;
@@ -209,16 +230,11 @@
   font-weight: 700;
   color: #2e7d32;
 }
-.total-remaining-order strong {
-  text-align: center;
-  font-weight: 700;
-  color: #2e7d32;
-}
 
-.total-remaining-order p {
+.price-deposit-order strong {
   text-align: center;
   font-weight: 700;
-  color: #2e7d32;
+  color: #d32f2f;
 }
 
 /* เพิ่ม CSS ใหม่ใน myOrder.css */
@@ -342,6 +358,14 @@
   font-weight: 500;
 }
 
+.status-text-detail.complete {
+  color: #155724;
+  background-color: #d4f4dd;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
 .status-text-detail.rejected {
   color: #721c24;
   background-color: #fddede;
@@ -418,6 +442,14 @@
 
 .stat-card.approved .stat-number {
   color: #155724;
+}
+
+.stat-card.complete {
+  border-color: #0e7025;
+}
+
+.stat-card.complete .stat-number {
+  color: #0f501e;
 }
 
 .stat-card.rejected {
