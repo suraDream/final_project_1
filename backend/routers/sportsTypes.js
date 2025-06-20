@@ -97,10 +97,9 @@ router.put("/update/:id", authMiddleware, async (req, res) => {
   }
 });
 
-// ดึงข้อมูลประเภทกีฬาและสนามที่ผ่านการอนุมัติ
-router.get("/preview", async (req, res) => {
-  const sportId = req.query.sport_id; // Get the sport_id from the query string
 
+router.get("/preview", async (req, res) => {
+  const sportId = req.query.sport_id; 
   try {
     const query = `
     SELECT 

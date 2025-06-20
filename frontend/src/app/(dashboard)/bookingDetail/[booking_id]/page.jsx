@@ -608,12 +608,7 @@ console.log("reviewData",reviewData)
                   <strong> มัดจำ:</strong> {booking.price_deposit} บาท
                 </p>
               </div>
-              <div>
-                <p>
-                  <strong> ราคาหลังหักค่ามัดจำ:</strong>{" "}
-                  {booking.total_remaining} บาท
-                </p>
-              </div>
+      
             {Array.isArray(booking.facilities) && (
   <div className="facility-container">
     <strong>
